@@ -40,10 +40,10 @@ import java.util.UUID; // <-- THÊM IMPORT NÀY
 public class EventDatPhong {
 
     // --- HẰNG SỐ TRẠNG THÁI ---
-    private static final int TT_PHONG_SAN_SANG = 1;
-    private static final int TT_PHONG_DA_THUE = 2;
-    private static final int TT_PHONG_DANG_DON = 3;
-    private static final int TT_PHONG_BAO_TRI = 4;
+    private static final int TT_PHONG_SAN_SANG = 0;
+    private static final int TT_PHONG_DA_THUE = 1;
+    private static final int TT_PHONG_DANG_DON = 2;
+    private static final int TT_PHONG_BAO_TRI = 3;
 
     // --- HẰNG SỐ MÀU SẮC ---
     private static final Color ACCENT_BLUE = new Color(24, 90, 219);

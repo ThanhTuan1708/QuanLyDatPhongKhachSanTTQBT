@@ -11,8 +11,10 @@ package ui.gui;
 // ---------------------------
 
 // DAO, Entity, Event
+import com.formdev.flatlaf.FlatLightLaf;
 import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
+import connectDB.ConnectDB;
 import dao.*;
 import entity.*;
 import event.*;
@@ -25,18 +27,14 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.MatteBorder;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
+import javax.swing.table.*;
 
 import java.awt.*;
 import java.awt.event.*;
 
 
 // SQL (chỉ cần cho try-catch)
-import java.sql.SQLException;
+import java.sql.*;
 import java.text.DecimalFormat;
 // TIME
 import java.text.NumberFormat;
@@ -49,6 +47,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.text.SimpleDateFormat;
 
 public class GUI_NhanVienLeTan extends JFrame {
 
@@ -507,8 +506,26 @@ public class GUI_NhanVienLeTan extends JFrame {
             LichLamViec_DAO dao = new LichLamViec_DAO();
             int tongGioTuan = dao.tinhTongGioLamTrongTuan(nhanVien.getMaNV());
             JPanel boxHours = createStatBox(String.valueOf(tongGioTuan), "Giờ tuần này", STAT_BG_1);
-            JPanel boxCheckIn = createStatBox("12", "Check-in", STAT_BG_2);
-            JPanel boxCheckOut = createStatBox("10", "Check-out", STAT_BG_3);
+            PhieuDatPhong_DAO pdpDAO = new PhieuDatPhong_DAO();
+            //check in
+            int soCheckInHomNay = pdpDAO.demCheckInHomNay();
+
+            JPanel boxCheckIn = createStatBox(
+                    String.valueOf(soCheckInHomNay),
+                    "Check-in",
+                    STAT_BG_2
+            );
+
+            //check out
+            int soCheckOutHomNay = pdpDAO.demCheckOutHomNay();
+
+            JPanel boxCheckOut = createStatBox(
+                    String.valueOf(soCheckOutHomNay),
+                    "Check-out",
+                    STAT_BG_3
+            );
+
+
 
             // --- Gắn sự kiện click ---
             EventDashBoardLeTan.addStatBoxClickEvent(boxCheckIn, "checkin");
@@ -607,11 +624,11 @@ public class GUI_NhanVienLeTan extends JFrame {
 
                 // Lấy thứ trong tuầnNVNV
 
-                // 🔹 Nếu là Thứ 7 hoặc Chủ nhật → Nghỉ
+                // Nếu là Thứ 7 hoặc Chủ nhật → Nghỉ
                 if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) {
                     tt = "Nghỉ";
                 } else {
-                    // 🔹 Nếu không có trạng thái thì tự động xác định theo ngày
+                    // Nếu không có trạng thái thì tự động xác định theo ngày
                     if (tt == null || tt.isEmpty()) {
                         if (ngayLam.isBefore(today)) {
                             tt = "Hoàn thành";
@@ -625,7 +642,7 @@ public class GUI_NhanVienLeTan extends JFrame {
 
                 status.setText(tt);
 
-                // 🔹 Đặt màu theo trạng thái
+                // Đặt màu theo trạng thái
                 switch (tt) {
                     case "Hoàn thành" -> {
                         status.setBackground(new Color(220, 255, 230));
@@ -694,18 +711,18 @@ public class GUI_NhanVienLeTan extends JFrame {
             tasks.add(title, BorderLayout.NORTH);
 
             // --- Lấy dữ liệu từ SQL ---
-            LichLamViec_DAO dao = new LichLamViec_DAO();
-            List<LichLamViec> list = dao.getLichLamTheoMaNV(nhanVien.getMaNV());
+            NhiemVuCaLam_DAO dao = new NhiemVuCaLam_DAO();
+            List<NhiemVu> list = dao.getNhiemVuHomNay(nhanVien.getMaNV());
 
             String[] columns = {"Thời gian", "Nhiệm vụ", "Trạng thái", "Ghi chú"};
             Object[][] data = new Object[list.size()][4];
 
             for (int i = 0; i < list.size(); i++) {
-                LichLamViec llv = list.get(i);
-                data[i][0] = llv.getThoiGianNV();
-                data[i][1] = llv.getNhiemVu();
-                data[i][2] = llv.getTrangThaiNhiemVu();
-                data[i][3] = llv.getGhiChu();
+                NhiemVu nv = list.get(i);
+                data[i][0] = (nv.getThoiGian() != null) ? nv.getThoiGian().toString() : "";
+                data[i][1] = nv.getNhiemVu();
+                data[i][2] = nv.getTrangThai();
+                data[i][3] = nv.getGhiChu();
             }
 
             JTable table = new JTable(data, columns) {
@@ -757,25 +774,74 @@ public class GUI_NhanVienLeTan extends JFrame {
         private JPanel createStatsPanel() {
             JPanel stats = new JPanel(new GridLayout(3, 2, 12, 12));
             stats.setOpaque(false);
+
+            String maNV = nhanVien.getMaNV();
+
             LichLamViec_DAO lichLamViecDAO = new LichLamViec_DAO();
-            //đếm số giờ làm
-            double tongGio = lichLamViecDAO.tinhTongGioLamTrongTuan(nhanVien.getMaNV());
+            NhiemVuCaLam_DAO nhiemVuDAO = new NhiemVuCaLam_DAO();
 
-            stats.add(createStatCard(String.format("%.0fh", tongGio), "Tổng giờ làm", STAT_BG_1));
+            //  Tổng giờ làm trong tuần
+            int tongGio = lichLamViecDAO.tinhTongGioLamTrongTuan(maNV);
+            stats.add(createStatCard(tongGio + "h", "Tổng giờ làm", STAT_BG_1));
 
-            //thống kê ca làm
-            int[] thongKe = lichLamViecDAO.getThongKeCaTuan(nhanVien.getMaNV());
+            //  Thống kê ca làm
+            int[] thongKe = lichLamViecDAO.getThongKeCaTuan(maNV);
             int caHoanThanh = thongKe[0];
             int tongCa = thongKe[1];
+            stats.add(createStatCard(caHoanThanh + "/" + tongCa, "Ca hoàn thành",
+                    new Color(220, 255, 230)));
 
-            stats.add(createStatCard(caHoanThanh + "/" + tongCa, "Ca hoàn thành", new Color(220, 255, 230)));
-            stats.add(createStatCard("12", "Check-in hôm nay", new Color(245, 235, 255)));
-            stats.add(createStatCard("10", "Check-out hôm nay", new Color(255, 240, 230)));
-            int soGhiChu = lichLamViecDAO.getSoGhiChu("NV001");
-            stats.add(createStatCard(String.valueOf(soGhiChu), "Yêu cầu", new Color(255, 235, 245)));
+            // Check-in / Check-out (chưa có logic → để tạm)
+            PhieuDatPhong_DAO pdpDAO = new PhieuDatPhong_DAO();
+            int soCheckInHomNay = pdpDAO.demCheckInHomNay();
 
-            int tongGioTangCa = lichLamViecDAO.getTongGioTangCaInt("NV001");
-            stats.add(createStatCard(tongGioTangCa + "h", "Tăng ca", new Color(250, 245, 230)));
+            JPanel cardCheckIn = createStatCard(
+                    String.valueOf(soCheckInHomNay),
+                    "Check-in hôm nay",
+                    new Color(245, 235, 255)
+            );
+
+            // thêm click
+            cardCheckIn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            cardCheckIn.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    new GUI_CheckIn().setVisible(true);
+                }
+            });
+
+            stats.add(cardCheckIn);
+
+
+            int soCheckOutHomNay = pdpDAO.demCheckOutHomNay();
+
+            JPanel cardCheckOut = createStatCard(
+                    String.valueOf(soCheckOutHomNay),
+                    "Check-out hôm nay",
+                    new Color(255, 240, 230) // đổi màu nhẹ cho khác check-in (tuỳ thích)
+            );
+
+            // thêm click
+            cardCheckOut.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            cardCheckOut.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    new GUI_CheckOut().setVisible(true);
+                }
+            });
+
+            stats.add(cardCheckOut);
+
+            // Số yêu cầu (ghi chú) → lấy từ NhiemVu
+            int soGhiChu = nhiemVuDAO.getSoGhiChu(maNV);
+            stats.add(createStatCard(String.valueOf(soGhiChu), "Yêu cầu",
+                    new Color(255, 235, 245)));
+
+            // Tổng giờ tăng ca
+            int tongGioTangCa = lichLamViecDAO.getTongGioTangCaInt(maNV);
+            stats.add(createStatCard(tongGioTangCa + "h", "Tăng ca",
+                    new Color(250, 245, 230)));
+
             return stats;
         }
 
@@ -784,6 +850,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             box.setPreferredSize(new Dimension(110, 60));
             box.setBackground(bg);
             box.setBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER));
+            box.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             JLabel valueLabel = new JLabel(value);
             valueLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
             valueLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -2943,6 +3010,7 @@ public class GUI_NhanVienLeTan extends JFrame {
         private JButton btnMainAction;
         private JButton btnHistory;
         private JCheckBox chkSelectAll;
+        private JLabel titleLabel;
 
         private Frame ownerFrame;
 
@@ -2977,7 +3045,32 @@ public class GUI_NhanVienLeTan extends JFrame {
             header.setOpaque(false);
             header.add(createTitlePanel(), BorderLayout.NORTH);
             header.add(createToggleAndHistoryPanel(), BorderLayout.CENTER);
+            header.add(createBookingInfoPanel(), BorderLayout.SOUTH);
             return header;
+        }
+
+        private JPanel createBookingInfoPanel() {
+
+            JPanel panel = new JPanel(new GridLayout(1, 6, 15, 0));
+            panel.setOpaque(false);
+            panel.setBorder(new EmptyBorder(5, 0, 5, 0));
+
+            panel.add(new JLabel("Mã phiếu:"));
+            lblMaPhieu = new JLabel("-");
+            lblMaPhieu.setFont(new Font("SansSerif", Font.BOLD, 13));
+            panel.add(lblMaPhieu);
+
+            panel.add(new JLabel("Phòng:"));
+            lblPhong = new JLabel("-");
+            lblPhong.setFont(new Font("SansSerif", Font.BOLD, 13));
+            panel.add(lblPhong);
+
+            panel.add(new JLabel("Khách:"));
+            lblTenKhach = new JLabel("-");
+            lblTenKhach.setFont(new Font("SansSerif", Font.BOLD, 13));
+            panel.add(lblTenKhach);
+
+            return panel;
         }
 
         /**
@@ -2986,12 +3079,15 @@ public class GUI_NhanVienLeTan extends JFrame {
         private JPanel createTitlePanel() {
             JPanel titlePanel = new JPanel(new BorderLayout());
             titlePanel.setOpaque(false);
-            JLabel title = new JLabel("Check In / Check Out");
-            title.setFont(new Font("SansSerif", Font.BOLD, 20));
+
+            titleLabel = new JLabel("Check In / Check Out"); // <-- LƯU BIẾN
+            titleLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
+
             JLabel subtitle = new JLabel("Quản lý check-in và check-out khách hàng");
             subtitle.setFont(new Font("SansSerif", Font.PLAIN, 12));
             subtitle.setForeground(COLOR_TEXT_MUTED);
-            titlePanel.add(title, BorderLayout.NORTH);
+
+            titlePanel.add(titleLabel, BorderLayout.NORTH);
             titlePanel.add(subtitle, BorderLayout.SOUTH);
             return titlePanel;
         }
@@ -3816,36 +3912,839 @@ public class GUI_NhanVienLeTan extends JFrame {
             public boolean isConfirmed() { return confirmed; }
         }
 
+
+
+        private JLabel lblMaPhieu;
+        private JLabel lblPhong;
+        private JLabel lblTenKhach;
+
+
+        public void loadCheckInToday(List<String> maPhieuList) {
+
+            DefaultTableModel model = (DefaultTableModel) table.getModel();
+            model.setRowCount(0);
+
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+            String inSql = maPhieuList.stream()
+                    .map(x -> "?")
+                    .collect(Collectors.joining(","));
+
+            String sql = """
+       SELECT pdp.maPhieu,
+       pdp.maKH,
+       kh.hoTen,
+       kh.sdt,
+       kh.email,
+       kh.cccd,
+       kh.diaChi,
+       p.maPhong,
+       lp.tenLoaiPhong,
+       pdp.ngayNhanPhong,
+       pdp.ngayTraPhong,
+       p.giaTienMotDem,
+       p.soChua,
+       CASE
+           WHEN DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong) <= 0
+           THEN 1
+           ELSE DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong)
+       END AS soDem
+       FROM PhieuDatPhong pdp
+       JOIN KhachHang kh ON pdp.maKH = kh.maKH
+       JOIN Phong p ON pdp.maPhong = p.maPhong
+       JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong
+       WHERE pdp.maPhieu IN (%s)
+       """.formatted(inSql);
+
+            try (var con = ConnectDB.getConnection();
+                 var ps = con.prepareStatement(sql)) {
+
+                for (int i = 0; i < maPhieuList.size(); i++) {
+                    ps.setString(i + 1, maPhieuList.get(i));
+                }
+
+                var rs = ps.executeQuery();
+
+                while (rs.next()) {
+                    Timestamp ts = rs.getTimestamp("ngayNhanPhong");
+                    String ngayNhan = ts != null ? ts.toLocalDateTime().format(dtf) : "";
+
+                    int soDem = Math.max(rs.getInt("soDem"), 1);
+                    long tamTinh = (long) rs.getInt("giaTienMotDem") * soDem;
+
+                    model.addRow(new Object[]{
+                            false,                               // 0 checkbox
+                            rs.getString("maPhieu"),             // 1
+                            rs.getString("hoTen"),               // 2
+                            rs.getString("maPhong"),             // 3
+                            rs.getString("tenLoaiPhong"),         // 4
+                            ngayNhan,                             // 5
+                            rs.getInt("soChua"),                  // 6
+                            rs.getString("sdt") + "\n" + rs.getString("email"), // 7
+                            String.format("%,d đ", tamTinh),      // 8
+                            rs.getTimestamp("ngayTraPhong"),      // 9 (ẨN)
+                            rs.getString("maKH")                  // 10 (ẨN)
+                    });
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Lỗi load check-in: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        }
+
+
+        private boolean isCheckOutMode = true;
+        private void switchToCheckOutUI() {
+
+            isCheckOutMode = true;
+
+            // Toggle button
+            btnToggleCheckIn.setSelected(false);
+            btnToggleCheckOut.setSelected(true);
+
+            styleToggleButton(btnToggleCheckIn, false);
+            styleToggleButton(btnToggleCheckOut, true);
+
+            // Title
+            titleLabel.setText("Check Out");
+
+            // Cột ngày
+            setNgayColumnHeader("Ngày trả");
+
+            // Nút hành động chính
+            btnMainAction.setText("Check Out (0)");
+            btnMainAction.setEnabled(false);
+            updateMainActionButtonColor(false); // false = CheckOut
+        }
+
+        public void loadCheckOutToday(List<String> maPhieuList) {
+
+            // 1️⃣ Chuyển UI sang CHECK OUT
+            switchToCheckOutUI();
+            // 2️⃣ ÉP CONTROLLER SANG CHECK OUT ❗
+            controller.forceCheckOutMode();
+
+            DefaultTableModel model = (DefaultTableModel) table.getModel();
+            model.setRowCount(0);
+
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+            // 2️⃣ Tạo IN (?, ?, ?)
+            String inSql = maPhieuList.stream()
+                    .map(x -> "?")
+                    .collect(Collectors.joining(","));
+
+            // 3️⃣ SQL: chỉ lấy khách CHECK-OUT HÔM NAY
+            String sql = """
+        SELECT pdp.maPhieu,
+               kh.hoTen,
+               p.maPhong,
+               lp.tenLoaiPhong,
+               pdp.ngayTraPhong,
+               p.soChua,
+               kh.sdt,
+               kh.email,
+               p.giaTienMotDem,
+               CASE
+                   WHEN DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong) <= 0
+                   THEN 1
+                   ELSE DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong)
+               END AS soDem
+        FROM PhieuDatPhong pdp
+        JOIN KhachHang kh ON pdp.maKH = kh.maKH
+        JOIN Phong p ON pdp.maPhong = p.maPhong
+        JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong
+        WHERE pdp.maPhieu IN (%s)
+        """.formatted(inSql);
+
+            try (var con = ConnectDB.getConnection();
+                 var ps = con.prepareStatement(sql)) {
+
+                // 4️⃣ Gán tham số IN
+                for (int i = 0; i < maPhieuList.size(); i++) {
+                    ps.setString(i + 1, maPhieuList.get(i));
+                }
+
+                var rs = ps.executeQuery();
+
+                while (rs.next()) {
+
+                    Timestamp tsTra = rs.getTimestamp("ngayTraPhong");
+                    String ngayTra = tsTra != null
+                            ? tsTra.toLocalDateTime().format(dtf)
+                            : "";
+
+                    int soDem = Math.max(rs.getInt("soDem"), 1);
+                    long tongTien = (long) rs.getInt("giaTienMotDem") * soDem;
+
+                    model.addRow(new Object[]{
+                            false,                                   // checkbox
+                            rs.getString("maPhieu"),
+                            rs.getString("hoTen"),
+                            rs.getString("maPhong"),
+                            rs.getString("tenLoaiPhong"),
+                            ngayTra,                                 // 👉 NGÀY TRẢ
+                            rs.getInt("soChua"),
+                            rs.getString("sdt") + "\n" + rs.getString("email"),
+                            String.format("%,d đ", tongTien)
+                    });
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Lỗi load check-out hôm nay: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        }
+
+
+
+
     } // <-- Dấu } kết thúc lớp PanelCheckInCheckOut
+
+
     //danh sach check in
     public static class GUI_CheckIn extends JFrame {
+
+        // ===== CARD =====
+        private CardLayout cardLayout;
+        private JPanel mainPanel;
+
+        private JPanel panelDanhSach;
+        private PanelCheckInCheckOut panelCheckIn;
+
+        // ===== TABLE =====
+        private JTable table;
+        private DefaultTableModel model;
+        private JButton btnCheckIn;
+
+        // ===== CONTROLLER =====
+        private EventDatPhong datPhongController;
+
+        // =====================================================
+        // ================== CONSTRUCTOR ======================
+        // =====================================================
         public GUI_CheckIn() {
-            setTitle("Màn hình Check-in");
-            setSize(400, 300);
+
+            FlatLightLaf.setup(); // UI hiện đại
+
+            setTitle("Check In hôm nay");
+            setSize(1100, 650);
             setLocationRelativeTo(null);
             setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            setLayout(new BorderLayout());
 
-            JLabel label = new JLabel("Thực hiện Check-in khách hàng", SwingConstants.CENTER);
-            label.setFont(new Font("SansSerif", Font.BOLD, 16));
+            cardLayout = new CardLayout();
+            mainPanel = new JPanel(cardLayout);
 
-            add(label, BorderLayout.CENTER);
+            // --- Panel danh sách
+            panelDanhSach = createDanhSachPanel();
+
+            // --- Controller dummy
+            PanelDatPhongContent dummyPanel = new PanelDatPhongContent(null);
+            datPhongController = new EventDatPhong(dummyPanel, null);
+
+            // --- Panel CheckIn
+            panelCheckIn = new PanelCheckInCheckOut(
+                    this,
+                    null,
+                    datPhongController
+            );
+
+            mainPanel.add(panelDanhSach, "LIST");
+            mainPanel.add(panelCheckIn, "CHECKIN");
+
+            add(mainPanel, BorderLayout.CENTER);
+            cardLayout.show(mainPanel, "LIST");
+            loadKhachHangHomNay();
+
+            loadKhachHangHomNay();
+            setVisible(true);
+        }
+
+        // =====================================================
+        // =============== UI DANH SÁCH ========================
+        // =====================================================
+        private JPanel createDanhSachPanel() {
+
+            JPanel root = new JPanel(new BorderLayout(15, 15));
+            root.setBorder(new EmptyBorder(20, 20, 20, 20));
+            root.setBackground(new Color(245, 243, 255));
+
+            // ===== TITLE =====
+            JLabel title = new JLabel("Danh sách khách check-in hôm nay");
+            title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+            title.setForeground(new Color(88, 28, 135));
+            root.add(title, BorderLayout.NORTH);
+
+            // ===== TABLE =====
+            String[] cols = {
+                    "", "Mã ĐP", "Khách hàng", "Phòng",
+                    "Loại phòng", "Ngày đến", "Khách",
+                    "Liên hệ", "Tạm tính"
+            };
+
+            model = new DefaultTableModel(cols, 0) {
+                @Override
+                public Class<?> getColumnClass(int columnIndex) {
+                    return switch (columnIndex) {
+                        case 0 -> Boolean.class;
+                        case 6 -> Integer.class;
+                        default -> String.class;
+                    };
+                }
+
+                @Override
+                public boolean isCellEditable(int row, int col) {
+                    return col == 0;
+                }
+            };
+
+            table = new JTable(model);
+            table.setRowHeight(44);
+            table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+
+            table.setShowHorizontalLines(false);
+            table.setShowVerticalLines(false);
+            table.setIntercellSpacing(new Dimension(0, 0));
+
+            table.setSelectionBackground(new Color(168, 85, 247));
+            table.setSelectionForeground(Color.WHITE);
+
+            JTableHeader header = table.getTableHeader();
+            header.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            header.setBackground(new Color(237, 233, 254));
+            header.setForeground(new Color(76, 29, 149));
+            header.setReorderingAllowed(false);
+
+            // ===== Căn giữa ======
+            CenterCellRenderer centerRenderer = new CenterCellRenderer();
+
+            // Mã ĐP
+            table.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
+
+            // Khách hàng
+            table.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
+
+            // Phòng
+            table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
+
+            // Loại phòng
+            table.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
+
+            // Ngày đến
+            table.getColumnModel().getColumn(5).setCellRenderer(centerRenderer);
+
+            // Số khách
+            table.getColumnModel().getColumn(6).setCellRenderer(centerRenderer);
+
+
+            // ===== COLUMN WIDTH =====
+            table.getColumnModel().getColumn(0).setMaxWidth(40);
+            table.getColumnModel().getColumn(0).setMinWidth(40);
+            table.getColumnModel().getColumn(6).setMaxWidth(60);
+
+
+            // ===== RENDERER TẠM TÍNH =====
+            DefaultTableCellRenderer moneyRenderer = new DefaultTableCellRenderer();
+            moneyRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
+            moneyRenderer.setForeground(new Color(88, 28, 135));
+            table.getColumnModel().getColumn(8).setCellRenderer(moneyRenderer);
+
+            // ===== RENDERER LIÊN HỆ (XUỐNG DÒNG) =====
+            table.getColumnModel()
+                    .getColumn(7) // cột "Liên hệ"
+                    .setCellRenderer(new MultiLineCellRenderer());
+
+            JScrollPane scroll = new JScrollPane(table);
+            scroll.setBorder(BorderFactory.createEmptyBorder());
+            root.add(scroll, BorderLayout.CENTER);
+
+            // ===== BUTTON =====
+            btnCheckIn = new JButton("Thực hiện Check In");
+            btnCheckIn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            btnCheckIn.setPreferredSize(new Dimension(230, 44));
+            btnCheckIn.setBackground(new Color(124, 58, 237));
+            btnCheckIn.setForeground(Color.WHITE);
+            btnCheckIn.setFocusPainted(false);
+            btnCheckIn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            btnCheckIn.addActionListener(e -> handleCheckIn());
+
+            JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            bottom.setOpaque(false);
+            bottom.add(btnCheckIn);
+            root.add(bottom, BorderLayout.SOUTH);
+
+            return root;
+        }
+
+        // =====================================================
+        // ================= CHECK IN ==========================
+        // =====================================================
+        private void handleCheckIn() {
+
+            List<String> maPhieuList = new ArrayList<>();
+
+            for (int i = 0; i < model.getRowCount(); i++) {
+                if (Boolean.TRUE.equals(model.getValueAt(i, 0))) {
+                    maPhieuList.add(model.getValueAt(i, 1).toString());
+                }
+            }
+
+            if (maPhieuList.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Vui lòng chọn ít nhất 1 khách để check-in.",
+                        "Thông báo",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            cardLayout.show(mainPanel, "CHECKIN");
+
+            // TRUYỀN DANH SÁCH MÃ PHIẾU
+            panelCheckIn.loadCheckInToday(maPhieuList);
+        }
+
+        //xuống dòng
+        private static class MultiLineCellRenderer extends JTextArea implements TableCellRenderer {
+
+            public MultiLineCellRenderer() {
+                setLineWrap(true);
+                setWrapStyleWord(true);
+                setOpaque(true);
+                setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            }
+
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int column) {
+
+                setText(value == null ? "" : value.toString());
+
+                if (isSelected) {
+                    setBackground(table.getSelectionBackground());
+                    setForeground(table.getSelectionForeground());
+                } else {
+                    setBackground(Color.WHITE);
+                    setForeground(Color.DARK_GRAY);
+                }
+
+                // Tự động tăng chiều cao row
+                setSize(table.getColumnModel().getColumn(column).getWidth(), Short.MAX_VALUE);
+                int preferredHeight = getPreferredSize().height;
+
+                if (table.getRowHeight(row) != preferredHeight) {
+                    table.setRowHeight(row, preferredHeight);
+                }
+
+                return this;
+            }
+        }
+
+        // căn giữa
+        private static class CenterCellRenderer extends DefaultTableCellRenderer {
+
+            public CenterCellRenderer() {
+                setHorizontalAlignment(SwingConstants.CENTER);
+            }
+
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int column) {
+
+                super.getTableCellRendererComponent(
+                        table, value, isSelected, hasFocus, row, column
+                );
+
+                if (isSelected) {
+                    setBackground(table.getSelectionBackground());
+                    setForeground(table.getSelectionForeground());
+                } else {
+                    setBackground(Color.WHITE);
+                    setForeground(Color.DARK_GRAY);
+                }
+
+                return this;
+            }
+        }
+
+        // =====================================================
+        // ================= LOAD DATA =========================
+        // =====================================================
+        private void loadKhachHangHomNay() {
+
+            model.setRowCount(0);
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+            String sql = """
+        SELECT pdp.maPhieu, kh.hoTen, kh.sdt, kh.email,
+               p.maPhong, lp.tenLoaiPhong, pdp.ngayNhanPhong,
+               p.giaTienMotDem, p.soChua,
+               CASE
+                   WHEN DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong) <= 0
+                   THEN 1
+                   ELSE DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong)
+               END AS soDem
+        FROM PhieuDatPhong pdp
+        JOIN KhachHang kh ON pdp.maKH = kh.maKH
+        JOIN Phong p ON pdp.maPhong = p.maPhong
+        JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong
+        WHERE CAST(pdp.ngayNhanPhong AS DATE) = CAST(GETDATE() AS DATE)
+          AND pdp.trangThai = N'Đã xác nhận'
+        ORDER BY pdp.ngayNhanPhong DESC
+        """;
+
+            try (var con = connectDB.ConnectDB.getConnection();
+                 var ps = con.prepareStatement(sql);
+                 var rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+                    Timestamp ts = rs.getTimestamp("ngayNhanPhong");
+                    String ngayNhan = ts != null ? ts.toLocalDateTime().format(dtf) : "";
+
+                    int soDem = Math.max(rs.getInt("soDem"), 1);
+                    long tamTinh = (long) rs.getInt("giaTienMotDem") * soDem;
+
+                    model.addRow(new Object[]{
+                            false,
+                            rs.getString("maPhieu"),
+                            rs.getString("hoTen"),
+                            rs.getString("maPhong"),
+                            rs.getString("tenLoaiPhong"),
+                            ngayNhan,
+                            rs.getInt("soChua"),
+                            rs.getString("sdt") + " - " + rs.getString("email"),
+                            String.format("%,d đ", tamTinh)
+                    });
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Lỗi load khách hôm nay: " + e.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
         }
     }
+
 
     //danh sach check out
     public static class GUI_CheckOut extends JFrame {
+
+        // ===== CARD =====
+        private CardLayout cardLayout;
+        private JPanel mainPanel;
+
+        private JPanel panelDanhSach;
+        private PanelCheckInCheckOut panelCheckOut;
+
+        // ===== TABLE =====
+        private JTable table;
+        private DefaultTableModel model;
+        private JButton btnCheckOut;
+
+        // ===== CONTROLLER =====
+        private EventDatPhong datPhongController;
+
+        // =====================================================
+        // ================== CONSTRUCTOR ======================
+        // =====================================================
         public GUI_CheckOut() {
-            setTitle("Màn hình Check-out");
-            setSize(400, 300);
+
+            FlatLightLaf.setup();
+
+            setTitle("Check Out hôm nay");
+            setSize(1100, 650);
             setLocationRelativeTo(null);
             setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            setLayout(new BorderLayout());
 
-            JLabel label = new JLabel("Thực hiện Check-out khách hàng", SwingConstants.CENTER);
-            label.setFont(new Font("SansSerif", Font.BOLD, 16));
+            cardLayout = new CardLayout();
+            mainPanel = new JPanel(cardLayout);
 
-            add(label, BorderLayout.CENTER);
+            panelDanhSach = createDanhSachPanel();
+
+            // controller dummy
+            PanelDatPhongContent dummyPanel = new PanelDatPhongContent(null);
+            datPhongController = new EventDatPhong(dummyPanel, null);
+
+            // dùng chung panel CheckInCheckOut
+            panelCheckOut = new PanelCheckInCheckOut(
+                    this,
+                    null,
+                    datPhongController
+            );
+
+            mainPanel.add(panelDanhSach, "LIST");
+            mainPanel.add(panelCheckOut, "CHECKOUT");
+
+            add(mainPanel, BorderLayout.CENTER);
+
+            loadKhachHangCheckOutHomNay();
+            cardLayout.show(mainPanel, "LIST");
+            setVisible(true);
+        }
+
+        // =====================================================
+        // ================= UI DANH SÁCH ======================
+        // =====================================================
+        private JPanel createDanhSachPanel() {
+
+            JPanel root = new JPanel(new BorderLayout(15, 15));
+            root.setBorder(new EmptyBorder(20, 20, 20, 20));
+            root.setBackground(new Color(255, 247, 237)); // CAM NHẠT
+
+            JLabel title = new JLabel("Danh sách khách check-out hôm nay");
+            title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+            title.setForeground(new Color(194, 65, 12)); // CAM ĐẬM
+            root.add(title, BorderLayout.NORTH);
+
+            String[] cols = {
+                    "", "Mã ĐP", "Khách hàng", "Phòng",
+                    "Loại phòng", "Ngày đi", "Khách",
+                    "Liên hệ", "Tổng tiền"
+            };
+
+            model = new DefaultTableModel(cols, 0) {
+                @Override
+                public Class<?> getColumnClass(int columnIndex) {
+                    return switch (columnIndex) {
+                        case 0 -> Boolean.class;
+                        case 6 -> Integer.class;
+                        default -> String.class;
+                    };
+                }
+
+                @Override
+                public boolean isCellEditable(int row, int col) {
+                    return col == 0;
+                }
+            };
+
+            table = new JTable(model);
+            table.setRowHeight(44);
+            table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            table.setShowHorizontalLines(false);
+            table.setShowVerticalLines(false);
+
+            table.setSelectionBackground(new Color(251, 146, 60)); // CAM
+            table.setSelectionForeground(Color.WHITE);
+
+            JTableHeader header = table.getTableHeader();
+            header.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            header.setBackground(new Color(255, 237, 213));
+            header.setForeground(new Color(154, 52, 18));
+            header.setReorderingAllowed(false);
+
+            CenterCellRenderer center = new CenterCellRenderer();
+
+            for (int i = 1; i <= 6; i++) {
+                table.getColumnModel().getColumn(i).setCellRenderer(center);
+            }
+
+            table.getColumnModel().getColumn(0).setMaxWidth(40);
+            table.getColumnModel().getColumn(6).setMaxWidth(60);
+
+            DefaultTableCellRenderer moneyRenderer = new DefaultTableCellRenderer();
+            moneyRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
+            moneyRenderer.setForeground(new Color(194, 65, 12));
+            table.getColumnModel().getColumn(8).setCellRenderer(moneyRenderer);
+
+            table.getColumnModel()
+                    .getColumn(7)
+                    .setCellRenderer(new MultiLineCellRenderer());
+
+            JScrollPane scroll = new JScrollPane(table);
+            scroll.setBorder(BorderFactory.createEmptyBorder());
+            root.add(scroll, BorderLayout.CENTER);
+
+            btnCheckOut = new JButton("Thực hiện Check Out");
+            btnCheckOut.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            btnCheckOut.setPreferredSize(new Dimension(230, 44));
+            btnCheckOut.setBackground(new Color(249, 115, 22));
+            btnCheckOut.setForeground(Color.WHITE);
+            btnCheckOut.setFocusPainted(false);
+            btnCheckOut.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            btnCheckOut.addActionListener(e -> handleCheckOut());
+
+            JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            bottom.setOpaque(false);
+            bottom.add(btnCheckOut);
+            root.add(bottom, BorderLayout.SOUTH);
+
+            return root;
+        }
+
+        // =====================================================
+        // ================= CHECK OUT =========================
+        // =====================================================
+        private void handleCheckOut() {
+
+            List<String> maPhieuList = new ArrayList<>();
+
+            for (int i = 0; i < model.getRowCount(); i++) {
+                if (Boolean.TRUE.equals(model.getValueAt(i, 0))) {
+                    maPhieuList.add(model.getValueAt(i, 1).toString());
+                }
+            }
+
+            if (maPhieuList.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Vui lòng chọn ít nhất 1 khách để check-out.",
+                        "Thông báo",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            // 👉 LOAD DATA TRƯỚC
+            panelCheckOut.loadCheckOutToday(maPhieuList);
+
+            // 👉 ĐỔI CARD
+            cardLayout.show(mainPanel, "CHECKOUT");
+
+            // 👉 BẮT BUỘC
+            panelCheckOut.revalidate();
+            panelCheckOut.repaint();
+        }
+
+
+
+        // =================== XUỐNG DÒNG ===================
+        private static class MultiLineCellRenderer extends JTextArea implements TableCellRenderer {
+
+            public MultiLineCellRenderer() {
+                setLineWrap(true);
+                setWrapStyleWord(true);
+                setOpaque(true);
+                setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            }
+
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int column) {
+
+                setText(value == null ? "" : value.toString());
+
+                if (isSelected) {
+                    setBackground(table.getSelectionBackground());
+                    setForeground(table.getSelectionForeground());
+                } else {
+                    setBackground(Color.WHITE);
+                    setForeground(Color.DARK_GRAY);
+                }
+
+                // tự động tăng chiều cao row
+                setSize(table.getColumnModel().getColumn(column).getWidth(), Short.MAX_VALUE);
+                int preferredHeight = getPreferredSize().height;
+
+                if (table.getRowHeight(row) != preferredHeight) {
+                    table.setRowHeight(row, preferredHeight);
+                }
+
+                return this;
+            }
+        }
+
+        // =================== CĂN GIỮA ===================
+        private static class CenterCellRenderer extends DefaultTableCellRenderer {
+
+            public CenterCellRenderer() {
+                setHorizontalAlignment(SwingConstants.CENTER);
+            }
+
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int column) {
+
+                super.getTableCellRendererComponent(
+                        table, value, isSelected, hasFocus, row, column
+                );
+
+                if (isSelected) {
+                    setBackground(table.getSelectionBackground());
+                    setForeground(table.getSelectionForeground());
+                } else {
+                    setBackground(Color.WHITE);
+                    setForeground(Color.DARK_GRAY);
+                }
+
+                return this;
+            }
+        }
+
+        // =====================================================
+        // ================= LOAD DATA =========================
+        // =====================================================
+        private void loadKhachHangCheckOutHomNay() {
+
+            model.setRowCount(0);
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+            String sql = """
+        SELECT pdp.maPhieu, kh.hoTen, kh.sdt, kh.email,
+               p.maPhong, lp.tenLoaiPhong, pdp.ngayTraPhong,
+               p.giaTienMotDem, p.soChua,
+               DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong) AS soDem
+        FROM PhieuDatPhong pdp
+        JOIN KhachHang kh ON pdp.maKH = kh.maKH
+        JOIN Phong p ON pdp.maPhong = p.maPhong
+        JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong
+        WHERE CAST(pdp.ngayTraPhong AS DATE) = CAST(GETDATE() AS DATE)
+          AND pdp.trangThai = N'Đã nhận phòng'
+        """;
+
+            try (var con = connectDB.ConnectDB.getConnection();
+                 var ps = con.prepareStatement(sql);
+                 var rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+                    Timestamp ts = rs.getTimestamp("ngayTraPhong");
+                    String ngayTra = ts != null ? ts.toLocalDateTime().format(dtf) : "";
+
+                    int soDem = Math.max(rs.getInt("soDem"), 1);
+                    long tongTien = (long) rs.getInt("giaTienMotDem") * soDem;
+
+                    model.addRow(new Object[]{
+                            false,
+                            rs.getString("maPhieu"),
+                            rs.getString("hoTen"),
+                            rs.getString("maPhong"),
+                            rs.getString("tenLoaiPhong"),
+                            ngayTra,
+                            rs.getInt("soChua"),
+                            rs.getString("sdt") + " - " + rs.getString("email"),
+                            String.format("%,d đ", tongTien)
+                    });
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
+
+
 }
 
 

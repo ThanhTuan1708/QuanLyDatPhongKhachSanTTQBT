@@ -66,6 +66,8 @@ public class EventDatPhong {
     private NhanVien nhanVienHienTai;
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
+
+
     public EventDatPhong(PanelDatPhongContent view, NhanVien nhanVienHienTai) {
         this.view = view;
         this.nhanVienHienTai = nhanVienHienTai;
@@ -192,24 +194,43 @@ public class EventDatPhong {
 
     public void handleShowBill(String bookingId) {
         System.out.println("Sự kiện Xem hóa đơn cho bookingId: " + bookingId);
-        String maHoaDonCanTim = null;
+
+        String maHoaDonCanTim;
         try {
             maHoaDonCanTim = hoaDonDAO.findMaHoaDonByMaPhieu(bookingId);
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(view, "Lỗi khi tìm hóa đơn: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Lỗi khi tìm hóa đơn: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
         }
 
-        if (maHoaDonCanTim != null) {
-            System.out.println("Tìm thấy mã hóa đơn: " + maHoaDonCanTim);
-            Frame owner = (Frame) SwingUtilities.getWindowAncestor(view);
-            if (owner != null) {
-                BillDialog billDialog = new BillDialog(owner, maHoaDonCanTim);
-                billDialog.setVisible(true);
-            } else { JOptionPane.showMessageDialog(null, "Không thể hiển thị hóa đơn.", "Lỗi", JOptionPane.ERROR_MESSAGE); }
-        } else {
-            JOptionPane.showMessageDialog(view, "Không thể tải dữ liệu cho hóa đơn của phiếu: " + bookingId, "Lỗi", JOptionPane.ERROR_MESSAGE);
+        if (maHoaDonCanTim == null) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Không thể tải dữ liệu cho hóa đơn của phiếu: " + bookingId,
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
         }
+
+        System.out.println("Tìm thấy mã hóa đơn: " + maHoaDonCanTim);
+
+        // 🔥 FIX Ở ĐÂY — LẤY FRAME ĐANG ACTIVE
+        Window window = KeyboardFocusManager
+                .getCurrentKeyboardFocusManager()
+                .getActiveWindow();
+
+        Frame owner = (window instanceof Frame) ? (Frame) window : null;
+
+        // 👉 HIỂN THỊ HÓA ĐƠN
+        BillDialog billDialog = new BillDialog(owner, maHoaDonCanTim);
+        billDialog.setVisible(true);
     }
 
     public void handleMoreOptions(String bookingId) {
@@ -782,5 +803,9 @@ public class EventDatPhong {
         titlePanel.add(subtitleLabel);
         JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0)); headerPanel.setOpaque(false); headerPanel.add(checkoutIconLabel); headerPanel.add(titlePanel); checkoutPanel.add(headerPanel, BorderLayout.NORTH); JPanel autoBillPanel = new JPanel(new FlowLayout(FlowLayout.LEFT)); autoBillPanel.setBackground(new Color(220, 235, 255)); autoBillPanel.setBorder(BorderFactory.createLineBorder(new Color(180, 210, 250))); JLabel autoBillLabel = new JLabel("📄 Hóa đơn sẽ tự động hiển thị và in sau khi check-out"); autoBillLabel.setForeground(new Color(24, 90, 219)); autoBillPanel.add(autoBillLabel); checkoutPanel.add(autoBillPanel, BorderLayout.CENTER); JLabel confirmLabel = new JLabel("Bạn có chắc chắn muốn check-out không? Thao tác này sẽ cập nhật trạng thái đặt phòng và in hóa đơn thanh toán."); checkoutPanel.add(confirmLabel, BorderLayout.SOUTH); checkoutPanel.setOpaque(false); return checkoutPanel;
     }
+
+
+
+
 
 }

@@ -239,4 +239,52 @@ public class PhieuDatPhong_DAO {
         }
         return dataList;
     }
+
+
+    public int demCheckInHomNay() {
+        String sql = """
+            SELECT COUNT(*) 
+            FROM PhieuDatPhong
+            WHERE CAST(ngayNhanPhong AS DATE) = CAST(GETDATE() AS DATE)
+              AND trangThai = N'Đã xác nhận'
+        """;
+
+        try (var con = ConnectDB.getConnection();
+             var ps = con.prepareStatement(sql);
+             var rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    public int demCheckOutHomNay() {
+        String sql = """
+        SELECT COUNT(*)
+        FROM PhieuDatPhong
+        WHERE CAST(ngayTraPhong AS DATE) = CAST(GETDATE() AS DATE)
+          AND trangThai = N'Đã nhận phòng'
+    """;
+
+        try (var con = ConnectDB.getConnection();
+             var ps = con.prepareStatement(sql);
+             var rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
 }

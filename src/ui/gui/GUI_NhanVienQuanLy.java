@@ -16,6 +16,7 @@ package ui.gui;
 // Lưu ý: cập nhật thời gian/ người sửa khi chỉnh sửa tiếp
 // ---------------------------
 import javax.swing.*;
+import java.sql.Statement;
 import javax.swing.border.*;
 import javax.swing.table.*;
 import java.awt.*;
@@ -309,383 +310,390 @@ public class GUI_NhanVienQuanLy extends JFrame {
     }
 
 
-// =================================================================================
-// PANEL NỘI DUNG 2: DASHBOARD QUẢN LÝ
-// =================================================================================
-
+    // =================================================================================
+    // PANEL 1: DASHBOARD QUẢN LÝ (FINAL FIXED: ADR SO SÁNH NGÀY + BIỂU ĐỒ CÓ TRỤC Y)
+    // =================================================================================
     public static class PanelQuanLyContent extends JPanel {
-        // Note: Màu sắc STAT_BG này chỉ dùng nội bộ trong Dashboard Quản lý
-        private final Color STAT_BG_1 = new Color(218, 240, 255);
-        private final Color STAT_BG_2 = new Color(230, 235, 255);
-        private final Color STAT_BG_3 = new Color(255, 235, 240);
+        // --- 1. KHAI BÁO CÁC HẰNG SỐ MÀU SẮC & FONT ---
+        private static final Color MAIN_BG = new Color(245, 247, 251);
+        private static final Color TEXT_DARK = new Color(30, 41, 59);
+        private static final Color TEXT_GRAY = new Color(100, 116, 139);
+        private static final Color PRIMARY_COLOR = new Color(59, 130, 246);
 
-        // profile labels that can be updated from outer class
-        private JLabel profileNameLabel;
-        private JLabel profileDetailsLabel;
+        private static final Color SUCCESS_BG = new Color(220, 252, 231);
+        private static final Color SUCCESS_TEXT = new Color(22, 163, 74);
+        private static final Color INFO_BG = new Color(219, 234, 254);
+        private static final Color INFO_TEXT = new Color(37, 99, 235);
+        private static final Color WARNING_BG = new Color(254, 243, 199);
+        private static final Color WARNING_TEXT = new Color(217, 119, 6);
+
+        // Màu cho biểu đồ
+        private static final Color CHART_FILL_COLOR = new Color(239, 68, 68, 30);
+        private static final Color CHART_LINE_COLOR = new Color(239, 68, 68);
+
+        // Font chữ
+        private static final Font FONT_HEADER = new Font("Segoe UI", Font.BOLD, 22);
+        private static final Font FONT_BIG = new Font("Segoe UI", Font.BOLD, 24);
+        private static final Font FONT_TITLE = new Font("Segoe UI", Font.BOLD, 16);
+        private static final Font FONT_TEXT = new Font("Segoe UI", Font.PLAIN, 13);
+        private static final Font FONT_BOLD = new Font("Segoe UI", Font.BOLD, 13);
+
+        // --- BIẾN DỮ LIỆU ---
+        private double doanhThuNgay = 0;
+        private double doanhThuHomQua = 0;
+        private int soHoaDonHomNay = 0;
+
+        private int totalRoom = 0, bookedRoom = 0, cleanRoom = 0, dirtyRoom = 0, maintenanceRoom = 0;
+
+        // [SỬA 1] Đổi tên biến từ adrThangTruoc -> adrHomQua
+        private double adrHomQua = 0;
+
+        private int[] peakHourData = new int[24];
+        private DefaultTableModel staffModel;
+        private JTable tableStaff;
 
         public PanelQuanLyContent() {
-            // --- Thiết lập cho JPanel này ---
             setLayout(new BorderLayout());
-            setBackground(MAIN_BG); // Sử dụng MAIN_BG đã import
-            setBorder(new EmptyBorder(18, 18, 18, 18)); // Lề cho nội dung
+            setBackground(MAIN_BG);
+            setBorder(new EmptyBorder(30, 40, 30, 40));
 
-            // --- Chỉ thêm Header và Content Panel ---
-            add(createHeader(), BorderLayout.NORTH);
-            add(createContentPanel(), BorderLayout.CENTER);
-        }
-
-        private JPanel createHeader() {
-            // Note: Phần tiêu đề và ngày tháng
-            JPanel header = new JPanel(new BorderLayout());
-            header.setOpaque(false);
-            JLabel title = new JLabel("Dashboard Quản lý Khách sạn");
-            title.setFont(new Font("SansSerif", Font.BOLD, 18));
-
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("EEEE, dd MMMM, yyyy");
-            JLabel date = new JLabel(fmt.format(LocalDate.now()));
-            date.setForeground(Color.GRAY);
-
-            header.add(title, BorderLayout.WEST);
-            header.add(date, BorderLayout.EAST);
-            return header;
-        }
-
-        private JPanel createContentPanel() {
-            // Note: Cấu trúc chính của Dashboard (Top Zone, Schedule, Tasks, Stats)
-            JPanel content = new JPanel(new BorderLayout(0, 12));
-            content.setOpaque(false);
-
-            // Zone 1 - Profile + quick stats (TOP)
-            JPanel zone1 = createTopZone();
-            zone1.setPreferredSize(new Dimension(Integer.MAX_VALUE, 110));
-            content.add(zone1, BorderLayout.NORTH);
-
-            // Middle container (Zone2 + Zone3 stacked)
-            JPanel middle = new JPanel(new GridBagLayout());
-            middle.setOpaque(false);
-            GridBagConstraints gc = new GridBagConstraints();
-            gc.insets = new Insets(8, 0, 8, 0);
-            gc.fill = GridBagConstraints.BOTH;
-            gc.gridx = 0;
-            gc.weightx = 1.0;
-
-            // Zone 2: Schedule (chiều rộng ngang với zone1)
-            gc.gridy = 0;
-            gc.weighty = 0.38;
-            JPanel scheduleCard = createCardWrapper(createSchedulePanel());
-            middle.add(scheduleCard, gc);
-
-            // Zone 3: Tasks + stats (Chia 2 cột)
-            gc.gridy = 1;
-            gc.weighty = 0.62;
-            JPanel bottom = new JPanel(new GridBagLayout());
-            bottom.setOpaque(false);
-            GridBagConstraints gc2 = new GridBagConstraints();
-            gc2.insets = new Insets(12, 12, 12, 12);
-            gc2.fill = GridBagConstraints.BOTH;
-
-            gc2.gridx = 0;
-            gc2.gridy = 0;
-            gc2.weightx = 0.66;
-            gc2.weighty = 1.0;
-            bottom.add(createCardWrapper(createTasksPanel()), gc2);
-
-            gc2.gridx = 1;
-            gc2.weightx = 0.34;
-            bottom.add(createCardWrapper(createStatsPanel()), gc2);
-
-            middle.add(bottom, gc);
-            content.add(middle, BorderLayout.CENTER);
-
-            return content;
-        }
-
-        // Allow outer classes to update the profile info shown in the top-left area
-        public void setProfileName(String name, String details) {
-            if (profileNameLabel != null) profileNameLabel.setText(name);
-            if (profileDetailsLabel != null) profileDetailsLabel.setText(details);
-        }
-
-        // wrapper để có border/padding giống các card
-        private JPanel createCardWrapper(JPanel inner) {
-            JPanel card = new JPanel(new BorderLayout());
-            card.setBackground(Color.WHITE);
-            card.setBorder(new CompoundBorder(new LineBorder(CARD_BORDER), new EmptyBorder(14, 14, 14, 14)));
-            card.add(inner, BorderLayout.CENTER);
-            return card;
-        }
-
-        private JPanel createTopZone() {
-            // Note: Phần hiển thị Profile chi tiết và 3 ô quick stats
-            JPanel card = new JPanel(new BorderLayout());
-            card.setBackground(Color.WHITE);
-            card.setBorder(new CompoundBorder(new LineBorder(CARD_BORDER), new EmptyBorder(12, 12, 12, 12)));
-
-            // left profile
-            JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 6));
-            left.setOpaque(false);
-            JLabel avatar = new JLabel("QL");
-            avatar.setPreferredSize(new Dimension(64, 64));
-            avatar.setHorizontalAlignment(SwingConstants.CENTER);
-            avatar.setOpaque(true);
-            avatar.setBackground(new Color(160, 110, 255));
-            avatar.setForeground(Color.WHITE);
-            avatar.setFont(new Font("SansSerif", Font.BOLD, 20));
-            left.add(avatar);
-
-            JPanel info = new JPanel();
-            info.setOpaque(false);
-            info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
-            profileNameLabel = new JLabel("Trần Văn Quản Lý");
-            profileNameLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
-            profileDetailsLabel = new JLabel("<html>quanly@tbqtthotel.vn • +84 (0) 987-654-321 • Ban Giám đốc</html>");
-            profileDetailsLabel.setForeground(Color.GRAY);
-            profileDetailsLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
-            info.add(profileNameLabel);
-            info.add(Box.createVerticalStrut(6));
-            info.add(profileDetailsLabel);
-            left.add(info);
-
-            // right quick stats
-            JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 12));
-            right.setOpaque(false);
-            right.add(createStatBox("27h", "Giờ tuần này", STAT_BG_1));
-            right.add(createStatBox("12", "Cuộc họp", STAT_BG_2));
-            right.add(createStatBox("14", "Công việc", STAT_BG_3));
-
-            card.add(left, BorderLayout.WEST);
-            card.add(right, BorderLayout.EAST);
-
-            return card;
-        }
-
-        private JPanel createSchedulePanel() {
-            // Note: Bảng Lịch làm việc/Cuộc họp
-            JPanel wrap = new JPanel(new BorderLayout(8, 8));
-            wrap.setOpaque(false);
-            JLabel title = new JLabel("Lịch làm việc & Cuộc họp tuần này");
-            title.setFont(new Font("SansSerif", Font.BOLD, 14));
-            wrap.add(title, BorderLayout.NORTH);
-
-            JPanel list = new JPanel();
-            list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
-            list.setOpaque(false);
-
-            String[][] data = {
-                    {"Thứ Hai", "15/1/2024", "Hành chính", "8:00 - 17:00", "9 giờ", "7:55", "17:15", "Hoàn thành"},
-                    {"Thứ Ba", "16/1/2024", "Hành chính", "8:00 - 17:00", "9 giờ", "8:00", "17:00", "Hoàn thành"},
-                    {"Thứ Tư", "17/1/2024", "Hành chính", "8:00 - 17:00", "9 giờ", "7:58", "", "Đang làm"},
-                    {"Thứ Năm", "18/1/2024", "Hành chính", "8:00 - 17:00", "9 giờ", "", "", ""},
-                    {"Thứ Sáu", "19/1/2024", "Hành chính", "8:00 - 17:00", "9 giờ", "", "", ""}
+            // Khởi tạo model bảng
+            String[] cols = {"Mã NV", "Nhân viên", "Vị trí", "Ca làm việc", "Trạng thái"};
+            staffModel = new DefaultTableModel(cols, 0) {
+                @Override public boolean isCellEditable(int row, int column) { return false; }
             };
 
-            DayOfWeek today = LocalDate.now().getDayOfWeek();
+            fetchRealDataFromSQL();
 
-            for (String[] row : data) {
-                JPanel r = new JPanel(new BorderLayout(8, 0));
-                r.setOpaque(true);
-                r.setBackground(Color.WHITE);
-                r.setBorder(new CompoundBorder(new EmptyBorder(8, 8, 8, 8), new LineBorder(new Color(241, 241, 246))));
-                r.setMaximumSize(new Dimension(Integer.MAX_VALUE, 52));
+            // 1. Header
+            JPanel header = new JPanel(new BorderLayout()); header.setOpaque(false);
+            JLabel title = new JLabel("Dashboard Quản Lý Khách Sạn"); title.setFont(FONT_HEADER); title.setForeground(TEXT_DARK);
 
-                JPanel left = new JPanel();
-                left.setOpaque(false);
-                left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
-                JLabel dn = new JLabel(row[0]);
-                dn.setFont(new Font("SansSerif", Font.BOLD, 12));
-                JLabel ddate = new JLabel(row[1]);
-                ddate.setForeground(Color.GRAY);
-                ddate.setFont(new Font("SansSerif", Font.PLAIN, 11));
-                left.add(dn);
-                left.add(ddate);
-                r.add(left, BorderLayout.WEST);
+            String todayStr = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy").format(LocalDate.now());
+            JLabel sub = new JLabel("Tổng quan vận hành ngày hôm nay: " + todayStr);
+            sub.setFont(FONT_TEXT); sub.setForeground(TEXT_GRAY);
 
-                JPanel mid = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 12));
-                mid.setOpaque(false);
-                mid.add(new JLabel(row[2] + "  (" + row[3] + ")"));
-                mid.add(new JLabel(row[4]));
-                r.add(mid, BorderLayout.CENTER);
+            JPanel titleBox = new JPanel(new GridLayout(2,1)); titleBox.setOpaque(false); titleBox.add(title); titleBox.add(sub);
+            header.add(titleBox, BorderLayout.WEST); add(header, BorderLayout.NORTH);
 
-                JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 12));
-                right.setOpaque(false);
-                if (!row[5].isEmpty())
-                    right.add(new JLabel("⏱ " + row[5]));
-                if (!row[6].isEmpty())
-                    right.add(new JLabel("⏲ " + row[6]));
-                if (!row[7].isEmpty()) {
-                    JLabel st = new JLabel(row[7]);
-                    st.setOpaque(true);
-                    st.setBorder(new EmptyBorder(4, 8, 4, 8));
-                    if ("Hoàn thành".equals(row[7])) {
-                        st.setBackground(new Color(220, 255, 230));
-                        st.setForeground(new Color(20, 110, 40));
-                    } else {
-                        st.setBackground(new Color(230, 245, 255));
-                        st.setForeground(new Color(10, 90, 180));
-                    }
-                    right.add(st);
-                }
-                r.add(right, BorderLayout.EAST);
-
-                // highlight today
-                DayOfWeek rowDay = getDayOfWeek(row[0]);
-                if (rowDay == today) {
-                    r.setBorder(new CompoundBorder(new EmptyBorder(8, 8, 8, 8),
-                            new LineBorder(new Color(200, 160, 255), 2, true)));
-                }
-
-                list.add(r);
-                list.add(Box.createVerticalStrut(6));
-            }
-
-            JScrollPane sp = new JScrollPane(list);
-            sp.setBorder(null);
-            sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-            wrap.add(sp, BorderLayout.CENTER);
-
-            return wrap;
+            // 2. Body
+            JPanel body = new JPanel(new GridBagLayout()); body.setOpaque(false);
+            GridBagConstraints gbc = new GridBagConstraints(); gbc.fill = GridBagConstraints.BOTH; gbc.insets = new Insets(25, 0, 0, 0);
+            gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1.0; gbc.weighty = 0.22;
+            body.add(createKPISection(), gbc);
+            gbc.gridy = 1; gbc.weighty = 0.78;
+            body.add(createMainSplitSection(), gbc);
+            add(body, BorderLayout.CENTER);
         }
 
-        private JPanel createTasksPanel() {
-            // Note: Bảng Công việc quan trọng hôm nay (Task Table)
-            JPanel p = new JPanel(new BorderLayout());
-            p.setOpaque(false);
-            JLabel title = new JLabel("Công việc quan trọng hôm nay");
-            title.setFont(new Font("SansSerif", Font.BOLD, 14));
-            p.add(title, BorderLayout.NORTH);
+        public void setProfileName(String name, String role) {}
 
-            DefaultTableModel model = new DefaultTableModel(
-                    new Object[][]{
-                            {"09:00", "Họp ban giám đốc", "Hoàn thành", "Phòng họp A"},
-                            {"10:30", "Duyệt báo cáo doanh thu", "Hoàn thành", ""},
-                            {"14:00", "Phỏng vấn ứng viên", "Chưa xong", ""},
-                            {"15:30", "Kiểm tra chất lượng dịch vụ", "Chưa xong", ""}
-                    },
-                    new String[]{"Thời gian", "Công việc", "Trạng thái", "Ghi chú"}) {
-                @Override
-                public boolean isCellEditable(int r, int c) {
-                    return false;
+        // --- FETCH DATA ---
+        private void fetchRealDataFromSQL() {
+            try {
+                Connection con = ConnectDB.getConnection();
+                if (con == null) return;
+
+                // 1. Room Status
+                String sqlRoom = "SELECT maTrangThai, COUNT(*) as sl FROM Phong GROUP BY maTrangThai";
+                try (PreparedStatement ps = con.prepareStatement(sqlRoom); ResultSet rs = ps.executeQuery()) {
+                    totalRoom = 0; bookedRoom = 0; cleanRoom = 0; dirtyRoom = 0; maintenanceRoom = 0;
+                    while(rs.next()) {
+                        int stt = rs.getInt("maTrangThai");
+                        int count = rs.getInt("sl");
+                        totalRoom += count;
+                        if(stt == 0) cleanRoom += count; else if(stt == 1) bookedRoom += count;
+                        else if(stt == 2) dirtyRoom += count; else if(stt == 3) maintenanceRoom += count;
+                    }
+                }
+
+                // 2. Doanh thu & Hóa đơn HÔM NAY
+                String sqlDT = "SELECT SUM(tongTien) as DT, COUNT(*) as SL FROM HoaDon WHERE CAST(ngayLap AS DATE) = CAST(GETDATE() AS DATE)";
+                try (PreparedStatement ps = con.prepareStatement(sqlDT); ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        doanhThuNgay = rs.getDouble("DT");
+                        soHoaDonHomNay = rs.getInt("SL");
+                    }
+                }
+
+                // 3. Doanh thu HÔM QUA
+                String sqlDTLast = "SELECT SUM(tongTien) as DT FROM HoaDon WHERE CAST(ngayLap AS DATE) = CAST(DATEADD(day, -1, GETDATE()) AS DATE)";
+                try (PreparedStatement ps = con.prepareStatement(sqlDTLast); ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) doanhThuHomQua = rs.getDouble("DT");
+                }
+
+                // 4. [SỬA LOGIC] ADR HÔM QUA (Không lấy tháng trước nữa)
+                // Lấy trung bình giá hóa đơn của ngày hôm qua
+                String sqlADRLast = "SELECT AVG(tongTien) as ADR FROM HoaDon WHERE CAST(ngayLap AS DATE) = CAST(DATEADD(day, -1, GETDATE()) AS DATE)";
+                try (PreparedStatement ps = con.prepareStatement(sqlADRLast); ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) adrHomQua = rs.getDouble("ADR");
+                }
+
+                // 5. Peak Hour
+                String sqlChart = "SELECT DATEPART(HOUR, ngayNhanPhong) as Gio, COUNT(*) as SoLuong FROM PhieuDatPhong WHERE CAST(ngayNhanPhong AS DATE) = CAST(GETDATE() AS DATE) GROUP BY DATEPART(HOUR, ngayNhanPhong) " +
+                        "UNION ALL " +
+                        "SELECT DATEPART(HOUR, ngayTraPhong) as Gio, COUNT(*) as SoLuong FROM PhieuDatPhong WHERE CAST(ngayTraPhong AS DATE) = CAST(GETDATE() AS DATE) GROUP BY DATEPART(HOUR, ngayTraPhong)";
+                Arrays.fill(peakHourData, 0);
+                try (PreparedStatement ps = con.prepareStatement(sqlChart); ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        int h = rs.getInt("Gio");
+                        int count = rs.getInt("SoLuong");
+                        if (h >= 0 && h < 24) peakHourData[h] += count;
+                    }
+                }
+
+                // 6. Staff List
+                String sqlNV = "SELECT nv.maNV, nv.hoTen, nv.maLoaiNV, llv.caLam, llv.gioBatDau, llv.gioKetThuc, llv.trangThai " +
+                        "FROM NhanVien nv LEFT JOIN LichLamViec llv ON nv.maNV = llv.maNV AND llv.ngayLam = CAST(GETDATE() AS DATE)";
+                staffModel.setRowCount(0);
+                try (PreparedStatement ps = con.prepareStatement(sqlNV); ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String maNV = rs.getString("maNV");
+                        String ten = rs.getString("hoTen");
+                        int loai = rs.getInt("maLoaiNV");
+                        String chucVu = (loai == 2) ? "Quản lý" : "Lễ tân";
+                        String thoiGian = (rs.getTime("gioBatDau") != null) ? rs.getTime("gioBatDau").toString().substring(0, 5) + " - " + rs.getTime("gioKetThuc").toString().substring(0, 5) : "--:--";
+                        String trangThai = rs.getString("trangThai");
+                        if (trangThai == null) { trangThai = "Chưa có lịch"; thoiGian = ""; }
+                        staffModel.addRow(new Object[]{maNV, ten, chucVu, thoiGian, trangThai});
+                    }
+                }
+            } catch (Exception e) { e.printStackTrace(); }
+        }
+
+        // --- UI COMPONENTS ---
+        private JPanel createKPISection() {
+            JPanel p = new JPanel(new GridLayout(1, 4, 20, 0)); p.setOpaque(false); p.setPreferredSize(new Dimension(0, 160));
+            java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
+            String dtStr = df.format(doanhThuNgay) + " ₫";
+
+            double revenueTrend = doanhThuHomQua > 0 ? ((doanhThuNgay - doanhThuHomQua) / doanhThuHomQua * 100) : 100;
+            String revTrendStr = (revenueTrend >= 0 ? "▲ +" : "▼ ") + String.format("%.1f", revenueTrend) + "%";
+            String revTrendColor = revenueTrend >= 0 ? "#16a34a" : "#dc2626";
+
+            // [SỬA LOGIC] Tính ADR hôm nay so với HÔM QUA
+            double adrToday = bookedRoom > 0 ? (doanhThuNgay / bookedRoom) : 0;
+            double adrTrend = adrHomQua > 0 ? ((adrToday - adrHomQua) / adrHomQua * 100) : 0;
+            String adrTrendStr = (adrTrend >= 0 ? "▲ +" : "▼ ") + String.format("%.1f", adrTrend) + "%";
+            String adrTrendColor = adrTrend >= 0 ? "#16a34a" : "#dc2626";
+
+            double revPar = totalRoom > 0 ? (doanhThuNgay / totalRoom) : 0;
+
+            // 1. DOANH THU
+            String revSub = String.format("<html><font color='%s'><b>%s</b></font> so với hôm qua<br><b>%d</b> hóa đơn đã xong</html>",
+                    revTrendColor, revTrendStr, soHoaDonHomNay);
+            JPanel cardRev = createCard("Doanh thu hôm nay", dtStr, revSub, "money", INFO_BG, INFO_TEXT);
+            cardRev.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            cardRev.addMouseListener(new MouseAdapter() { @Override public void mouseClicked(MouseEvent e) { showRevenueDetailDialog(); } });
+            p.add(cardRev);
+
+            // 2. LẤP ĐẦY
+            int emptyRoom = totalRoom - bookedRoom;
+            JPanel cardOcc = createDetailedOccupancyCard(bookedRoom, emptyRoom, totalRoom);
+            cardOcc.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            cardOcc.addMouseListener(new MouseAdapter() { @Override public void mouseClicked(MouseEvent e) { showOccupancyDetailsDialog(); } });
+            p.add(cardOcc);
+
+            // 3. ADR (GIÁ TB) - [SỬA TEXT HIỂN THỊ]
+            String adrSub = String.format("<html><font color='%s'><b>%s</b></font> so với hôm qua<br><font size='2' color='gray'>(Chỉ tính phòng đã check-out)</font></html>",
+                    adrTrendColor, adrTrendStr);
+            JPanel cardADR = createCard("ADR (Giá TB/phòng)", df.format(adrToday) + " ₫", adrSub, "tag", SUCCESS_BG, SUCCESS_TEXT);
+            cardADR.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            cardADR.addMouseListener(new MouseAdapter() { @Override public void mouseClicked(MouseEvent e) { showPriceAnalysisDialog(); } });
+            p.add(cardADR);
+
+            // 4. RevPAR
+            String revParSub = "<html>DT / Tổng phòng<br>🎯 Mục tiêu: <b>500.000 ₫</b></html>";
+            JPanel cardRevPar = createCard("RevPAR", df.format(revPar) + " ₫", revParSub, "chart", WARNING_BG, WARNING_TEXT);
+            cardRevPar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            cardRevPar.addMouseListener(new MouseAdapter() { @Override public void mouseClicked(MouseEvent e) { showPriceAnalysisDialog(); } });
+            p.add(cardRevPar);
+
+            return p;
+        }
+
+        // ... [GIỮ NGUYÊN HÀM createDetailedOccupancyCard và createLegendRow] ...
+        private JPanel createDetailedOccupancyCard(int booked, int empty, int total) {
+            RoundedPanel card = new RoundedPanel(new BorderLayout(), 20, Color.WHITE);
+            card.setBorder(new EmptyBorder(15, 20, 15, 15));
+            JPanel leftPanel = new JPanel(); leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS)); leftPanel.setOpaque(false);
+            JPanel iconBox = new JPanel(new GridBagLayout()); iconBox.setPreferredSize(new Dimension(45, 45)); iconBox.setMaximumSize(new Dimension(45, 45));
+            iconBox.setBackground(new Color(243, 232, 255)); iconBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+            iconBox.add(new JLabel(new AppIcon("bed", 24, new Color(147, 51, 234))));
+            int percent = total > 0 ? (booked * 100 / total) : 0;
+            JLabel lblPercent = new JLabel(percent + "%"); lblPercent.setFont(new Font("Segoe UI", Font.BOLD, 26)); lblPercent.setForeground(TEXT_DARK); lblPercent.setAlignmentX(Component.LEFT_ALIGNMENT);
+            JLabel lblTitle = new JLabel("Tỷ lệ lấp đầy"); lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 13)); lblTitle.setForeground(TEXT_GRAY); lblTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+            leftPanel.add(iconBox); leftPanel.add(Box.createVerticalStrut(15)); leftPanel.add(lblPercent); leftPanel.add(Box.createVerticalStrut(5)); leftPanel.add(lblTitle);
+            JPanel rightPanel = new JPanel(new GridBagLayout()); rightPanel.setOpaque(false);
+            JPanel chart = new JPanel() {
+                @Override protected void paintComponent(Graphics g) { super.paintComponent(g); Graphics2D g2 = (Graphics2D) g; g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    int size = Math.min(getWidth(), getHeight()); int x = (getWidth() - size) / 2; int y = (getHeight() - size) / 2;
+                    g2.setColor(new Color(229, 231, 235)); g2.fillOval(x, y, size, size);
+                    g2.setColor(new Color(168, 85, 247)); int angle = (int) (3.6 * percent); g2.fillArc(x, y, size, size, 90, -angle);
+                    g2.setColor(Color.WHITE); int innerSize = (int) (size * 0.6); g2.fillOval(x + (size - innerSize) / 2, y + (size - innerSize) / 2, innerSize, innerSize);
                 }
             };
+            chart.setPreferredSize(new Dimension(70, 70)); chart.setOpaque(false);
+            JPanel legend = new JPanel(new GridLayout(2, 1, 0, 5)); legend.setOpaque(false); legend.setBorder(new EmptyBorder(0, 10, 0, 0));
+            legend.add(createLegendRow(booked + " đã đặt", new Color(168, 85, 247))); legend.add(createLegendRow(empty + " trống", new Color(156, 163, 175)));
+            GridBagConstraints gbc = new GridBagConstraints(); gbc.gridx = 0; gbc.gridy = 0; rightPanel.add(chart, gbc); gbc.gridx = 1; rightPanel.add(legend, gbc);
+            card.add(leftPanel, BorderLayout.WEST); card.add(rightPanel, BorderLayout.EAST); return card;
+        }
+        private JPanel createLegendRow(String text, Color color) { JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0)); p.setOpaque(false); JLabel colorBox = new JLabel(); colorBox.setOpaque(true); colorBox.setBackground(color); colorBox.setPreferredSize(new Dimension(10, 10)); JLabel lblText = new JLabel(text); lblText.setFont(new Font("Segoe UI", Font.BOLD, 12)); lblText.setForeground(TEXT_DARK); p.add(colorBox); p.add(lblText); return p; }
 
-            JTable table = new JTable(model);
-            table.setRowHeight(40);
-            table.getColumnModel().getColumn(0).setPreferredWidth(80);
-            table.getColumnModel().getColumn(1).setPreferredWidth(240);
-            table.getColumnModel().getColumn(2).setPreferredWidth(120);
-            table.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer() {
-                @Override
-                public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
-                    JLabel lbl = (JLabel) super.getTableCellRendererComponent(t, v, s, f, r, c);
-                    lbl.setHorizontalAlignment(SwingConstants.CENTER);
-                    lbl.setBorder(new EmptyBorder(6, 8, 6, 8));
-                    String st = v == null ? "" : v.toString();
-                    if ("Hoàn thành".equals(st)) {
-                        lbl.setBackground(new Color(220, 255, 230));
-                        lbl.setForeground(new Color(20, 110, 40));
-                    } else if ("Chưa xong".equals(st)) {
-                        lbl.setBackground(new Color(255, 245, 230));
-                        lbl.setForeground(new Color(170, 110, 20));
-                    } else {
-                        lbl.setBackground(new Color(240, 240, 245));
-                        lbl.setForeground(Color.DARK_GRAY);
-                    }
-                    lbl.setOpaque(true);
-                    return lbl;
+        private JPanel createMainSplitSection() {
+            JPanel p = new JPanel(new GridBagLayout()); p.setOpaque(false);
+            GridBagConstraints gbc = new GridBagConstraints(); gbc.fill = GridBagConstraints.BOTH; gbc.weighty = 1.0;
+            gbc.gridx = 0; gbc.weightx = 0.65; gbc.insets = new Insets(0, 0, 0, 20); p.add(createStaffSchedulePanel(), gbc);
+            gbc.gridx = 1; gbc.weightx = 0.35; gbc.insets = new Insets(0, 0, 0, 0); p.add(createRightSideStats(), gbc);
+            return p;
+        }
+
+        private JPanel createStaffSchedulePanel() {
+            RoundedPanel card = new RoundedPanel(new BorderLayout(), 20, Color.WHITE);
+            card.setBorder(new EmptyBorder(20, 20, 20, 20));
+            JLabel title = new JLabel("Lịch làm việc hôm nay (Click để xem chi tiết)");
+            title.setFont(FONT_TITLE); title.setBorder(new EmptyBorder(0, 0, 15, 0));
+            card.add(title, BorderLayout.NORTH);
+            tableStaff = new JTable(staffModel); tableStaff.setRowHeight(55); tableStaff.setShowVerticalLines(false); tableStaff.setGridColor(new Color(240, 240, 240));
+            tableStaff.setFont(FONT_TEXT); tableStaff.getTableHeader().setBackground(Color.WHITE); tableStaff.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+            tableStaff.getColumnModel().getColumn(0).setMinWidth(0); tableStaff.getColumnModel().getColumn(0).setMaxWidth(0); tableStaff.getColumnModel().getColumn(0).setWidth(0);
+            tableStaff.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
+                @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
+                    String name = v.toString(); String initial = name.length() > 0 ? name.substring(name.lastIndexOf(" ")+1).substring(0, 1).toUpperCase() : "?";
+                    JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0)); p.setOpaque(true); p.setBackground(s ? t.getSelectionBackground() : Color.WHITE); p.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+                    JLabel avatar = new JLabel(initial, SwingConstants.CENTER); avatar.setPreferredSize(new Dimension(32, 32)); avatar.setOpaque(true); avatar.setBackground(new Color(219, 234, 254)); avatar.setForeground(PRIMARY_COLOR); avatar.setFont(new Font("Segoe UI", Font.BOLD, 14));
+                    p.add(avatar); p.add(new JLabel(name)); return p;
                 }
             });
-
-            JScrollPane sp = new JScrollPane(table);
-            sp.setBorder(null);
-            p.add(sp, BorderLayout.CENTER);
-            return p;
+            tableStaff.addMouseListener(new MouseAdapter() { @Override public void mouseClicked(MouseEvent e) { int row = tableStaff.getSelectedRow(); if (row != -1) { String maNV = tableStaff.getModel().getValueAt(row, 0).toString(); String tenNV = tableStaff.getModel().getValueAt(row, 1).toString(); showStaffScheduleDialog(maNV, tenNV); } } });
+            JScrollPane sp = new JScrollPane(tableStaff); sp.setBorder(null); sp.getViewport().setBackground(Color.WHITE); card.add(sp, BorderLayout.CENTER); return card;
         }
 
-        private JPanel createStatsPanel() {
-            // Note: 6 ô thống kê nhanh (3x2 grid)
-            JPanel p = new JPanel(new GridLayout(3, 2, 12, 12));
-            p.setOpaque(false);
-            p.add(createStatCard("27h", "Tuần này", STAT_BG_1));
-            p.add(createStatCard("12", "Cuộc họp", STAT_BG_2));
-            p.add(createStatCard("24", "Nhân viên", new Color(230, 255, 245)));
-            p.add(createStatCard("450.000.000đ", "Doanh thu tuần", new Color(230, 255, 230)));
-            p.add(createStatCardWithArrow("2h", "Tăng ca", new Color(255, 250, 230), true));
-            p.add(createStatCard("★", "Đánh giá", new Color(255, 245, 245)));
-            return p;
+        private JPanel createRightSideStats() {
+            JPanel p = new JPanel(new GridLayout(2, 1, 0, 20)); p.setOpaque(false);
+            // Peak Hour Chart
+            RoundedPanel chartCard = new RoundedPanel(new BorderLayout(), 20, Color.WHITE);
+            chartCard.setBorder(new EmptyBorder(20, 20, 20, 20));
+            chartCard.add(new JLabel("Lưu lượng khách (Hôm nay)", JLabel.LEFT), BorderLayout.NORTH);
+            PeakHourChart chart = new PeakHourChart(peakHourData);
+            chartCard.add(chart, BorderLayout.CENTER);
+            chartCard.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            chartCard.addMouseListener(new MouseAdapter() { @Override public void mouseClicked(MouseEvent e) { showPeakHourDetails(); } });
+            // Room Status
+            RoundedPanel status = new RoundedPanel(new BorderLayout(), 20, Color.WHITE);
+            status.setBorder(new EmptyBorder(20, 20, 20, 20));
+            status.add(new JLabel("Tình trạng phòng (Hiện tại)", JLabel.LEFT), BorderLayout.NORTH);
+            JPanel statList = new JPanel(new GridLayout(3, 1, 0, 10)); statList.setOpaque(false); statList.setBorder(new EmptyBorder(15, 0, 0, 0));
+            statList.add(createStatusRow("⌂ Sạch sẽ", String.valueOf(cleanRoom), SUCCESS_BG, SUCCESS_TEXT, () -> showRoomListDialog("Phòng sạch sẽ (Trống)", 0)));
+            statList.add(createStatusRow("⌂ Cần dọn", String.valueOf(dirtyRoom), WARNING_BG, WARNING_TEXT, () -> showRoomListDialog("Phòng cần dọn", 2)));
+            statList.add(createStatusRow("⌂ Bảo trì", String.valueOf(maintenanceRoom), new Color(255, 237, 213), new Color(194, 65, 12), () -> showRoomListDialog("Phòng bảo trì", 3)));
+            status.add(statList, BorderLayout.CENTER);
+            p.add(chartCard); p.add(status); return p;
         }
 
-        private JPanel createStatBox(String big, String small, Color bg) {
-            // Note: ô thống kê trên Top Zone
-            JPanel c = new JPanel(new BorderLayout());
-            c.setBackground(bg);
-            c.setBorder(new LineBorder(CARD_BORDER));
-            JLabel bigLabel = new JLabel(big, SwingConstants.CENTER); // Đổi tên biến để rõ ràng hơn
-            bigLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
-            c.add(bigLabel, BorderLayout.CENTER);
-            JLabel lb = new JLabel(small, SwingConstants.CENTER);
-            lb.setForeground(Color.DARK_GRAY);
-            c.add(lb, BorderLayout.SOUTH);
-            return c;
+        // ... [GIỮ NGUYÊN CÁC HELPER COMPONENTS: createCard, createStatusRow] ...
+        private JPanel createCard(String title, String value, String subText, String iconName, Color iconBg, Color iconFg) {
+            RoundedPanel card = new RoundedPanel(new BorderLayout(), 20, Color.WHITE); card.setBorder(new EmptyBorder(20, 20, 20, 20));
+            JPanel header = new JPanel(new BorderLayout()); header.setOpaque(false); JPanel iconBox = new JPanel(new GridBagLayout()); iconBox.setPreferredSize(new Dimension(45, 45)); iconBox.setBackground(iconBg); iconBox.add(new JLabel(new AppIcon(iconName, 24, iconFg))); header.add(iconBox, BorderLayout.WEST);
+            JPanel content = new JPanel(new GridLayout(3,1)); content.setOpaque(false); content.setBorder(new EmptyBorder(15, 0, 0, 0));
+            JLabel val = new JLabel(value); val.setFont(FONT_BIG); val.setForeground(TEXT_DARK); JLabel tit = new JLabel(title); tit.setFont(FONT_TEXT); tit.setForeground(TEXT_GRAY); JLabel sub = new JLabel(subText); sub.setFont(new Font("Segoe UI", Font.PLAIN, 12)); sub.setForeground(new Color(100, 116, 139));
+            content.add(val); content.add(tit); content.add(sub); card.add(header, BorderLayout.NORTH); card.add(content, BorderLayout.CENTER); return card;
         }
+        private JPanel createStatusRow(String label, String count, Color bg, Color fg, Runnable onClick) { JPanel p = new JPanel(new BorderLayout()); p.setOpaque(false); JLabel l = new JLabel(label); l.setFont(FONT_TEXT); l.setForeground(TEXT_DARK); JLabel c = new JLabel(" " + count + " "); c.setOpaque(true); c.setBackground(bg); c.setForeground(fg); c.setFont(FONT_BOLD); p.add(l, BorderLayout.WEST); p.add(c, BorderLayout.EAST); p.setBorder(BorderFactory.createMatteBorder(0,0,1,0, new Color(240,240,240))); p.setCursor(new Cursor(Cursor.HAND_CURSOR)); p.addMouseListener(new MouseAdapter() { @Override public void mouseClicked(MouseEvent e) { if(onClick != null) onClick.run(); } }); return p; }
 
-        private JPanel createStatCard(String value, String label, Color bg) {
-            // Note: ô thống kê trong Stats Panel
-            JPanel card = new JPanel(new BorderLayout());
-            card.setBackground(bg);
-            card.setBorder(new LineBorder(CARD_BORDER));
-            JLabel v = new JLabel(value, SwingConstants.CENTER);
-            v.setFont(new Font("SansSerif", Font.BOLD, 18));
-            JLabel l = new JLabel(label, SwingConstants.CENTER);
-            l.setForeground(Color.DARK_GRAY);
-            card.add(v, BorderLayout.CENTER);
-            card.add(l, BorderLayout.SOUTH);
-            return card;
-        }
+        // ... [GIỮ NGUYÊN CÁC HÀM DRILL DOWN] ...
+        private void showDrillDownDialog(String title, JComponent content, int width, int height) { JDialog d = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), title, true); d.setSize(width, height); d.setLocationRelativeTo(this); d.setLayout(new BorderLayout()); d.add(new JScrollPane(content), BorderLayout.CENTER); d.setVisible(true); }
+        private void showRevenueDetailDialog() { String[] cols = {"Mã HD", "Ngày lập", "Khách hàng", "Tổng tiền"}; DefaultTableModel model = new DefaultTableModel(cols, 0); String sql = "SELECT maHoaDon, ngayLap, maKH, tongTien FROM HoaDon WHERE CAST(ngayLap AS DATE) = CAST(GETDATE() AS DATE)"; try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) { ResultSet rs = ps.executeQuery(); java.text.DecimalFormat df = new java.text.DecimalFormat("#,###"); while(rs.next()) { model.addRow(new Object[]{rs.getString(1), rs.getTime(2), rs.getString(3), df.format(rs.getDouble(4))}); } } catch (Exception e) { e.printStackTrace(); } JTable table = new JTable(model); showDrillDownDialog("Chi tiết doanh thu HÔM NAY", table, 600, 400); }
+        private void showRoomListDialog(String title, int status) { String[] cols = {"Mã Phòng", "Loại Phòng", "Giá tiền"}; DefaultTableModel model = new DefaultTableModel(cols, 0); try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement("SELECT p.maPhong, lp.tenLoaiPhong, p.giaTienMotDem FROM Phong p JOIN LoaiPhong lp ON p.maLoaiPhong=lp.maLoaiPhong WHERE p.maTrangThai=?")) { ps.setInt(1, status); ResultSet rs = ps.executeQuery(); java.text.DecimalFormat df = new java.text.DecimalFormat("#,###"); while(rs.next()) { model.addRow(new Object[]{rs.getString(1), rs.getString(2), df.format(rs.getDouble(3))}); } } catch (Exception e) { e.printStackTrace(); } JTable table = new JTable(model); showDrillDownDialog(title, table, 500, 400); }
+        private void showStaffScheduleDialog(String maNV, String tenNV) { String[] cols = {"Ngày", "Ca làm", "Giờ BĐ", "Giờ KT", "Trạng thái"}; DefaultTableModel model = new DefaultTableModel(cols, 0); String sql = "SELECT ngayLam, caLam, gioBatDau, gioKetThuc, trangThai FROM LichLamViec WHERE maNV=?"; try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) { ps.setString(1, maNV); ResultSet rs = ps.executeQuery(); while(rs.next()) { model.addRow(new Object[]{rs.getDate(1), rs.getString(2), rs.getTime(3), rs.getTime(4), rs.getString(5)}); } } catch (Exception e) { e.printStackTrace(); } JTable table = new JTable(model); showDrillDownDialog("Lịch làm việc: " + tenNV, table, 600, 350); }
+        private void showPeakHourDetails() { String[] cols = {"Giờ", "Loại phiếu", "Phòng", "Khách hàng"}; DefaultTableModel model = new DefaultTableModel(cols, 0); String sql = "SELECT DATEPART(HOUR, ngayNhanPhong) as Gio, N'Check-in' as Loai, maPhong, maKH FROM PhieuDatPhong WHERE CAST(ngayNhanPhong AS DATE) = CAST(GETDATE() AS DATE) UNION ALL SELECT DATEPART(HOUR, ngayTraPhong) as Gio, N'Check-out' as Loai, maPhong, maKH FROM PhieuDatPhong WHERE CAST(ngayTraPhong AS DATE) = CAST(GETDATE() AS DATE)"; try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) { ResultSet rs = ps.executeQuery(); while(rs.next()) { model.addRow(new Object[]{rs.getInt(1) + "h00", rs.getString(2), rs.getString(3), rs.getString(4)}); } } catch (Exception e) { e.printStackTrace(); } JTable table = new JTable(model); showDrillDownDialog("Chi tiết lưu lượng khách HÔM NAY", table, 500, 400); }
+        private void showPriceAnalysisDialog() { String[] cols = {"Loại phòng", "Giá niêm yết", "Số lượng phòng"}; DefaultTableModel model = new DefaultTableModel(cols, 0); String sql = "SELECT lp.tenLoaiPhong, AVG(p.giaTienMotDem), COUNT(p.maPhong) FROM Phong p JOIN LoaiPhong lp ON p.maLoaiPhong=lp.maLoaiPhong GROUP BY lp.tenLoaiPhong"; try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) { ResultSet rs = ps.executeQuery(); java.text.DecimalFormat df = new java.text.DecimalFormat("#,###"); while(rs.next()) { model.addRow(new Object[]{rs.getString(1), df.format(rs.getDouble(2)), rs.getInt(3)}); } } catch(Exception e) { e.printStackTrace(); } JTable table = new JTable(model); showDrillDownDialog("Phân tích giá phòng & Cơ cấu", table, 500, 300); }
+        private void showOccupancyDetailsDialog() { JDialog d = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Chi tiết tình trạng phòng", true); d.setSize(650, 450); d.setLocationRelativeTo(this); d.setLayout(new BorderLayout()); JTabbedPane tabbedPane = new JTabbedPane(); tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 13)); JPanel pnlBooked = createRoomTableByStatus(1); tabbedPane.addTab("Đang có khách", new AppIcon("bed", 16, new Color(147, 51, 234)), pnlBooked); JPanel pnlEmpty = createRoomTableByStatus(0); tabbedPane.addTab("Phòng trống (Sạch)", new AppIcon("bed", 16, new Color(22, 163, 74)), pnlEmpty); d.add(tabbedPane, BorderLayout.CENTER); JButton btnClose = new JButton("Đóng"); btnClose.addActionListener(e -> d.dispose()); JPanel pnlBtn = new JPanel(new FlowLayout(FlowLayout.RIGHT)); pnlBtn.add(btnClose); d.add(pnlBtn, BorderLayout.SOUTH); d.setVisible(true); }
+        private JPanel createRoomTableByStatus(int status) { JPanel p = new JPanel(new BorderLayout()); p.setBorder(new EmptyBorder(10, 10, 10, 10)); p.setBackground(Color.WHITE); String[] cols = {"Mã Phòng", "Loại Phòng", "Đơn giá", "Tầng"}; DefaultTableModel model = new DefaultTableModel(cols, 0) { @Override public boolean isCellEditable(int row, int column) { return false; } }; String sql = "SELECT p.maPhong, lp.tenLoaiPhong, p.giaTienMotDem FROM Phong p JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong WHERE p.maTrangThai = ?"; try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) { ps.setInt(1, status); ResultSet rs = ps.executeQuery(); java.text.DecimalFormat df = new java.text.DecimalFormat("#,###"); while(rs.next()) { String maPhong = rs.getString(1); String loaiPhong = rs.getString(2); String gia = df.format(rs.getDouble(3)); String tang = maPhong.length() > 1 ? maPhong.substring(1, 2) : "1"; model.addRow(new Object[]{maPhong, loaiPhong, gia, "Tầng " + tang}); } } catch (Exception e) { e.printStackTrace(); } JTable table = new JTable(model); table.setRowHeight(30); table.setFont(new Font("Segoe UI", Font.PLAIN, 13)); table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13)); table.setShowVerticalLines(false); DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer(); centerRenderer.setHorizontalAlignment(JLabel.CENTER); table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer); table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer); JScrollPane sp = new JScrollPane(table); sp.getViewport().setBackground(Color.WHITE); p.add(sp, BorderLayout.CENTER); JLabel lblCount = new JLabel("Tổng số lượng: " + model.getRowCount() + " phòng"); lblCount.setFont(new Font("Segoe UI", Font.ITALIC, 12)); lblCount.setBorder(new EmptyBorder(5, 5, 0, 0)); p.add(lblCount, BorderLayout.SOUTH); return p; }
 
-        private JPanel createStatCardWithArrow(String value, String label, Color bg, boolean up) {
-            // Note: ô thống kê có mũi tên tăng/giảm
-            JPanel card = new JPanel(new BorderLayout());
-            card.setBackground(bg);
-            card.setBorder(new LineBorder(CARD_BORDER));
-            JPanel top = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 6));
-            top.setOpaque(false);
-            JLabel v = new JLabel(value);
-            v.setFont(new Font("SansSerif", Font.BOLD, 16));
-            JLabel arr = new JLabel(up ? "▲" : "▼");
-            arr.setForeground(up ? new Color(0, 140, 0) : new Color(200, 50, 50));
-            top.add(v);
-            top.add(arr);
-            card.add(top, BorderLayout.CENTER);
-            JLabel l = new JLabel(label, SwingConstants.CENTER);
-            l.setForeground(Color.DARK_GRAY);
-            card.add(l, BorderLayout.SOUTH);
-            return card;
-        }
+        // --- SUB CLASSES ---
 
-        private DayOfWeek getDayOfWeek(String vnName) {
-            // Note: Chuyển tên tiếng Việt sang DayOfWeek
-            switch (vnName) {
-                case "Thứ Hai":
-                    return DayOfWeek.MONDAY;
-                case "Thứ Ba":
-                    return DayOfWeek.TUESDAY;
-                case "Thứ Tư":
-                    return DayOfWeek.WEDNESDAY;
-                case "Thứ Năm":
-                    return DayOfWeek.THURSDAY;
-                case "Thứ Sáu":
-                    return DayOfWeek.FRIDAY;
-                case "Thứ Bảy":
-                    return DayOfWeek.SATURDAY;
-                case "Chủ Nhật":
-                    return DayOfWeek.SUNDAY;
-                default:
-                    return null;
+        // [SỬA 2] CẬP NHẬT CLASS PeakHourChart ĐỂ VẼ TRỤC Y (SỐ LƯỢNG)
+        private static class PeakHourChart extends JPanel {
+            private final int[] data;
+            public PeakHourChart(int[] data) { this.data = data; setOpaque(false); }
+            @Override protected void paintComponent(Graphics g) {
+                super.paintComponent(g); Graphics2D g2 = (Graphics2D) g; g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                int w = getWidth(), h = getHeight();
+                int padLeft = 40; // Tăng lề trái để hiện số trục Y
+                int padBot = 25;
+                int chartH = h - padBot - 15;
+                int chartW = w - padLeft - 10;
+
+                // Tìm max
+                int maxVal = 1; for(int v : data) if(v > maxVal) maxVal = v;
+
+                // Vẽ lưới ngang và số trục Y (5 mốc)
+                g2.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+                for (int i = 0; i <= 4; i++) {
+                    int val = (int)Math.round(maxVal * i / 4.0); // 0, 25%, 50%...
+                    int yPos = 15 + chartH - (int)((double)val/maxVal * chartH);
+
+                    // Vẽ số trục Y (bên trái)
+                    g2.setColor(TEXT_GRAY);
+                    g2.drawString(String.valueOf(val), 5, yPos + 4);
+
+                    // Vẽ dòng kẻ mờ
+                    g2.setColor(new Color(230, 230, 230));
+                    g2.drawLine(padLeft, yPos, w-10, yPos);
+                }
+
+                // Vẽ trục X và Y chính
+                g2.setColor(new Color(200, 200, 200));
+                g2.drawLine(padLeft, 15, padLeft, h-padBot); // Trục Y
+                g2.drawLine(padLeft, h-padBot, w-10, h-padBot); // Trục X
+
+                java.awt.geom.GeneralPath polyline = new java.awt.geom.GeneralPath();
+                double xStep = (double)chartW / 23;
+
+                // Điểm bắt đầu
+                polyline.moveTo(padLeft, 15 + chartH - (int)((double)data[0]/maxVal * chartH));
+
+                // Vẽ đường biểu đồ
+                for (int i = 0; i < 24; i++) {
+                    float x = padLeft + (float)(i * xStep);
+                    float y = 15 + chartH - (int)((double)data[i]/maxVal * chartH);
+                    polyline.lineTo(x, y);
+
+                    // Vẽ số giờ trục X
+                    if(i % 4 == 0) {
+                        g2.setColor(TEXT_GRAY);
+                        g2.drawString(i + "h", x - 5, h - 5);
+                    }
+                }
+
+                // Tô màu vùng dưới
+                java.awt.geom.GeneralPath area = (java.awt.geom.GeneralPath) polyline.clone();
+                area.lineTo(padLeft + chartW, 15 + chartH); area.lineTo(padLeft, 15 + chartH); area.closePath();
+                g2.setPaint(new GradientPaint(0, 15, CHART_FILL_COLOR, 0, h, new Color(255,255,255,0)));
+                g2.fill(area);
+
+                // Vẽ đường line chính
+                g2.setColor(CHART_LINE_COLOR);
+                g2.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g2.draw(polyline);
             }
         }
 
+        // ... [GIỮ NGUYÊN RoundedPanel và AppIcon] ...
+        private static class RoundedPanel extends JPanel {
+            private int radius; private Color bgColor;
+            public RoundedPanel(LayoutManager layout, int radius, Color bgColor) { super(layout); this.radius = radius; this.bgColor = bgColor; setOpaque(false); }
+            @Override protected void paintComponent(Graphics g) { super.paintComponent(g); Graphics2D g2 = (Graphics2D) g; g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); g2.setColor(bgColor); g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius); g2.setColor(new Color(230,230,230)); g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, radius, radius); }
+        }
+        private static class AppIcon implements Icon {
+            private String type; private int size; private Color color;
+            public AppIcon(String type, int size, Color color) { this.type = type; this.size = size; this.color = color; }
+            public int getIconWidth() { return size; } public int getIconHeight() { return size; }
+            public void paintIcon(Component c, Graphics g, int x, int y) { Graphics2D g2 = (Graphics2D) g; g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); g2.setColor(color); g2.setFont(new Font("Segoe UI Emoji", Font.BOLD, size - 4)); String symbol = "●"; if(type.equals("money")) symbol = "$"; else if(type.equals("tag")) symbol = "🏷"; else if(type.equals("chart")) symbol = "📈"; else if(type.equals("bed")) symbol = "🛏"; FontMetrics fm = g2.getFontMetrics(); g2.drawString(symbol, x + (size - fm.stringWidth(symbol)) / 2, y + (size - fm.getHeight()) / 2 + fm.getAscent()); }
+        }
     }
-
 // =================================================================================
 // PANEL NỘI DUNG 3: QUẢN LÝ NHÂN VIÊN
 // =================================================================================
@@ -1361,565 +1369,516 @@ public class GUI_NhanVienQuanLy extends JFrame {
 // Lớp giao diện quản lý khuyến mãi, kế thừa từ JPanel
 
 
-// =================================================================================
-// PANEL NỘI DUNG 5: THỐNG KÊ & BÁO CÁO (GUI_ThongKeBaoCao cũ)
-// =================================================================================
-
+    // =================================================================================
+    // PANEL NỘI DUNG 5: THỐNG KÊ & BÁO CÁO (FINAL POLISHED VERSION)
+    // =================================================================================
     public static class PanelThongKeContent extends JPanel {
 
-        // --- Các hằng số màu sắc (Được sử dụng làm nguồn cho các lớp khác) ---
+        // --- MÀU SẮC CHUẨN ---
         public static final Color MAIN_BG = new Color(242, 245, 250);
         public static final Color CARD_BORDER = new Color(222, 226, 230);
         public static final Color ACCENT_BLUE = new Color(24, 90, 219);
         public static final Color COLOR_WHITE = Color.WHITE;
-        public static final Color COLOR_GREEN = new Color(50, 168, 82);
-        public static final Color COLOR_RED = new Color(217, 30, 24);
-        public static final Color COLOR_PURPLE = new Color(153, 51, 204);
-        public static final Color COLOR_ORANGE = new Color(255, 140, 0);
-        public static final Color COLOR_TEXT_MUTED = new Color(108, 117, 125);
+        public static final Color COLOR_GREEN = new Color(22, 163, 74); // Xanh lá
+        public static final Color COLOR_RED = new Color(220, 38, 38);    // Đỏ
+        public static final Color COLOR_NEUTRAL = new Color(107, 114, 128); // Xám
+        public static final Color COLOR_PURPLE = new Color(147, 51, 234);
+        public static final Color COLOR_ORANGE = new Color(245, 158, 11);
 
-        // Màu sắc trong biểu đồ
-        private static final Color CHART_COLOR_REVENUE = new Color(70, 130, 180); // Steel Blue
-        private static final Color CHART_COLOR_BOOKING = new Color(46, 204, 113); // Emerald
-        private static final Color CHART_COLOR_RATE = new Color(255, 179, 0); // Orange
+        // --- MODEL DỮ LIỆU ---
+        private static class KPIModel {
+            double currentMonthVal;
+            double lastMonthVal;
+            String label;
+            String unit; // "₫", "Lượt", "%"
+
+            public KPIModel(double current, double last, String label, String unit) {
+                this.currentMonthVal = current;
+                this.lastMonthVal = last;
+                this.label = label;
+                this.unit = unit;
+            }
+
+            public double getGrowthRate() {
+                if (lastMonthVal == 0) return currentMonthVal > 0 ? 100.0 : 0.0;
+                return ((currentMonthVal - lastMonthVal) / lastMonthVal) * 100;
+            }
+        }
 
         public PanelThongKeContent() {
-            // Note: Panel chính chứa toàn bộ nội dung thống kê
             setLayout(new BorderLayout());
-
-            // Tạo Panel chứa toàn bộ nội dung chính
             JPanel mainPanel = new JPanel(new BorderLayout());
             mainPanel.setBackground(MAIN_BG);
             mainPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
 
-            // Thêm Header và Content
+            // Load dữ liệu thật từ SQL
+            KPIModel[] kpis = fetchKPIData();
+            double[] revenueData = fetchRevenueChartData();
+            int[] bookingData = fetchBookingChartData();
+            Map<String, Integer> roomTypeData = fetchRoomTypeData();
+
+            // Header
             mainPanel.add(createHeader(), BorderLayout.NORTH);
-            mainPanel.add(createContentPanel(), BorderLayout.CENTER);
-            mainPanel.add(createSummaryFooter(), BorderLayout.SOUTH);
+
+            // Nội dung chính (Grid Charts)
+            mainPanel.add(createContentPanel(kpis, revenueData, bookingData, roomTypeData), BorderLayout.CENTER);
+
+            // Footer Summary
+            mainPanel.add(createSummaryFooter(kpis), BorderLayout.SOUTH);
 
             add(mainPanel, BorderLayout.CENTER);
         }
 
+        // -------------------------------------------------------------------------
+        // PHẦN 1: TRUY VẤN DỮ LIỆU (DATA ACCESS)
+        // -------------------------------------------------------------------------
+
+        private KPIModel[] fetchKPIData() {
+            KPIModel[] data = new KPIModel[4];
+            // Init mặc định để tránh null
+            for(int i=0; i<4; i++) data[i] = new KPIModel(0, 0, "", "");
+
+            LocalDate now = LocalDate.now();
+            int curMonth = now.getMonthValue();
+            int curYear = now.getYear();
+            int lastMonth = now.minusMonths(1).getMonthValue();
+            int lastYear = now.minusMonths(1).getYear();
+
+            try {
+                Connection con = ConnectDB.getConnection();
+                if (con == null) return data;
+
+                // 1. DOANH THU (Revenue)
+                String sqlRev = "SELECT " +
+                        "SUM(CASE WHEN MONTH(ngayLap)=? AND YEAR(ngayLap)=? THEN tongTien ELSE 0 END) as Cur, " +
+                        "SUM(CASE WHEN MONTH(ngayLap)=? AND YEAR(ngayLap)=? THEN tongTien ELSE 0 END) as Last " +
+                        "FROM HoaDon";
+                try (PreparedStatement ps = con.prepareStatement(sqlRev)) {
+                    ps.setInt(1, curMonth); ps.setInt(2, curYear);
+                    ps.setInt(3, lastMonth); ps.setInt(4, lastYear);
+                    ResultSet rs = ps.executeQuery();
+                    if (rs.next()) {
+                        data[0] = new KPIModel(rs.getDouble("Cur"), rs.getDouble("Last"), "Tổng doanh thu", "₫");
+                    }
+                }
+
+                // 2. SỐ LƯỢNG BOOKING
+                String sqlBook = "SELECT " +
+                        "COUNT(CASE WHEN MONTH(ngayDatPhong)=? AND YEAR(ngayDatPhong)=? THEN 1 END) as Cur, " +
+                        "COUNT(CASE WHEN MONTH(ngayDatPhong)=? AND YEAR(ngayDatPhong)=? THEN 1 END) as Last " +
+                        "FROM PhieuDatPhong";
+                try (PreparedStatement ps = con.prepareStatement(sqlBook)) {
+                    ps.setInt(1, curMonth); ps.setInt(2, curYear);
+                    ps.setInt(3, lastMonth); ps.setInt(4, lastYear);
+                    ResultSet rs = ps.executeQuery();
+                    if (rs.next()) {
+                        data[1] = new KPIModel(rs.getInt("Cur"), rs.getInt("Last"), "Tổng booking", "");
+                    }
+                }
+
+                // 3. TỶ LỆ LẤP ĐẦY
+                int totalRooms = 1;
+                try (Statement st = con.createStatement(); ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM Phong")) {
+                    if (rs.next()) totalRooms = rs.getInt(1);
+                }
+                if (totalRooms == 0) totalRooms = 1;
+
+                double occCur = (double) data[1].currentMonthVal / (totalRooms * 30) * 100;
+                double occLast = (double) data[1].lastMonthVal / (totalRooms * 30) * 100;
+
+                // Fix logic hiển thị khi booking ít: Lấy trạng thái thực
+                if (occCur < 1) {
+                    try (Statement st = con.createStatement(); ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM Phong WHERE maTrangThai = 1")) {
+                        if(rs.next()) occCur = (rs.getDouble(1) / totalRooms) * 100;
+                    }
+                }
+                data[2] = new KPIModel(occCur, occLast, "Tỷ lệ lấp đầy", "%");
+
+                // 4. GIÁ BÁN TRUNG BÌNH (ADR)
+                double adrCur = data[1].currentMonthVal > 0 ? data[0].currentMonthVal / data[1].currentMonthVal : 0;
+                double adrLast = data[1].lastMonthVal > 0 ? data[0].lastMonthVal / data[1].lastMonthVal : 0;
+                data[3] = new KPIModel(adrCur, adrLast, "Giá TB (ADR)", "₫");
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return data;
+        }
+
+        private double[] fetchRevenueChartData() {
+            double[] data = new double[12];
+            try {
+                Connection con = ConnectDB.getConnection();
+                if (con == null) return data;
+
+                String sql = "SELECT MONTH(ngayLap) as M, SUM(tongTien) as T FROM HoaDon WHERE YEAR(ngayLap) = ? GROUP BY MONTH(ngayLap)";
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    ps.setInt(1, LocalDate.now().getYear());
+                    ResultSet rs = ps.executeQuery();
+                    while (rs.next()) {
+                        int m = rs.getInt("M");
+                        if (m >= 1 && m <= 12) data[m - 1] = rs.getDouble("T");
+                    }
+                }
+            } catch (Exception e) { e.printStackTrace(); }
+            return data;
+        }
+
+        private int[] fetchBookingChartData() {
+            int[] data = new int[12];
+            try {
+                Connection con = ConnectDB.getConnection();
+                if (con == null) return data;
+
+                String sql = "SELECT MONTH(ngayDatPhong) as M, COUNT(*) as C FROM PhieuDatPhong WHERE YEAR(ngayDatPhong) = ? GROUP BY MONTH(ngayDatPhong)";
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    ps.setInt(1, LocalDate.now().getYear());
+                    ResultSet rs = ps.executeQuery();
+                    while (rs.next()) {
+                        int m = rs.getInt("M");
+                        if (m >= 1 && m <= 12) data[m - 1] = rs.getInt("C");
+                    }
+                }
+            } catch (Exception e) { e.printStackTrace(); }
+            return data;
+        }
+
+        private Map<String, Integer> fetchRoomTypeData() {
+            Map<String, Integer> data = new LinkedHashMap<>();
+            try {
+                Connection con = ConnectDB.getConnection();
+                if (con == null) return data;
+
+                String sql = "SELECT lp.tenLoaiPhong, COUNT(p.maPhong) as SL " +
+                        "FROM Phong p JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong " +
+                        "GROUP BY lp.tenLoaiPhong";
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    ResultSet rs = ps.executeQuery();
+                    while (rs.next()) {
+                        data.put(rs.getString(1), rs.getInt(2));
+                    }
+                }
+            } catch (Exception e) { e.printStackTrace(); }
+            return data;
+        }
+
+        // -------------------------------------------------------------------------
+        // PHẦN 2: UI COMPONENTS
+        // -------------------------------------------------------------------------
+
         private JPanel createHeader() {
-            // Note: Phần tiêu đề, phụ đề và nút Xuất/Lọc
             JPanel header = new JPanel(new BorderLayout());
             header.setOpaque(false);
             header.setBorder(new EmptyBorder(0, 0, 15, 0));
 
             JLabel title = new JLabel("Thống kê & Báo cáo");
-            title.setFont(new Font("SansSerif", Font.BOLD, 20));
+            title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+            JLabel subtitle = new JLabel("Dữ liệu thời gian thực từ hệ thống");
+            subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            subtitle.setForeground(COLOR_NEUTRAL);
 
-            JLabel subtitle = new JLabel("Phân tích hiệu suất hoạt động khách sạn");
-            subtitle.setFont(new Font("SansSerif", Font.PLAIN, 12));
-            subtitle.setForeground(COLOR_TEXT_MUTED);
-
-            JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+            JPanel titlePanel = new JPanel(new GridLayout(2, 1));
             titlePanel.setOpaque(false);
-            titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
             titlePanel.add(title);
             titlePanel.add(subtitle);
-
             header.add(titlePanel, BorderLayout.WEST);
 
-            // Nút Xuất báo cáo và Lọc năm
-            JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-            rightPanel.setOpaque(false);
-
-            JComboBox<String> yearFilter = new JComboBox<>(new String[]{"Năm 2024", "Năm 2023", "Năm 2022"});
-            rightPanel.add(yearFilter);
-
-            JButton btnExport = new JButton("Xuất báo cáo");
-            btnExport.setFont(new Font("SansSerif", Font.BOLD, 12));
-            btnExport.setBackground(ACCENT_BLUE);
-            btnExport.setForeground(COLOR_WHITE);
+            JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            right.setOpaque(false);
+            JComboBox<String> cboTime = new JComboBox<>(new String[]{"Tháng này", "Quý này", "Năm nay"});
+            cboTime.setFocusable(false);
+            JButton btnExport = new JButton("Xuất Excel");
+            btnExport.setBackground(new Color(16, 124, 65));
+            btnExport.setForeground(Color.WHITE);
             btnExport.setFocusPainted(false);
-            btnExport.setBorderPainted(false);
-            btnExport.setBorder(new EmptyBorder(8, 15, 8, 15));
-            rightPanel.add(btnExport);
+            btnExport.addActionListener(e -> JOptionPane.showMessageDialog(this, "Tính năng đang phát triển...", "Thông báo", JOptionPane.INFORMATION_MESSAGE));
 
-            header.add(rightPanel, BorderLayout.EAST);
+            right.add(new JLabel("Thời gian: "));
+            right.add(cboTime);
+            right.add(Box.createHorizontalStrut(10));
+            right.add(btnExport);
+            header.add(right, BorderLayout.EAST);
 
             return header;
         }
 
-        private JPanel createContentPanel() {
-            // Note: Cấu trúc chính 2 hàng (Stat Cards và Biểu đồ)
+        private JPanel createContentPanel(KPIModel[] kpis, double[] revenueData, int[] bookingData, Map<String, Integer> roomTypeData) {
             JPanel content = new JPanel(new BorderLayout(15, 15));
             content.setOpaque(false);
 
-            // --- Hàng 1: Stat Cards ---
-            content.add(createStatCardsPanel(), BorderLayout.NORTH);
+            content.add(createStatCardsPanel(kpis), BorderLayout.NORTH);
 
-            // --- Hàng 2: Biểu đồ (GridBagLayout 2x2)
-            JPanel centerGrid = new JPanel(new GridBagLayout());
-            centerGrid.setOpaque(false);
-
+            JPanel grid = new JPanel(new GridBagLayout());
+            grid.setOpaque(false);
             GridBagConstraints gbc = new GridBagConstraints();
             gbc.fill = GridBagConstraints.BOTH;
-            gbc.insets = new Insets(0, 0, 15, 15); // Khoảng cách giữa các panel
+            gbc.insets = new Insets(0, 0, 15, 15);
 
-            // 1. Cột Trái trên (Doanh thu)
-            gbc.gridx = 0;
-            gbc.gridy = 0;
-            gbc.weightx = 0.70;
-            gbc.weighty = 0.5;
-            centerGrid.add(createRevenueChartPanel(), gbc);
+            gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.7; gbc.weighty = 0.5;
+            grid.add(createChartCard("Biểu đồ doanh thu (Năm nay)", new LineChartPanel(revenueData)), gbc);
 
-            // 2. Cột Phải trên (Phân loại phòng)
-            gbc.gridx = 1;
-            gbc.gridy = 0;
-            gbc.weightx = 0.30;
-            gbc.weighty = 0.5;
-            gbc.insets = new Insets(0, 0, 15, 0);
-            centerGrid.add(createRoomTypeChartPanel(), gbc);
+            gbc.gridx = 1; gbc.gridy = 0; gbc.weightx = 0.3; gbc.insets = new Insets(0, 0, 15, 0);
+            grid.add(createChartCard("Cơ cấu phòng", new PieChartPanel(roomTypeData)), gbc);
 
-            // 3. Cột Trái Dưới (Booking)
-            gbc.gridx = 0;
-            gbc.gridy = 1;
-            gbc.weightx = 0.70;
-            gbc.weighty = 0.5;
-            gbc.insets = new Insets(0, 0, 0, 15);
-            centerGrid.add(createBookingChartPanel(), gbc);
+            gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0.7; gbc.weighty = 0.5; gbc.insets = new Insets(0, 0, 0, 15);
+            grid.add(createChartCard("Số lượng Booking theo tháng", new BarChartPanel(bookingData, ACCENT_BLUE)), gbc);
 
-            // 4. Cột Phải Dưới (Rate)
-            gbc.gridx = 1;
-            gbc.gridy = 1;
-            gbc.weightx = 0.30;
-            gbc.weighty = 0.5;
-            gbc.insets = new Insets(0, 0, 0, 0);
-            centerGrid.add(createRateChartPanel(), gbc);
+            gbc.gridx = 1; gbc.gridy = 1; gbc.weightx = 0.3; gbc.insets = new Insets(0, 0, 0, 0);
+            grid.add(createChartCard("Thông tin hệ thống", createSystemInfoPanel()), gbc);
 
-            content.add(centerGrid, BorderLayout.CENTER);
-
+            content.add(grid, BorderLayout.CENTER);
             return content;
         }
 
-        // =================================================================================
-        // CÁC HÀM TẠO COMPONENT DASHBOARD
-        // =================================================================================
-
-        private JPanel createStatCardsPanel() {
-            // Note: 4 thẻ thống kê ở hàng trên cùng
-            JPanel panel = new JPanel(new GridLayout(1, 4, 15, 0)); // 1 hàng, 4 cột
+        private JPanel createStatCardsPanel(KPIModel[] kpis) {
+            JPanel panel = new JPanel(new GridLayout(1, 4, 15, 0));
             panel.setOpaque(false);
-
-            // Stat 1: Tổng doanh thu ($ - Icon đại diện)
-            panel.add(createStatCard("Tổng doanh thu", "13.700.000.000 ₫", "+12.5%", true, COLOR_GREEN.darker().darker(),
-                    "$"));
-            // Stat 2: Tổng booking (B - Icon đại diện)
-            panel.add(createStatCard("Tổng booking", "2,435", "+5.3%", true, CHART_COLOR_BOOKING, "B"));
-            // Stat 3: Tỷ lệ lấp đầy (P - Icon đại diện)
-            panel.add(createStatCard("Tỷ lệ lấp đầy", "90.0%", "-2.1%", false, COLOR_PURPLE, "P"));
-            // Stat 4: DT trung bình/tháng (A - Icon đại diện)
-            panel.add(createStatCard("DT trung bình/tháng", "1.141.666.667 ₫", "+5.8%", true, COLOR_ORANGE, "A"));
-
+            panel.add(createKPICard(kpis[0], ACCENT_BLUE, "$"));
+            panel.add(createKPICard(kpis[1], COLOR_ORANGE, "B"));
+            panel.add(createKPICard(kpis[2], COLOR_PURPLE, "%"));
+            panel.add(createKPICard(kpis[3], COLOR_GREEN, "A"));
             return panel;
         }
 
-        /**
-         * Helper tạo một thẻ thống kê (Stat Card)
-         */
-        private JPanel createStatCard(String title, String value, String change, boolean isPositive, Color accentColor,
-                                      String iconChar) {
-            // Note: Thiết kế thẻ thống kê với màu nền nhạt cho icon
-            JPanel card = new JPanel(new BorderLayout(10, 5));
-            card.setBackground(COLOR_WHITE);
-            card.setBorder(new CompoundBorder(
-                    new LineBorder(CARD_BORDER, 1),
-                    new EmptyBorder(15, 15, 15, 15)));
+        private JPanel createKPICard(KPIModel model, Color color, String iconStr) {
+            JPanel card = new JPanel(new BorderLayout());
+            card.setBackground(Color.WHITE);
+            card.setBorder(new CompoundBorder(new LineBorder(CARD_BORDER, 1, true), new EmptyBorder(15, 15, 15, 15)));
 
-            // Top: Title and Icon
-            JPanel topPanel = new JPanel(new BorderLayout());
-            topPanel.setOpaque(false);
+            JPanel top = new JPanel(new BorderLayout()); top.setOpaque(false);
+            JLabel lblTitle = new JLabel(model.label);
+            lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            lblTitle.setForeground(COLOR_NEUTRAL);
 
-            JLabel titleLabel = new JLabel(title);
-            titleLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
-            titleLabel.setForeground(COLOR_TEXT_MUTED);
-            topPanel.add(titleLabel, BorderLayout.WEST);
+            JLabel lblIcon = new JLabel(iconStr, SwingConstants.CENTER);
+            lblIcon.setPreferredSize(new Dimension(32, 32));
+            lblIcon.setOpaque(true);
+            lblIcon.setBackground(new Color(color.getRed(), color.getGreen(), color.getBlue(), 30));
+            lblIcon.setForeground(color);
+            lblIcon.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            lblIcon.setBorder(BorderFactory.createLineBorder(Color.WHITE, 0));
 
-            // Simple Icon Placeholder (đã sửa để hiển thị ổn định)
-            JLabel icon = new JLabel(iconChar, SwingConstants.CENTER);
-            icon.setPreferredSize(new Dimension(30, 30));
-            icon.setFont(new Font("SansSerif", Font.BOLD, 18));
-            icon.setForeground(accentColor);
-            icon.setOpaque(true);
-            // Thiết lập màu nền icon nhạt hơn (dùng alpha 30 để tạo nền nhạt)
-            icon.setBackground(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 30));
+            top.add(lblTitle, BorderLayout.WEST);
+            top.add(lblIcon, BorderLayout.EAST);
 
-            topPanel.add(icon, BorderLayout.EAST);
+            // UPDATED: Format tiền tệ đầy đủ theo yêu cầu
+            String valStr;
+            if (model.unit.equals("₫")) {
+                valStr = String.format("%,.0f ₫", model.currentMonthVal);
+            } else if (model.unit.equals("%")) {
+                valStr = String.format("%.1f%%", model.currentMonthVal);
+            } else {
+                valStr = String.format("%,.0f", model.currentMonthVal);
+            }
+            JLabel lblVal = new JLabel(valStr);
+            lblVal.setFont(new Font("Segoe UI", Font.BOLD, 22));
+            lblVal.setForeground(new Color(17, 24, 39));
 
-            // Center: Value
-            JLabel valueLabel = new JLabel(value);
-            valueLabel.setFont(new Font("SansSerif", Font.BOLD, 22));
-            card.add(valueLabel, BorderLayout.CENTER);
+            double growth = model.getGrowthRate();
+            boolean up = growth >= 0;
+            String trendStr = String.format("%s %.1f%% so với tháng trước", up ? "▲" : "▼", Math.abs(growth));
+            JLabel lblTrend = new JLabel(trendStr);
+            lblTrend.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            lblTrend.setForeground(up ? COLOR_GREEN : COLOR_RED);
 
-            // Bottom: Change (Tăng/giảm)
-            JPanel bottomPanel = new JPanel(new BorderLayout());
-            bottomPanel.setOpaque(false);
-
-            JLabel changeLabel = new JLabel(change);
-            changeLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
-            changeLabel.setForeground(isPositive ? COLOR_GREEN : COLOR_RED);
-            bottomPanel.add(changeLabel, BorderLayout.WEST);
-
-            card.add(bottomPanel, BorderLayout.SOUTH);
+            card.add(top, BorderLayout.NORTH);
+            card.add(lblVal, BorderLayout.CENTER);
+            card.add(lblTrend, BorderLayout.SOUTH);
 
             return card;
         }
 
-        /**
-         * Tạo Panel chứa biểu đồ Doanh thu theo tháng
-         */
-        private JPanel createRevenueChartPanel() {
-            JPanel panel = new JPanel(new BorderLayout());
-            panel.setBackground(COLOR_WHITE);
-            panel.setBorder(new CompoundBorder(
-                    new LineBorder(CARD_BORDER, 1),
-                    new EmptyBorder(15, 15, 15, 15)));
+        private JPanel createChartCard(String title, JPanel chart) {
+            JPanel card = new JPanel(new BorderLayout());
+            card.setBackground(Color.WHITE);
+            card.setBorder(new CompoundBorder(new LineBorder(CARD_BORDER, 1), new EmptyBorder(10, 15, 10, 15)));
 
-            JLabel title = new JLabel("Doanh thu theo tháng");
-            title.setFont(new Font("SansSerif", Font.BOLD, 14));
-            panel.add(title, BorderLayout.NORTH);
+            JLabel lblTitle = new JLabel(title);
+            lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            lblTitle.setBorder(new EmptyBorder(0,0,10,0));
 
-            // Placeholder cho biểu đồ đường
-            JPanel chart = new ChartPlaceholder("LINE", CHART_COLOR_REVENUE);
-            panel.add(chart, BorderLayout.CENTER);
-
-            return panel;
+            card.add(lblTitle, BorderLayout.NORTH);
+            card.add(chart, BorderLayout.CENTER);
+            return card;
         }
 
-        /**
-         * Tạo Panel chứa biểu đồ Phân bổ loại phòng
-         */
-        private JPanel createRoomTypeChartPanel() {
-            JPanel panel = new JPanel(new BorderLayout());
-            panel.setBackground(COLOR_WHITE);
-            panel.setBorder(new CompoundBorder(
-                    new LineBorder(CARD_BORDER, 1),
-                    new EmptyBorder(15, 15, 15, 15)));
-
-            JLabel title = new JLabel("Phân bổ loại phòng");
-            title.setFont(new Font("SansSerif", Font.BOLD, 14));
-            panel.add(title, BorderLayout.NORTH);
-
-            // Placeholder cho biểu đồ tròn (Pie Chart)
-            JPanel chart = new PieChartPlaceholder();
-            panel.add(chart, BorderLayout.CENTER);
-
-            return panel;
+        private JPanel createSystemInfoPanel() {
+            JPanel p = new JPanel(new GridLayout(4, 1, 0, 10));
+            p.setOpaque(false);
+            p.add(new JLabel("Hệ thống: Quản lý khách sạn TBQTT"));
+            p.add(new JLabel("Phiên bản: v2.5 (Stable)"));
+            p.add(new JLabel("Database: SQL Server 2019"));
+            p.add(new JLabel("Trạng thái: Đang kết nối..."));
+            return p;
         }
 
-        /**
-         * Tạo Panel chứa biểu đồ Số lượng booking
-         */
-        private JPanel createBookingChartPanel() {
-            JPanel panel = new JPanel(new BorderLayout());
-            panel.setBackground(COLOR_WHITE);
-            panel.setBorder(new CompoundBorder(
-                    new LineBorder(CARD_BORDER, 1),
-                    new EmptyBorder(15, 15, 15, 15)));
+        private JPanel createSummaryFooter(KPIModel[] kpis) {
+            JPanel f = new JPanel(new FlowLayout(FlowLayout.CENTER, 40, 15));
+            f.setBackground(Color.WHITE);
+            f.setBorder(new MatteBorder(1,0,0,0, CARD_BORDER));
 
-            JLabel title = new JLabel("Số lượng booking");
-            title.setFont(new Font("SansSerif", Font.BOLD, 14));
-            panel.add(title, BorderLayout.NORTH);
+            f.add(createFooterItem("Tăng trưởng doanh thu", String.format("%+.1f%%", kpis[0].getGrowthRate()),
+                    kpis[0].getGrowthRate() >= 0 ? COLOR_GREEN : COLOR_RED));
 
-            // Placeholder cho biểu đồ cột
-            JPanel chart = new ChartPlaceholder("BAR_GREEN", CHART_COLOR_BOOKING);
-            panel.add(chart, BorderLayout.CENTER);
+            // UPDATED: Đổi tên thành "Tỷ lệ lấp đầy trung bình" theo yêu cầu
+            f.add(createFooterItem("Tỷ lệ lấp đầy trung bình", String.format("%.1f%%", kpis[2].currentMonthVal), ACCENT_BLUE));
 
-            return panel;
+            f.add(createFooterItem("Đánh giá trung bình", "4.8/5.0", COLOR_PURPLE));
+            return f;
         }
 
-        /**
-         * Tạo Panel chứa biểu đồ Tỷ lệ lấp đầy theo ngày
-         */
-        private JPanel createRateChartPanel() {
-            JPanel panel = new JPanel(new BorderLayout());
-            panel.setBackground(COLOR_WHITE);
-            panel.setBorder(new CompoundBorder(
-                    new LineBorder(CARD_BORDER, 1),
-                    new EmptyBorder(15, 15, 15, 15)));
-
-            JLabel title = new JLabel("Tỷ lệ lấp đầy theo ngày");
-            title.setFont(new Font("SansSerif", Font.BOLD, 14));
-            panel.add(title, BorderLayout.NORTH);
-
-            // Placeholder cho biểu đồ cột (màu cam)
-            JPanel chart = new ChartPlaceholder("BAR_ORANGE", CHART_COLOR_RATE);
-            panel.add(chart, BorderLayout.CENTER);
-
-            return panel;
+        private JPanel createFooterItem(String label, String val, Color c) {
+            JPanel p = new JPanel(new GridLayout(2,1)); p.setOpaque(false);
+            JLabel v = new JLabel(val, SwingConstants.CENTER); v.setFont(new Font("Segoe UI", Font.BOLD, 16)); v.setForeground(c);
+            JLabel l = new JLabel(label, SwingConstants.CENTER); l.setFont(new Font("Segoe UI", Font.PLAIN, 12)); l.setForeground(COLOR_NEUTRAL);
+            p.add(v); p.add(l);
+            return p;
         }
 
-        // =================================================================================
-        // FOOTER TÓM TẮT HIỆU SUẤT
-        // =================================================================================
+        // -------------------------------------------------------------------------
+        // PHẦN 3: CHARTS VẼ TAY (CUSTOM PAINT)
+        // -------------------------------------------------------------------------
 
-        private JPanel createSummaryFooter() {
-            // Note: Thanh tóm tắt hiệu suất ở cuối trang
-            JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 50, 20));
-            footer.setBackground(COLOR_WHITE);
-            footer.setBorder(new CompoundBorder(
-                    new LineBorder(CARD_BORDER, 1),
-                    new EmptyBorder(10, 0, 10, 0)));
+        private static class LineChartPanel extends JPanel {
+            private double[] data;
+            public LineChartPanel(double[] data) { this.data = data; setBackground(Color.WHITE); }
+            @Override protected void paintComponent(Graphics g) {
+                super.paintComponent(g); Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                int w = getWidth(), h = getHeight(), pad = 30;
 
-            footer.add(createSummaryItem("+12.5%", "Tăng trưởng doanh thu", COLOR_GREEN));
-            footer.add(createSummaryItem("89.2", "Tỷ lệ lấp đầy trung bình", ACCENT_BLUE));
-            footer.add(createSummaryItem("4.8/5", "Đánh giá khách hàng", COLOR_PURPLE));
+                g2.setColor(Color.LIGHT_GRAY);
+                g2.drawLine(pad, h-pad, w-pad, h-pad);
+                g2.drawLine(pad, pad, pad, h-pad);
 
-            return footer;
-        }
+                if (data == null || data.length == 0) return;
+                double max = 0; for(double d: data) max = Math.max(max, d);
+                if (max == 0) max = 1;
 
-        private JPanel createSummaryItem(String value, String label, Color color) {
-            // Note: Một mục trong thanh tóm tắt
-            JPanel item = new JPanel();
-            item.setOpaque(false);
-            item.setLayout(new BoxLayout(item, BoxLayout.Y_AXIS));
+                g2.setStroke(new BasicStroke(2f));
+                g2.setColor(ACCENT_BLUE);
 
-            JLabel valueLabel = new JLabel(value);
-            valueLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
-            valueLabel.setForeground(color);
-            valueLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                int xStep = (w - 2*pad) / (data.length);
+                int[] xPoints = new int[data.length];
+                int[] yPoints = new int[data.length];
 
-            JLabel labelLabel = new JLabel(label);
-            labelLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
-            labelLabel.setForeground(COLOR_TEXT_MUTED);
-            labelLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                for(int i=0; i<data.length; i++) {
+                    xPoints[i] = pad + i*xStep + 10;
+                    yPoints[i] = h - pad - (int)((data[i]/max) * (h - 2*pad));
+                    g2.fillOval(xPoints[i]-3, yPoints[i]-3, 6, 6);
 
-            item.add(valueLabel);
-            item.add(labelLabel);
-            return item;
-        }
-
-        // =================================================================================
-        // LỚP CUSTOM CHỈ ĐỂ VẼ PLACEHOLDER CHO BIỂU ĐỒ (ĐÃ SỬA LỖI TRỤC X)
-        // =================================================================================
-
-        /**
-         * Lớp Placeholder cho biểu đồ cột và biểu đồ đường
-         */
-        private static class ChartPlaceholder extends JPanel {
-            private final String type;
-            private final Color color;
-
-            public ChartPlaceholder(String type, Color color) {
-                this.type = type;
-                this.color = color;
-                setPreferredSize(new Dimension(500, 250));
-                setBackground(COLOR_WHITE);
+                    g2.setColor(Color.GRAY);
+                    g2.setFont(new Font("SansSerif", Font.PLAIN, 10));
+                    if (i % 2 == 0) g2.drawString("T"+(i+1), xPoints[i]-5, h-15);
+                    g2.setColor(ACCENT_BLUE);
+                }
+                g2.drawPolyline(xPoints, yPoints, data.length);
             }
+        }
 
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        private static class BarChartPanel extends JPanel {
+            private int[] data; private Color c;
+            public BarChartPanel(int[] data, Color c) { this.data = data; this.c = c; setBackground(Color.WHITE); }
+            @Override protected void paintComponent(Graphics g) {
+                super.paintComponent(g); Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                int w = getWidth(), h = getHeight(), pad = 30;
+                g2.setColor(Color.LIGHT_GRAY); g2.drawLine(pad, h-pad, w-pad, h-pad);
 
-                int width = getWidth();
-                int height = getHeight();
-                int padding = 30;
-                int labelPadding = 15;
-                int yAxisLabelWidth = 50;
+                if (data == null || data.length == 0) return;
+                int max = 0; for(int d: data) max = Math.max(max, d); if(max==0) max=1;
 
-                int chartHeight = height - 2 * padding;
-                // Đã sửa lỗi T12
-                int chartWidth = width - (padding * 2) - yAxisLabelWidth;
+                int barW = (w - 2*pad) / data.length - 10;
 
-                // Draw Y axis
-                g2d.setColor(Color.LIGHT_GRAY);
-                g2d.drawLine(padding + yAxisLabelWidth, height - padding, padding + yAxisLabelWidth, padding);
+                for(int i=0; i<data.length; i++) {
+                    int barH = (int)((double)data[i]/max * (h - 2*pad));
+                    int x = pad + 5 + i * ((w - 2*pad) / data.length);
+                    int y = h - pad - barH;
 
-                // Draw X axis
-                g2d.drawLine(padding + yAxisLabelWidth, height - padding, padding + yAxisLabelWidth + chartWidth,
-                        height - padding);
+                    g2.setColor(c);
+                    g2.fillRoundRect(x, y, barW, barH, 5, 5);
 
-                // Draw X-axis labels
-                g2d.setColor(Color.GRAY);
-                String[] xLabels = {"T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"};
-                int numPoints = xLabels.length;
-
-                if (type.equals("BAR_ORANGE")) {
-                    xLabels = new String[]{"T2", "T3", "T4", "T5", "T6", "T7", "CN"};
-                    numPoints = 7;
-                }
-
-                int spacing;
-                if (numPoints > 1) {
-                    spacing = numPoints - 1;
-                } else {
-                    spacing = 1;
-                }
-
-                for (int i = 0; i < xLabels.length; i++) {
-                    if (type.equals("BAR_ORANGE") && i >= numPoints)
-                        break;
-
-                    int x;
-                    x = padding + yAxisLabelWidth + i * chartWidth / spacing;
-
-                    String label = xLabels[i];
-                    g2d.drawString(label, x - g2d.getFontMetrics().stringWidth(label) / 2, height - padding + labelPadding);
-                }
-
-                // Draw Y-axis labels
-                g2d.setColor(Color.GRAY);
-                if (type.startsWith("LINE")) {
-                    String[] yLabels = {"0.0", "0.4", "0.8", "1.2", "1.6B"};
-                    int numYLabels = yLabels.length;
-
-                    for (int i = 0; i < numYLabels; i++) {
-                        int y = height - padding - i * (chartHeight / (numYLabels - 1));
-                        String label = yLabels[i];
-
-                        if (i > 0) {
-                            g2d.setColor(new Color(240, 240, 240));
-                            g2d.drawLine(padding + yAxisLabelWidth, y, padding + yAxisLabelWidth + chartWidth, y);
-                            g2d.setColor(Color.GRAY);
-                        }
-                        g2d.drawString(label, padding, y + g2d.getFontMetrics().getHeight() / 4);
-                    }
-                } else if (type.equals("BAR_GREEN")) {
-                    String[] yLabels = {"0", "65", "130", "195", "260"};
-                    int numYLabels = yLabels.length;
-                    for (int i = 0; i < numYLabels; i++) {
-                        int y = height - padding - i * (chartHeight / (numYLabels - 1));
-                        String label = yLabels[i];
-                        g2d.drawString(label, padding, y + g2d.getFontMetrics().getHeight() / 4);
-                    }
-                } else if (type.equals("BAR_ORANGE")) {
-                    String[] yLabels = {"0", "25", "50", "75", "100"};
-                    int numYLabels = yLabels.length;
-                    for (int i = 0; i < numYLabels; i++) {
-                        int y = height - padding - i * (chartHeight / (numYLabels - 1));
-                        String label = yLabels[i];
-                        g2d.drawString(label, padding, y + g2d.getFontMetrics().getHeight() / 4);
-                    }
-                }
-
-                // Draw placeholder data
-                g2d.setColor(color);
-
-                if (type.startsWith("LINE")) {
-                    double[] revenueData = {0.88, 0.92, 0.83, 1.15, 1.25, 1.45, 1.55, 1.5, 1.25, 1.15, 0.95, 1.35};
-                    double maxVal = 1.6;
-                    double minVal = 0.0;
-                    double range = maxVal - minVal;
-
-                    g2d.setStroke(new BasicStroke(2));
-                    for (int i = 0; i < xLabels.length; i++) {
-                        int pX1 = padding + yAxisLabelWidth + i * chartWidth / spacing;
-                        int pY1 = height - padding - (int) ((revenueData[i] - minVal) * chartHeight / range);
-
-                        if (i < xLabels.length - 1) {
-                            int pX2 = padding + yAxisLabelWidth + (i + 1) * chartWidth / spacing;
-                            int pY2 = height - padding - (int) ((revenueData[i + 1] - minVal) * chartHeight / range);
-
-                            g2d.drawLine(pX1, pY1, pX2, pY2);
-                        }
-                        g2d.fillOval(pX1 - 3, pY1 - 3, 6, 6);
-                    }
-                } else {
-                    int barWidth = chartWidth / spacing / 3;
-
-                    for (int i = 0; i < numPoints; i++) {
-                        double val = 0;
-                        double chartMax = 1;
-
-                        if (type.equals("BAR_GREEN")) {
-                            double[] bookingData = {150, 135, 190, 180, 220, 240, 255, 250, 200, 195, 170, 230};
-                            val = bookingData[i];
-                            chartMax = 260;
-                        } else if (type.equals("BAR_ORANGE")) {
-                            double[] rateData = {85, 78, 92, 90, 95, 98, 99};
-                            val = rateData[i];
-                            chartMax = 100;
-                        }
-
-                        if (val > 0) {
-                            int barHeight = (int) (val * chartHeight / chartMax);
-                            int xCenter = padding + yAxisLabelWidth + i * chartWidth / spacing;
-                            int x = xCenter - (barWidth / 2);
-                            int y = height - padding - barHeight;
-                            g2d.fillRect(x, y, barWidth, barHeight);
-                        }
+                    if (data[i] > 0) {
+                        g2.setColor(Color.DARK_GRAY);
+                        g2.setFont(new Font("SansSerif", Font.PLAIN, 9));
+                        g2.drawString(String.valueOf(data[i]), x + barW/2 - 5, y - 5);
                     }
                 }
             }
         }
 
-        /**
-         * Lớp Placeholder cho biểu đồ tròn (Pie Chart)
-         */
-        private static class PieChartPlaceholder extends JPanel {
-            private final Color[] colors = {
-                    new Color(70, 130, 180), // Standard 35%
-                    new Color(46, 204, 113), // Deluxe 30%
-                    new Color(255, 179, 0), // Suite 20%
-                    new Color(217, 30, 24) // Presidential 15%
-            };
-            private final int[] percentages = {35, 30, 20, 15};
-            private final String[] labels = {"Standard 35%", "Deluxe 30%", "Suite 20%", "Presidential 15%"};
+        private static class PieChartPanel extends JPanel {
+            private Map<String, Integer> data;
+            private Color[] colors = {new Color(59, 130, 246), new Color(16, 185, 129), new Color(245, 158, 11), new Color(239, 68, 68), new Color(139, 92, 246)};
+            public PieChartPanel(Map<String, Integer> data) { this.data = data; setBackground(Color.WHITE); }
+            @Override protected void paintComponent(Graphics g) {
+                super.paintComponent(g); Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            public PieChartPlaceholder() {
-                setPreferredSize(new Dimension(500, 250));
-                setBackground(COLOR_WHITE);
-                setLayout(new GridBagLayout());
-
-                // Replicate the legend arrangement (Right side of the pie)
-                JPanel legendPanel = new JPanel();
-                legendPanel.setOpaque(false);
-                legendPanel.setLayout(new BoxLayout(legendPanel, BoxLayout.Y_AXIS));
-                legendPanel.setBorder(new EmptyBorder(0, 20, 0, 0));
-
-                for (int i = 0; i < labels.length; i++) {
-                    JLabel label = new JLabel(labels[i]);
-                    label.setForeground(colors[i]);
-                    label.setFont(new Font("SansSerif", Font.BOLD, 12));
-                    legendPanel.add(label);
+                if(data == null || data.isEmpty()) {
+                    g2.setColor(Color.GRAY);
+                    g2.drawString("Chưa có dữ liệu", getWidth()/2 - 40, getHeight()/2); return;
                 }
 
-                GridBagConstraints gbc = new GridBagConstraints();
+                int total = 0; for(int v : data.values()) total += v;
+                if(total == 0) return;
 
-                // Add Pie Chart (Custom Paint)
-                gbc.gridx = 0;
-                gbc.weightx = 1.0;
-                gbc.fill = GridBagConstraints.BOTH;
-                add(new PiePanel(), gbc);
+                int d = Math.min(getWidth(), getHeight()) - 40;
+                int x = 10, y = (getHeight()-d)/2;
 
-                // Add Legend
-                gbc.gridx = 1;
-                gbc.weightx = 0.5;
-                gbc.fill = GridBagConstraints.NONE;
-                add(legendPanel, gbc);
-            }
+                int startAngle = 90;
+                int i = 0;
+                int legendY = 20;
 
-            private class PiePanel extends JPanel {
-                public PiePanel() {
-                    setOpaque(false);
-                    setPreferredSize(new Dimension(200, 200));
-                }
+                for(Map.Entry<String, Integer> entry : data.entrySet()) {
+                    int angle = (int)(entry.getValue() * 360.0 / total);
+                    g2.setColor(colors[i % colors.length]);
+                    g2.fillArc(x, y, d, d, startAngle, angle);
 
-                @Override
-                protected void paintComponent(Graphics g) {
-                    super.paintComponent(g);
-                    Graphics2D g2d = (Graphics2D) g;
-                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                    int diameter = Math.min(getWidth(), getHeight()) - 20;
-                    int x = (getWidth() - diameter) / 2;
-                    int y = (getHeight() - diameter) / 2;
-
-                    int startAngle = 90;
-                    for (int i = 0; i < percentages.length; i++) {
-                        int angle = (int) (percentages[i] * 3.6);
-                        g2d.setColor(colors[i]);
-                        g2d.fillArc(x, y, diameter, diameter, startAngle, -angle);
-                        startAngle -= angle;
+                    // Vẽ Legend bên cạnh
+                    if (getWidth() > d + 50) {
+                        g2.fillRect(d + 30, legendY, 10, 10);
+                        g2.setColor(Color.GRAY);
+                        g2.setFont(new Font("SansSerif", Font.PLAIN, 11));
+                        g2.drawString(entry.getKey() + " (" + entry.getValue() + ")", d + 45, legendY + 10);
+                        legendY += 20;
                     }
+
+                    startAngle += angle;
+                    i++;
                 }
+                // Donut hole
+                g2.setColor(Color.WHITE);
+                g2.fillOval(x + d/4, y + d/4, d/2, d/2);
             }
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // =================================================================================
     // PANEL NỘI DUNG 6: KHUYẾN MÃI
     // =================================================================================
@@ -2290,4 +2249,3 @@ public class GUI_NhanVienQuanLy extends JFrame {
         }
     }
 }
-

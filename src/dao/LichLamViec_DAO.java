@@ -11,15 +11,31 @@ public class LichLamViec_DAO {
 
     public List<LichLamViec> getLichLamTheoMaNV(String maNV) {
         List<LichLamViec> ds = new ArrayList<>();
-        try {
-            Connection con = ConnectDB.getConnection();
-            String sql = "SELECT * FROM LichLamViec WHERE maNV = ? ORDER BY ngayLam";
-            PreparedStatement ps = con.prepareStatement(sql);
+
+        String sql = """
+        DECLARE @today DATE = CAST(GETDATE() AS DATE);
+        DECLARE @thuHai DATE = DATEADD(
+            DAY,
+            -((DATEPART(WEEKDAY, @today) + @@DATEFIRST - 2) % 7),
+            @today
+        );
+
+        SELECT *
+        FROM LichLamViec
+        WHERE maNV = ?
+          AND ngayLam BETWEEN @thuHai AND DATEADD(DAY, 6, @thuHai)
+        ORDER BY ngayLam
+    """;
+
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
             ps.setString(1, maNV);
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
                 LichLamViec llv = new LichLamViec(
+                        rs.getInt("maLichLam"),
                         rs.getString("maNV"),
                         rs.getDate("ngayLam"),
                         rs.getString("caLam"),
@@ -27,11 +43,7 @@ public class LichLamViec_DAO {
                         rs.getTime("gioKetThuc"),
                         rs.getString("gioCong"),
                         rs.getString("tangCa"),
-                        rs.getString("nhiemVu"),
-                        rs.getString("thoiGianNV"),
-                        rs.getString("trangThai"),
-                        rs.getString("ghiChu"),
-                        rs.getString("trangThaiNhiemVu")
+                        rs.getString("trangThai")
                 );
                 ds.add(llv);
             }
@@ -40,6 +52,7 @@ public class LichLamViec_DAO {
         }
         return ds;
     }
+
 
     //tổng giờ làm
     public int tinhTongGioLamTrongTuan(String maNV) {
@@ -114,23 +127,6 @@ WHERE maNV = ?
         return result;
     }
 
-    //đếm số yêu cầu
-    public int getSoGhiChu(String maNV) {
-        int count = 0;
-        String sql = "SELECT COUNT(*) AS soGhiChu FROM LichLamViec WHERE maNV = ? AND ghiChu IS NOT NULL AND ghiChu <> ''";
-
-        try (Connection con = ConnectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, maNV);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                count = rs.getInt("soGhiChu");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return count;
-    }
 
 
     //đếm giờ tăng ca
@@ -138,13 +134,18 @@ WHERE maNV = ?
         int tongGio = 0;
         String sql = """
         SELECT SUM(
-            DATEDIFF(MINUTE, 
-                CAST(LEFT(tangCa,5) AS TIME),
-                CAST(RIGHT(tangCa,5) AS TIME)
-            ) / 60
+            CASE 
+                WHEN tangCa LIKE '%[0-2][0-9]:[0-5][0-9]%-%[0-2][0-9]:[0-5][0-9]%'
+                THEN DATEDIFF(
+                    MINUTE,
+                    TRY_CAST(REPLACE(LEFT(tangCa,5),' ','') AS TIME),
+                    TRY_CAST(REPLACE(RIGHT(tangCa,5),' ','') AS TIME)
+                ) / 60
+                ELSE 0
+            END
         ) AS tongGioTangCa
         FROM LichLamViec
-        WHERE maNV = ? AND tangCa IS NOT NULL AND tangCa <> ''
+        WHERE maNV = ?
     """;
 
         try (Connection con = ConnectDB.getConnection();
@@ -160,5 +161,30 @@ WHERE maNV = ?
         return tongGio;
     }
 
+
+    public void capNhatTrangThaiTheoNgay() {
+        String sql = """
+        UPDATE LichLamViec
+        SET trangThai =
+            CASE
+                WHEN DATENAME(WEEKDAY, ngayLam) IN (N'Saturday', N'Sunday')
+                    THEN N'Nghỉ'
+                WHEN CAST(ngayLam AS DATE) < CAST(GETDATE() AS DATE)
+                    THEN N'Hoàn thành'
+                WHEN CAST(ngayLam AS DATE) = CAST(GETDATE() AS DATE)
+                    THEN N'Đang làm'
+                ELSE N'Sắp tới'
+            END
+    """;
+
+        try (var con = ConnectDB.getConnection();
+             var ps = con.prepareStatement(sql)) {
+
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 }

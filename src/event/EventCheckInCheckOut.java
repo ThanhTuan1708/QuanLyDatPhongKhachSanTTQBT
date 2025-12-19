@@ -357,8 +357,8 @@ public class EventCheckInCheckOut {
                 if ((Boolean) view.getTableModel().getValueAt(i, 0)) {
                     selectedMaPhieu.add(safeGetValueAt(i, 1));
                     selectedMaPhong.add(safeGetValueAt(i, 4));
-                    GUI_NhanVienLeTan.PanelCheckInCheckOut.CustomerInfo info = (GUI_NhanVienLeTan.PanelCheckInCheckOut.CustomerInfo) view.getTableModel().getValueAt(i, 2);
-                    selectedTenKH.add(info != null ? info.name : "N/A");
+                    String tenKH = safeGetValueAt(i, 2);
+                    selectedTenKH.add(tenKH);
                 }
             }
             int confirm = JOptionPane.showConfirmDialog(view,
@@ -400,5 +400,10 @@ public class EventCheckInCheckOut {
             return "N/A"; // Trả về "N/A" thay vì gây lỗi
         }
         return value.toString();
+    }
+
+    public void forceCheckOutMode() {
+        isCheckInMode = false;
+        updateButtonState();
     }
 }

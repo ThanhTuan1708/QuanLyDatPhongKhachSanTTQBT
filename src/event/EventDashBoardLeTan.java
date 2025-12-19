@@ -10,16 +10,26 @@ import java.awt.event.MouseEvent;
 
 public class EventDashBoardLeTan {
 
-    public static void addStatBoxClickEvent(JPanel box, String type) {
-        box.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    public static void addStatBoxClickEvent(
+            JPanel box,
+            String type,
+            Runnable callback
+    ) {
+        box.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         box.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+
                 if ("checkin".equalsIgnoreCase(type)) {
-                    new GUI_NhanVienLeTan.GUI_CheckIn().setVisible(true);
+                    GUI_NhanVienLeTan.GUI_CheckIn gui =
+                            new GUI_NhanVienLeTan.GUI_CheckIn(callback);
+                    gui.setVisible(true);
+
                 } else if ("checkout".equalsIgnoreCase(type)) {
-                    new GUI_NhanVienLeTan.GUI_CheckOut().setVisible(true);
+                    GUI_NhanVienLeTan.GUI_CheckOut gui =
+                            new GUI_NhanVienLeTan.GUI_CheckOut(callback);
+                    gui.setVisible(true);
                 }
             }
 

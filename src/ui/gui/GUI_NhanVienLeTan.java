@@ -368,9 +368,18 @@ public class GUI_NhanVienLeTan extends JFrame {
         private final Color STAT_BG_1 = new Color(218, 240, 255);
         private final Color STAT_BG_2 = new Color(230, 235, 255);
         private final Color STAT_BG_3 = new Color(255, 235, 240);
+        private JLabel lblCheckIn;
+        private JLabel lblCheckOut;
 
         public PanelLeTanContent(NhanVien nhanVienDangNhap) {
             this.nhanVien = nhanVienDangNhap; // Lưu nhân viên đăng nhập
+            // CẬP NHẬT TRẠNG THÁI LỊCH TRONG SQL
+            new LichLamViec_DAO().capNhatTrangThaiTheoNgay();
+
+            // UPDATE maLichLam NGAY KHI MỞ UI
+            NhiemVuCaLam_DAO nvDAO = new NhiemVuCaLam_DAO();
+            nvDAO.capNhatMaLichLamHomNay(nhanVien.getMaNV());
+
             // --- Thiết lập cho JPanel này ---
             setLayout(new BorderLayout());
             setBackground(GUI_NhanVienLeTan.MAIN_BG);
@@ -459,13 +468,11 @@ public class GUI_NhanVienLeTan extends JFrame {
             JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 6));
             left.setOpaque(false);
 
-            // --- Lấy thông tin từ nhân viên ---
             String tenNV = nhanVien != null ? nhanVien.getTenNV() : "Không rõ tên";
             String email = nhanVien != null ? nhanVien.getEmail() : "Không có email";
             String sdt = nhanVien != null ? nhanVien.getSoDT() : "Không có SĐT";
             String maNV = nhanVien != null ? nhanVien.getMaNV() : "N/A";
 
-            // --- Tạo avatar bằng ký tự đầu tên ---
             String initials = "LT";
             if (tenNV != null && !tenNV.isBlank()) {
                 String[] parts = tenNV.trim().split(" ");
@@ -482,7 +489,6 @@ public class GUI_NhanVienLeTan extends JFrame {
             avatar.setBorder(new LineBorder(new Color(100, 120, 220), 2, true));
             left.add(avatar);
 
-            // --- Tạo phần thông tin ---
             JPanel info = new JPanel();
             info.setOpaque(false);
             info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
@@ -490,7 +496,8 @@ public class GUI_NhanVienLeTan extends JFrame {
             JLabel name = new JLabel(tenNV);
             name.setFont(new Font("SansSerif", Font.BOLD, 16));
 
-            JLabel details = new JLabel(String.format("<html>%s • %s • Mã NV: %s</html>", email, sdt, maNV));
+            JLabel details = new JLabel(String.format(
+                    "<html>%s • %s • Mã NV: %s</html>", email, sdt, maNV));
             details.setForeground(Color.GRAY);
             details.setFont(new Font("SansSerif", Font.PLAIN, 12));
 
@@ -503,43 +510,51 @@ public class GUI_NhanVienLeTan extends JFrame {
             JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
             right.setOpaque(false);
 
-            LichLamViec_DAO dao = new LichLamViec_DAO();
-            int tongGioTuan = dao.tinhTongGioLamTrongTuan(nhanVien.getMaNV());
-            JPanel boxHours = createStatBox(String.valueOf(tongGioTuan), "Giờ tuần này", STAT_BG_1);
             PhieuDatPhong_DAO pdpDAO = new PhieuDatPhong_DAO();
-            //check in
-            int soCheckInHomNay = pdpDAO.demCheckInHomNay();
+            LichLamViec_DAO lichDAO = new LichLamViec_DAO();
 
-            JPanel boxCheckIn = createStatBox(
-                    String.valueOf(soCheckInHomNay),
-                    "Check-in",
-                    STAT_BG_2
+            // Label PHẢI là field để reload
+            lblCheckIn = new JLabel(String.valueOf(pdpDAO.demCheckInHomNay()));
+            lblCheckOut = new JLabel(String.valueOf(pdpDAO.demCheckOutHomNay()));
+
+            JLabel lblHours = new JLabel(
+                    String.valueOf(lichDAO.tinhTongGioLamTrongTuan(nhanVien.getMaNV()))
             );
 
-            //check out
-            int soCheckOutHomNay = pdpDAO.demCheckOutHomNay();
+            JPanel boxHours = createStatBox(lblHours, "Giờ tuần này", STAT_BG_1);
+            JPanel boxCheckIn = createStatBox(lblCheckIn, "Check-in", STAT_BG_2);
+            JPanel boxCheckOut = createStatBox(lblCheckOut, "Check-out", STAT_BG_3);
 
-            JPanel boxCheckOut = createStatBox(
-                    String.valueOf(soCheckOutHomNay),
-                    "Check-out",
-                    STAT_BG_3
+            // Click → mở form → reload lại dashboard
+            EventDashBoardLeTan.addStatBoxClickEvent(
+                    boxCheckIn, "checkin", this::reloadDashboardStats
             );
 
-
-
-            // --- Gắn sự kiện click ---
-            EventDashBoardLeTan.addStatBoxClickEvent(boxCheckIn, "checkin");
-            EventDashBoardLeTan.addStatBoxClickEvent(boxCheckOut, "checkout");
+            EventDashBoardLeTan.addStatBoxClickEvent(
+                    boxCheckOut, "checkout", this::reloadDashboardStats
+            );
 
             right.add(boxHours);
             right.add(boxCheckIn);
             right.add(boxCheckOut);
 
-            // ===== Combine =====
             card.add(left, BorderLayout.WEST);
             card.add(right, BorderLayout.EAST);
 
             return card;
+        }
+
+        public void reloadDashboardStats() {
+
+            // cập nhật trạng thái lịch theo ngày trong SQL
+            new LichLamViec_DAO().capNhatTrangThaiTheoNgay();
+
+            PhieuDatPhong_DAO pdpDAO = new PhieuDatPhong_DAO();
+
+            lblCheckIn.setText(String.valueOf(pdpDAO.demCheckInHomNay()));
+            lblCheckOut.setText(String.valueOf(pdpDAO.demCheckOutHomNay()));
+            lblCheckInToday.setText(String.valueOf(pdpDAO.demCheckInHomNay()));
+            lblCheckOutToday.setText(String.valueOf(pdpDAO.demCheckOutHomNay()));
         }
 
         private JPanel createSchedulePanel(String maNV) {
@@ -620,29 +635,20 @@ public class GUI_NhanVienLeTan extends JFrame {
                 status.setFont(new Font("SansSerif", Font.PLAIN, 11));
                 status.setBorder(new EmptyBorder(4, 10, 4, 10));
 
-                String tt = llv.getTrangThai();
+                String tt;
 
-                // Lấy thứ trong tuầnNVNV
-
-                // Nếu là Thứ 7 hoặc Chủ nhật → Nghỉ
                 if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) {
                     tt = "Nghỉ";
+                } else if (ngayLam.isBefore(today)) {
+                    tt = "Hoàn thành";
+                } else if (ngayLam.equals(today)) {
+                    tt = "Đang làm";
                 } else {
-                    // Nếu không có trạng thái thì tự động xác định theo ngày
-                    if (tt == null || tt.isEmpty()) {
-                        if (ngayLam.isBefore(today)) {
-                            tt = "Hoàn thành";
-                        } else if (ngayLam.equals(today)) {
-                            tt = "Đang làm";
-                        } else {
-                            tt = "Chưa làm";
-                        }
-                    }
+                    tt = "Sắp tới";
                 }
 
                 status.setText(tt);
 
-                // Đặt màu theo trạng thái
                 switch (tt) {
                     case "Hoàn thành" -> {
                         status.setBackground(new Color(220, 255, 230));
@@ -652,9 +658,9 @@ public class GUI_NhanVienLeTan extends JFrame {
                         status.setBackground(new Color(230, 245, 255));
                         status.setForeground(new Color(10, 90, 180));
                     }
-                    case "Chưa làm" -> {
-                        status.setBackground(new Color(255, 245, 230));
-                        status.setForeground(new Color(180, 110, 20));
+                    case "Sắp tới" -> {
+                        status.setBackground(new Color(245, 240, 255));
+                        status.setForeground(new Color(120, 80, 160));
                     }
                     case "Nghỉ" -> {
                         status.setBackground(new Color(245, 245, 245));
@@ -712,7 +718,13 @@ public class GUI_NhanVienLeTan extends JFrame {
 
             // --- Lấy dữ liệu từ SQL ---
             NhiemVuCaLam_DAO dao = new NhiemVuCaLam_DAO();
+
+            //  TỰ ĐỘNG CẬP NHẬT TRẠNG THÁI THEO GIỜ
+            dao.capNhatTrangThaiNhiemVuHomNay(nhanVien.getMaNV());
+
+            //  SAU ĐÓ MỚI LOAD DATA
             List<NhiemVu> list = dao.getNhiemVuHomNay(nhanVien.getMaNV());
+
 
             String[] columns = {"Thời gian", "Nhiệm vụ", "Trạng thái", "Ghi chú"};
             Object[][] data = new Object[list.size()][4];
@@ -736,6 +748,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             table.setIntercellSpacing(new Dimension(0, 0));
             table.setRowHeight(40);
             table.getTableHeader().setReorderingAllowed(false);
+
 
             // Renderer trạng thái
             table.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer() {
@@ -771,6 +784,9 @@ public class GUI_NhanVienLeTan extends JFrame {
             return tasks;
         }
 
+        private JLabel lblCheckInToday;
+        private JLabel lblCheckOutToday;
+
         private JPanel createStatsPanel() {
             JPanel stats = new JPanel(new GridLayout(3, 2, 12, 12));
             stats.setOpaque(false);
@@ -779,103 +795,121 @@ public class GUI_NhanVienLeTan extends JFrame {
 
             LichLamViec_DAO lichLamViecDAO = new LichLamViec_DAO();
             NhiemVuCaLam_DAO nhiemVuDAO = new NhiemVuCaLam_DAO();
-
-            //  Tổng giờ làm trong tuần
-            int tongGio = lichLamViecDAO.tinhTongGioLamTrongTuan(maNV);
-            stats.add(createStatCard(tongGio + "h", "Tổng giờ làm", STAT_BG_1));
-
-            //  Thống kê ca làm
-            int[] thongKe = lichLamViecDAO.getThongKeCaTuan(maNV);
-            int caHoanThanh = thongKe[0];
-            int tongCa = thongKe[1];
-            stats.add(createStatCard(caHoanThanh + "/" + tongCa, "Ca hoàn thành",
-                    new Color(220, 255, 230)));
-
-            // Check-in / Check-out (chưa có logic → để tạm)
             PhieuDatPhong_DAO pdpDAO = new PhieuDatPhong_DAO();
-            int soCheckInHomNay = pdpDAO.demCheckInHomNay();
+
+            // ===== Tổng giờ làm =====
+            int tongGio = lichLamViecDAO.tinhTongGioLamTrongTuan(maNV);
+            stats.add(createStatCard(
+                    new JLabel(tongGio + "h"),
+                    "Tổng giờ làm",
+                    STAT_BG_1
+            ));
+
+            // ===== Ca làm =====
+            int[] thongKe = lichLamViecDAO.getThongKeCaTuan(maNV);
+            stats.add(createStatCard(
+                    new JLabel(thongKe[0] + "/" + thongKe[1]),
+                    "Ca hoàn thành",
+                    new Color(220, 255, 230)
+            ));
+
+            // ===== CHECK IN =====
+            lblCheckInToday = new JLabel(String.valueOf(pdpDAO.demCheckInHomNay()));
 
             JPanel cardCheckIn = createStatCard(
-                    String.valueOf(soCheckInHomNay),
+                    lblCheckInToday,
                     "Check-in hôm nay",
                     new Color(245, 235, 255)
             );
 
-            // thêm click
             cardCheckIn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             cardCheckIn.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    new GUI_CheckIn().setVisible(true);
+                    new GUI_CheckIn(() -> reloadDashboardStats()).setVisible(true);
                 }
             });
 
             stats.add(cardCheckIn);
 
-
-            int soCheckOutHomNay = pdpDAO.demCheckOutHomNay();
+            // ===== CHECK OUT =====
+            lblCheckOutToday = new JLabel(String.valueOf(pdpDAO.demCheckOutHomNay()));
 
             JPanel cardCheckOut = createStatCard(
-                    String.valueOf(soCheckOutHomNay),
+                    lblCheckOutToday,
                     "Check-out hôm nay",
-                    new Color(255, 240, 230) // đổi màu nhẹ cho khác check-in (tuỳ thích)
+                    new Color(255, 240, 230)
             );
 
-            // thêm click
             cardCheckOut.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             cardCheckOut.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    new GUI_CheckOut().setVisible(true);
+                    new GUI_CheckOut(() -> reloadDashboardStats()).setVisible(true);
                 }
             });
 
             stats.add(cardCheckOut);
 
-            // Số yêu cầu (ghi chú) → lấy từ NhiemVu
+            // ===== Yêu cầu =====
             int soGhiChu = nhiemVuDAO.getSoGhiChu(maNV);
-            stats.add(createStatCard(String.valueOf(soGhiChu), "Yêu cầu",
-                    new Color(255, 235, 245)));
+            stats.add(createStatCard(
+                    new JLabel(String.valueOf(soGhiChu)),
+                    "Yêu cầu",
+                    new Color(255, 235, 245)
+            ));
 
-            // Tổng giờ tăng ca
-            int tongGioTangCa = lichLamViecDAO.getTongGioTangCaInt(maNV);
-            stats.add(createStatCard(tongGioTangCa + "h", "Tăng ca",
-                    new Color(250, 245, 230)));
+            // ===== Tăng ca =====
+            int tangCa = lichLamViecDAO.getTongGioTangCaInt(maNV);
+            stats.add(createStatCard(
+                    new JLabel(tangCa + "h"),
+                    "Tăng ca",
+                    new Color(250, 245, 230)
+            ));
 
             return stats;
         }
 
-        private JPanel createStatBox(String value, String label, Color bg) {
+        private JPanel createStatBox(JLabel valueLabel, String label, Color bg) {
             JPanel box = new JPanel(new BorderLayout());
             box.setPreferredSize(new Dimension(110, 60));
             box.setBackground(bg);
             box.setBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER));
-            box.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            JLabel valueLabel = new JLabel(value);
+
             valueLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
             valueLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
             JLabel textLabel = new JLabel(label);
             textLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
             textLabel.setForeground(Color.GRAY);
             textLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
             box.add(valueLabel, BorderLayout.CENTER);
             box.add(textLabel, BorderLayout.SOUTH);
+
             return box;
         }
 
-        private JPanel createStatCard(String value, String label, Color bg) {
+        private JPanel createStatCard(
+                JLabel valueLabel,
+                String label,
+                Color bg
+        ) {
             JPanel card = new JPanel(new BorderLayout());
             card.setBackground(bg);
             card.setBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER));
-            JLabel valueLabel = new JLabel(value);
+
             valueLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
             valueLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
             JLabel textLabel = new JLabel(label);
             textLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
             textLabel.setForeground(Color.GRAY);
             textLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
             card.add(valueLabel, BorderLayout.CENTER);
             card.add(textLabel, BorderLayout.SOUTH);
+
             return card;
         }
 
@@ -4115,6 +4149,7 @@ public class GUI_NhanVienLeTan extends JFrame {
 
     //danh sach check in
     public static class GUI_CheckIn extends JFrame {
+        private Runnable callback;
 
         // ===== CARD =====
         private CardLayout cardLayout;
@@ -4134,6 +4169,20 @@ public class GUI_NhanVienLeTan extends JFrame {
         // =====================================================
         // ================== CONSTRUCTOR ======================
         // =====================================================
+        public GUI_CheckIn(Runnable callback) {
+            this();               // ⭐ GỌI KHỞI TẠO UI
+            this.callback = callback;
+
+            addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    if (callback != null) {
+                        callback.run(); // 🔄 refresh lại UI lễ tân
+                    }
+                }
+            });
+        }
+
         public GUI_CheckIn() {
 
             FlatLightLaf.setup(); // UI hiện đại
@@ -4447,6 +4496,7 @@ public class GUI_NhanVienLeTan extends JFrame {
 
     //danh sach check out
     public static class GUI_CheckOut extends JFrame {
+        private Runnable callback;
 
         // ===== CARD =====
         private CardLayout cardLayout;
@@ -4466,6 +4516,21 @@ public class GUI_NhanVienLeTan extends JFrame {
         // =====================================================
         // ================== CONSTRUCTOR ======================
         // =====================================================
+
+        public GUI_CheckOut(Runnable callback) {
+            this();               // ⭐ GỌI KHỞI TẠO UI
+            this.callback = callback;
+
+            addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    if (callback != null) {
+                        callback.run(); // 🔄 refresh lại UI lễ tân
+                    }
+                }
+            });
+        }
+
         public GUI_CheckOut() {
 
             FlatLightLaf.setup();

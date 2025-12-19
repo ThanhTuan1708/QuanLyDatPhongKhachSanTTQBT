@@ -162,4 +162,29 @@ WHERE maNV = ?
     }
 
 
+    public void capNhatTrangThaiTheoNgay() {
+        String sql = """
+        UPDATE LichLamViec
+        SET trangThai =
+            CASE
+                WHEN DATENAME(WEEKDAY, ngayLam) IN (N'Saturday', N'Sunday')
+                    THEN N'Nghỉ'
+                WHEN CAST(ngayLam AS DATE) < CAST(GETDATE() AS DATE)
+                    THEN N'Hoàn thành'
+                WHEN CAST(ngayLam AS DATE) = CAST(GETDATE() AS DATE)
+                    THEN N'Đang làm'
+                ELSE N'Sắp tới'
+            END
+    """;
+
+        try (var con = ConnectDB.getConnection();
+             var ps = con.prepareStatement(sql)) {
+
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }

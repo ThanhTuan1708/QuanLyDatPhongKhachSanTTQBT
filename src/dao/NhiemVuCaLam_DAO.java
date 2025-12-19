@@ -117,6 +117,33 @@ ORDER BY nv.thoiGian
             return list;
         }
 
+        public void capNhatMaLichLamHomNay(String maNV) {
+
+            String sql = """
+        UPDATE nv
+        SET nv.maLichLam = llvToday.maLichLam
+        FROM NhiemVuCaLam nv
+        JOIN LichLamViec llvToday 
+            ON llvToday.maNV = ?
+           AND llvToday.ngayLam = CAST(GETDATE() AS DATE)
+        WHERE nv.maLichLam IS NULL
+           OR nv.maLichLam NOT IN (
+               SELECT maLichLam FROM LichLamViec
+               WHERE ngayLam = CAST(GETDATE() AS DATE)
+           )
+    """;
+
+            try (Connection con = ConnectDB.getConnection();
+                 PreparedStatement ps = con.prepareStatement(sql)) {
+
+                ps.setString(1, maNV);
+                ps.executeUpdate();
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
         public int getSoGhiChu(String maNV) {
             int count = 0;
 
@@ -143,6 +170,52 @@ ORDER BY nv.thoiGian
             }
             return count;
         }
+
+        public void capNhatTrangThaiNhiemVuHomNay(String maNV) {
+
+            String sql = """
+    DECLARE @now TIME = CAST(GETDATE() AS TIME);
+
+    ;WITH TaskToday AS (
+        SELECT nv.maNhiemVu, TRY_CONVERT(TIME, nv.thoiGian) AS thoiGian
+        FROM NhiemVuCaLam nv
+        JOIN LichLamViec llv ON nv.maLichLam = llv.maLichLam
+        WHERE llv.maNV = ?
+          AND CAST(llv.ngayLam AS DATE) = CAST(GETDATE() AS DATE)
+    ),
+    CurrentTask AS (
+        SELECT MAX(thoiGian) AS thoiGianDangLam
+        FROM TaskToday
+        WHERE thoiGian <= @now
+    )
+    UPDATE nv
+    SET trangThai =
+        CASE
+            WHEN t.thoiGian > @now THEN N'Chờ xử lý'
+            WHEN t.thoiGian = c.thoiGianDangLam THEN N'Chưa xong'
+            WHEN t.thoiGian < c.thoiGianDangLam THEN N'Hoàn thành'
+            ELSE nv.trangThai
+        END
+    FROM NhiemVuCaLam nv
+    JOIN LichLamViec llv ON nv.maLichLam = llv.maLichLam
+    JOIN TaskToday t ON nv.maNhiemVu = t.maNhiemVu
+    CROSS JOIN CurrentTask c
+    WHERE llv.maNV = ?
+      AND CAST(llv.ngayLam AS DATE) = CAST(GETDATE() AS DATE);
+    """;
+
+            try (Connection con = ConnectDB.getConnection();
+                 PreparedStatement ps = con.prepareStatement(sql)) {
+
+                ps.setString(1, maNV);
+                ps.setString(2, maNV);
+                ps.executeUpdate();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
 
     }
 

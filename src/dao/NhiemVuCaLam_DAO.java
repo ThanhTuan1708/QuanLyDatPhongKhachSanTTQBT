@@ -120,24 +120,24 @@ ORDER BY nv.thoiGian
         public void capNhatMaLichLamHomNay(String maNV) {
 
             String sql = """
-        UPDATE nv
-        SET nv.maLichLam = llvToday.maLichLam
-        FROM NhiemVuCaLam nv
-        JOIN LichLamViec llvToday 
-            ON llvToday.maNV = ?
-           AND llvToday.ngayLam = CAST(GETDATE() AS DATE)
-        WHERE nv.maLichLam IS NULL
-           OR nv.maLichLam NOT IN (
-               SELECT maLichLam FROM LichLamViec
-               WHERE ngayLam = CAST(GETDATE() AS DATE)
-           )
+        UPDATE nvcl
+        SET nvcl.maLichLam = llv.maLichLam
+        FROM NhiemVuCaLam nvcl
+        JOIN LichLamViec llv
+            ON llv.maNV = ?
+        WHERE llv.ngayLam = CAST(GETDATE() AS DATE)
+          AND (
+                nvcl.maLichLam IS NULL
+                OR nvcl.maLichLam <> llv.maLichLam
+              )
     """;
 
             try (Connection con = ConnectDB.getConnection();
                  PreparedStatement ps = con.prepareStatement(sql)) {
 
                 ps.setString(1, maNV);
-                ps.executeUpdate();
+                int rows = ps.executeUpdate();
+                System.out.println("Đã cập nhật " + rows + " nhiệm vụ");
 
             } catch (SQLException e) {
                 e.printStackTrace();

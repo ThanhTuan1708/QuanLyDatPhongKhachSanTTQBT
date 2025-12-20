@@ -21,12 +21,14 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -87,6 +89,10 @@ public class EventDatPhong {
             JOptionPane.showMessageDialog(view, "Lỗi khởi tạo DAO: " + e.getMessage(), "Lỗi nghiêm trọng", JOptionPane.ERROR_MESSAGE);
         }
     }
+    
+    public PanelDatPhongContent getView() {
+        return view;
+    }
 
     // Gắn listener tĩnh
     public void initListeners() {
@@ -108,13 +114,13 @@ public class EventDatPhong {
                 }
             }
         }
-        if (view.getPeopleGroup() != null) {
-            for (AbstractButton button : Collections.list(view.getPeopleGroup().getElements())) {
-                if (button instanceof JToggleButton) {
-                    button.addActionListener(e -> filterRooms());
-                }
-            }
-        }
+        
+        // Gắn sự kiện cho các bộ lọc mới
+        view.getFromDateChooser().addPropertyChangeListener("date", e -> filterRooms());
+        view.getToDateChooser().addPropertyChangeListener("date", e -> filterRooms());
+        view.getAdultSpinner().addChangeListener(e -> filterRooms());
+        view.getChildSpinner().addChangeListener(e -> filterRooms());
+
 
         if (view.getBtnBookLater() != null) {
             view.getBtnBookLater().addActionListener(e -> {
@@ -640,16 +646,14 @@ public class EventDatPhong {
     }
 
     public void filterRooms() {
-        // (Hàm này giữ nguyên, không cần thay đổi)
         // 1. Lấy trạng thái của các nút lọc
         String selectedTypeText = "Tất cả";
-        String selectedPeopleText = "Tất cả";
         String selectedFloorText = "Tất cả tầng";
         String selectedStatusText = "Tất cả trạng thái";
         ButtonGroup typeGroup = view.getTypeGroup();
-        ButtonGroup peopleGroup = view.getPeopleGroup();
         ButtonGroup floorGroup = view.getFloorGroup();
         ButtonGroup statusGroup = view.getStatusGroup();
+
         if (typeGroup != null) {
             for (AbstractButton button : Collections.list(typeGroup.getElements())) {
                 if (button instanceof JToggleButton) {
@@ -662,20 +666,7 @@ public class EventDatPhong {
                     }
                 }
             }
-        } else { System.err.println("Lỗi: typeGroup null!"); }
-        if (peopleGroup != null) {
-            for (AbstractButton button : Collections.list(peopleGroup.getElements())) {
-                if (button instanceof JToggleButton) {
-                    JToggleButton tb = (JToggleButton) button;
-                    if (tb.isSelected()) {
-                        selectedPeopleText = tb.getText();
-                        view.styleActivePeopleButton(tb);
-                    } else {
-                        view.resetButtonStyle(tb);
-                    }
-                }
-            }
-        } else { System.err.println("Lỗi: peopleGroup null!"); }
+        }
         if (floorGroup != null) {
             for (AbstractButton button : Collections.list(floorGroup.getElements())) {
                 if (button instanceof JToggleButton) {
@@ -688,7 +679,7 @@ public class EventDatPhong {
                     }
                 }
             }
-        } else { System.err.println("Lỗi: floorGroup null!"); }
+        }
         if (statusGroup != null) {
             for (AbstractButton button : Collections.list(statusGroup.getElements())) {
                 if (button instanceof JToggleButton) {
@@ -701,42 +692,28 @@ public class EventDatPhong {
                     }
                 }
             }
-        } else { System.err.println("Lỗi: statusGroup null!"); }
+        }
 
         // 2. Xử lý ngày và kiểm tra tính hợp lệ
-        String fromDateStr = view.getFromDate().getText().trim();
-        String toDateStr = view.getToDate().getText().trim();
-        java.util.Date tuNgay = null;
-        java.util.Date denNgay = null;
-        boolean hasDateFilter = !fromDateStr.equals("dd/MM/yyyy") && !toDateStr.equals("dd/MM/yyyy");
+        Date tuNgay = view.getFromDateChooser().getDate();
+        Date denNgay = view.getToDateChooser().getDate();
+        boolean hasDateFilter = tuNgay != null && denNgay != null;
+
         if (hasDateFilter) {
-            try {
-                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-                sdf.setLenient(false);
-                tuNgay = sdf.parse(fromDateStr);
-                denNgay = sdf.parse(toDateStr);
-                if (tuNgay.after(denNgay)) {
-                    JOptionPane.showMessageDialog(view, "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            } catch (ParseException e) {
-                JOptionPane.showMessageDialog(view, "Ngày không hợp lệ. Vui lòng nhập theo định dạng dd/MM/yyyy", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            if (tuNgay.after(denNgay)) {
+                JOptionPane.showMessageDialog(view, "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
         }
 
         // 3. Chuyển đổi các giá trị filter
         String tenLoaiPhongFilter = selectedTypeText.equals("Tất cả") ? null : selectedTypeText;
-        int soChuaFilter = -1;
-        if (selectedPeopleText.equals("1 người")) {
-            soChuaFilter = 1;
-        } else if (selectedPeopleText.equals("2 người")) {
-            soChuaFilter = 2;
-        } else if (selectedPeopleText.equals("3 người")) {
-            soChuaFilter = 3;
-        } else if (selectedPeopleText.equals("4+ người")) {
-            soChuaFilter = 4;
-        }
+        
+        // Lấy số lượng người từ spinner
+        int adults = (int) view.getAdultSpinner().getValue();
+        int children = (int) view.getChildSpinner().getValue();
+        int totalGuests = adults + children;
+
         Integer floorFilter = null;
         if (selectedFloorText.startsWith("Tầng ")) {
             try {
@@ -762,7 +739,7 @@ public class EventDatPhong {
         try {
             List<Phong> filteredList = phongDAO.getFilteredPhong(
                     tenLoaiPhongFilter,
-                    soChuaFilter,
+                    totalGuests, // Sử dụng tổng số khách
                     floorFilter,
                     statusFilter,
                     hasDateFilter ? tuNgay : null,

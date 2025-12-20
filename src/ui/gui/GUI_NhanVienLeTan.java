@@ -946,8 +946,10 @@ public class GUI_NhanVienLeTan extends JFrame {
         // --- Biến tham chiếu UI ---
         private JTextField searchField;
         private JComboBox<String> bookingFilterComboBox;
-        private JTextField fromDate; // Từ ngày
-        private JTextField toDate;   // Đến ngày
+        private JDateChooser fromDateChooser; // Từ ngày
+        private JDateChooser toDateChooser;   // Đến ngày
+        private JSpinner adultSpinner;
+        private JSpinner childSpinner;
         private JPanel cardListPanelContainer;
         private JPanel roomGridPanel;
         private JPanel filterButtonsPanel;
@@ -1023,8 +1025,10 @@ public class GUI_NhanVienLeTan extends JFrame {
         public ButtonGroup getFloorGroup() { return floorGroup; }
         public ButtonGroup getStatusGroup() { return statusGroup; }
         public Set<String> getSelectedRoomIds() { return selectedRoomIds; }
-        public JTextField getFromDate() { return fromDate; }
-        public JTextField getToDate() { return toDate; }
+        public JDateChooser getFromDateChooser() { return fromDateChooser; }
+        public JDateChooser getToDateChooser() { return toDateChooser; }
+        public JSpinner getAdultSpinner() { return adultSpinner; }
+        public JSpinner getChildSpinner() { return childSpinner; }
         public JButton getBtnBookLater() {
             return btnBookLater;
         }
@@ -1321,49 +1325,31 @@ public class GUI_NhanVienLeTan extends JFrame {
             JPanel datePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
             datePanel.setOpaque(false);
 
-            // Text field từ ngày
-            fromDate = new JTextField("dd/MM/yyyy");
-            fromDate.setPreferredSize(new Dimension(120, 28));
-            fromDate.setForeground(Color.GRAY);
-            fromDate.addFocusListener(new FocusAdapter() {
-                @Override
-                public void focusGained(FocusEvent e) {
-                    if (fromDate.getText().equals("dd/MM/yyyy")) {
-                        fromDate.setText("");
-                        fromDate.setForeground(Color.BLACK);
-                    }
-                }
+            // Date chooser for "from date"
+            fromDateChooser = new JDateChooser();
+            fromDateChooser.setDateFormatString("dd/MM/yyyy");
+            fromDateChooser.setPreferredSize(new Dimension(120, 28));
+            JTextFieldDateEditor fromEditor = (JTextFieldDateEditor) fromDateChooser.getDateEditor();
+            fromEditor.setEditable(false);
+            fromEditor.setBackground(Color.WHITE);
 
-                @Override 
-                public void focusLost(FocusEvent e) {
-                    if (fromDate.getText().isEmpty()) {
-                        fromDate.setText("dd/MM/yyyy");
-                        fromDate.setForeground(Color.GRAY);
-                    }
-                }
-            });
 
-            // Text field đến ngày
-            toDate = new JTextField("dd/MM/yyyy");
-            toDate.setPreferredSize(new Dimension(120, 28));
-            toDate.setForeground(Color.GRAY);
-            toDate.addFocusListener(new FocusAdapter() {
-                @Override
-                public void focusGained(FocusEvent e) {
-                    if (toDate.getText().equals("dd/MM/yyyy")) {
-                        toDate.setText("");
-                        toDate.setForeground(Color.BLACK);
-                    }
-                }
+            // Date chooser for "to date"
+            toDateChooser = new JDateChooser();
+            toDateChooser.setDateFormatString("dd/MM/yyyy");
+            toDateChooser.setPreferredSize(new Dimension(120, 28));
+            JTextFieldDateEditor toEditor = (JTextFieldDateEditor) toDateChooser.getDateEditor();
+            toEditor.setEditable(false);
+            toEditor.setBackground(Color.WHITE);
 
-                @Override
-                public void focusLost(FocusEvent e) {
-                    if (toDate.getText().isEmpty()) {
-                        toDate.setText("dd/MM/yyyy");
-                        toDate.setForeground(Color.GRAY);
-                    }
-                }
-            });
+            // Spinners for number of guests
+            SpinnerModel adultModel = new SpinnerNumberModel(1, 1, 10, 1); // default, min, max, step
+            adultSpinner = new JSpinner(adultModel);
+            adultSpinner.setPreferredSize(new Dimension(60, 28));
+
+            SpinnerModel childModel = new SpinnerNumberModel(0, 0, 10, 1); // default, min, max, step
+            childSpinner = new JSpinner(childModel);
+            childSpinner.setPreferredSize(new Dimension(60, 28));
 
             // Thêm nút lọc
             JButton filterButton = new JButton("Lọc");
@@ -1379,10 +1365,14 @@ public class GUI_NhanVienLeTan extends JFrame {
                 }
             });
 
-            datePanel.add(new JLabel("Từ ngày"));
-            datePanel.add(fromDate);
-            datePanel.add(new JLabel("Đến ngày"));
-            datePanel.add(toDate);
+            datePanel.add(new JLabel("Từ ngày:"));
+            datePanel.add(fromDateChooser);
+            datePanel.add(new JLabel("Đến ngày:"));
+            datePanel.add(toDateChooser);
+            datePanel.add(new JLabel("Người lớn:"));
+            datePanel.add(adultSpinner);
+            datePanel.add(new JLabel("Trẻ em:"));
+            datePanel.add(childSpinner);
             datePanel.add(filterButton);
 
             topControls.add(datePanel, BorderLayout.WEST);
@@ -1449,17 +1439,6 @@ public class GUI_NhanVienLeTan extends JFrame {
             JToggleButton btnPresident = createFilterToggleButton("Tổng thống", typeGroup, false, controller);
             styleActiveTypeButton(btnAllTypes);
             
-            // Panel for capacity filters
-            JPanel peoplePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-            peoplePanel.setOpaque(false);
-            peopleGroup = new ButtonGroup();
-            JToggleButton btnAllPeople = createFilterToggleButton("Tất cả ", peopleGroup, true, controller);
-            JToggleButton btn1People = createFilterToggleButton("1 người", peopleGroup, false, controller);
-            JToggleButton btn2People = createFilterToggleButton("2 người", peopleGroup, false, controller);
-            JToggleButton btn3People = createFilterToggleButton("3 người", peopleGroup, false, controller);
-            JToggleButton btn4People = createFilterToggleButton("4+ người", peopleGroup, false, controller);
-            styleActivePeopleButton(btnAllPeople);
-            
             // Panel for floor filters
             JPanel floorPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
             floorPanel.setOpaque(false);
@@ -1491,12 +1470,6 @@ public class GUI_NhanVienLeTan extends JFrame {
             typePanel.add(btnFamily);
             typePanel.add(btnPresident);
 
-            peoplePanel.add(btnAllPeople);
-            peoplePanel.add(btn1People);
-            peoplePanel.add(btn2People);
-            peoplePanel.add(btn3People);
-            peoplePanel.add(btn4People);
-
             floorPanel.add(btnAllFloors);
             floorPanel.add(btnFloor1);
             floorPanel.add(btnFloor2);
@@ -1512,8 +1485,6 @@ public class GUI_NhanVienLeTan extends JFrame {
 
             // Add panels to main filter panel
             filterButtonsPanel.add(typePanel);
-            filterButtonsPanel.add(Box.createVerticalStrut(5));
-            filterButtonsPanel.add(peoplePanel);
             filterButtonsPanel.add(Box.createVerticalStrut(5));
             filterButtonsPanel.add(floorPanel);
             filterButtonsPanel.add(Box.createVerticalStrut(5));

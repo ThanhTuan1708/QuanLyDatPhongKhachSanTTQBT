@@ -239,6 +239,9 @@ public class BillDialog extends JDialog {
             if (ngayDen != null && ngayDi != null) {
                 soDem = ChronoUnit.DAYS.between(ngayDen.toLocalDate(), ngayDi.toLocalDate());
                 if (soDem == 0 && ngayDen.toLocalTime().isBefore(ngayDi.toLocalTime())) soDem = 1;
+                if(soDem <= 0) soDem = 1; // Đảm bảo ít nhất 1 đêm
+            } else {
+                soDem = 1; // Mặc định 1 đêm nếu thiếu ngày
             }
         }
         bookingPanel.add(createInfoRow("Ngày đến", ": " + ngayDenStr));
@@ -359,27 +362,28 @@ public class BillDialog extends JDialog {
 
         bottomPanel.add(createTotalRow("Tổng tiền hàng:", MONEY_FORMAT.format(subTotal) + " đ"));
 
-        double vatRate = (hoaDon != null) ? hoaDon.getVat() / 100.0 : 0.0;
-        double vatAmount = subTotal * vatRate;
-        if (vatAmount > 0) {
-            bottomPanel.add(createTotalRow("Thuế VAT (" + String.format("%.0f", vatRate * 100) + "%):", MONEY_FORMAT.format(vatAmount) + " đ"));
-        }
-
         double discountAmount = 0;
         KhuyenMai km = (hoaDon != null) ? hoaDon.getKhuyenMai() : null;
         if (km != null) {
             double chietKhau = km.getChietKhau() / 100.0;
-            discountAmount = subTotal * chietKhau; // Giả sử KM tính trên subTotal
+            discountAmount = subTotal * chietKhau;
             String kmName = km.getTenKhuyenMai();
             if (discountAmount > 0) {
                 bottomPanel.add(createTotalRow(kmName + " (" + String.format("%.0f", chietKhau * 100) + "%):", "- " + MONEY_FORMAT.format(discountAmount) + " đ"));
             }
         }
 
-        // TÍNH LẠI TỔNG TIỀN ĐỂ ĐẢM BẢO
-        double tongTienTinhLai = subTotal + vatAmount - discountAmount;
-        // double tongTienHD = (hoaDon != null) ? hoaDon.getTongTien() : 0.0; // Lấy từ HD có thể không chính xác nếu chưa cập nhật
-        JPanel finalTotalPanel = createTotalRow("Tổng cộng:", MONEY_FORMAT.format(tongTienTinhLai) + " đ");
+        double subTotalAfterDiscount = subTotal - discountAmount;
+        bottomPanel.add(createTotalRow("Thành tiền:", MONEY_FORMAT.format(subTotalAfterDiscount) + " đ"));
+
+        double vatRate = (hoaDon != null) ? hoaDon.getVat() / 100.0 : 0.0;
+        double vatAmount = subTotalAfterDiscount * vatRate;
+        if (vatAmount > 0) {
+            bottomPanel.add(createTotalRow("Thuế VAT (" + String.format("%.0f", vatRate * 100) + "%):", MONEY_FORMAT.format(vatAmount) + " đ"));
+        }
+
+        double finalTotal = subTotalAfterDiscount + vatAmount;
+        JPanel finalTotalPanel = createTotalRow("Tổng cộng:", MONEY_FORMAT.format(finalTotal) + " đ");
         for(Component c : finalTotalPanel.getComponents()) {
             if (c instanceof JLabel) ((JLabel) c).setFont(((JLabel) c).getFont().deriveFont(Font.BOLD, 14f));
         }

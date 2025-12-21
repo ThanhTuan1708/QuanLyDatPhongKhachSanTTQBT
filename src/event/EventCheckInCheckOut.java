@@ -137,10 +137,7 @@ public class EventCheckInCheckOut {
         loadData();
     }
 
-    /**
-     * Tải dữ liệu từ DAO dựa trên chế độ (CheckIn/CheckOut) và bộ lọc
-     * (ĐÃ SỬA: Thêm maKH vào cột ẩn 10)
-     */
+
     /**
      * Tải dữ liệu lên bảng dựa trên chế độ và bộ lọc
      * - Check-in: Chỉ hiện "Đã xác nhận"
@@ -206,23 +203,28 @@ public class EventCheckInCheckOut {
                 String maKH = row[8].toString();
 
                 Phong phong = null;
-                try {
-                    phong = phongDAO.getPhongById(maPhong);
-                } catch (Exception e) {
+                try {phong = phongDAO.getPhongById(maPhong);} catch (Exception e) {}
+
+                // --- SỬA LOGIC TÍNH TIỀN: ƯU TIÊN HÓA ĐƠN ---
+                double tongTienHienThi = 0;
+
+                // Kiểm tra xem có dữ liệu tiền từ DAO không (Index 10)
+                if (row.length > 10 && row[10] != null) {
+                    try {
+                        tongTienHienThi = Double.parseDouble(row[10].toString());
+                    } catch (Exception e) { tongTienHienThi = 0; }
                 }
 
-                // Tính tiền tạm tính
-                double tongTien = 0;
-                if (phong != null) {
+                // Nếu chưa có hóa đơn (tiền = 0), mới tính tạm tính tiền phòng
+                if (tongTienHienThi <= 0 && phong != null) {
                     try {
                         LocalDate checkin = LocalDate.parse(ngayDen, DATE_FORMAT);
                         LocalDate checkout = LocalDate.parse(ngayTra, DATE_FORMAT);
                         long soDem = ChronoUnit.DAYS.between(checkin, checkout);
-                        if (soDem == 0)
-                            soDem = 1;
-                        tongTien = phong.getGiaTienMotDem() * soDem;
+                        if (soDem <= 0) soDem = 1;
+                        tongTienHienThi = phong.getGiaTienMotDem() * soDem;
                     } catch (Exception e) {
-                        tongTien = phong.getGiaTienMotDem();
+                        tongTienHienThi = phong.getGiaTienMotDem();
                     }
                 }
 
@@ -232,28 +234,27 @@ public class EventCheckInCheckOut {
                         : "N/A";
                 int soKhach = (phong != null) ? phong.getSoChua() : 2;
 
-                // 1. Liên hệ (Gộp SĐT và Email thành 1 chuỗi có xuống dòng)
+                // 1. Lấy Email (Index 9) - Đã an toàn vì DAO trả về đủ độ dài
                 String sdt = row[1].toString();
-                String email = "email@example.com"; // (Có thể query thêm email nếu cần)
+                String email = (row[9] != null) ? row[9].toString() : "";
                 String lienHeDisplay = sdt + "\n" + email;
 
-                // 2. Định dạng tiền tệ
-                String tongTienStr = String.format("%,.0f đ", tongTien);
+                // Format tiền
+                String tongTienStr = String.format("%,.0f đ", tongTienHienThi);
 
                 // Thêm dòng vào bảng
-                view.getTableModel().addRow(new Object[] {
-                        Boolean.FALSE, // 0. Checkbox
-                        maPhieu, // 1. Mã ĐP
-                        row[0].toString(), // 2. Khách hàng (Tên) -> Renderer sẽ thêm Icon
-                        maPhong, // 3. Phòng -> Renderer sẽ thêm Icon
-                        loaiPhongText, // 4. Loại phòng
-                        dateToShow, // 5. Ngày -> Renderer sẽ thêm Icon
-                        soKhach, // 6. Số khách -> Renderer sẽ thêm Icon
-                        lienHeDisplay, // 7. Liên hệ (Chuỗi gộp SĐT + Email)
-                        tongTienStr, // 8. Tổng tiền
-
-                        ngayTra, // 9. Ẩn
-                        maKH // 10. Ẩn
+                view.getTableModel().addRow(new Object[]{
+                        Boolean.FALSE,
+                        maPhieu,
+                        row[0].toString(),
+                        maPhong,
+                        loaiPhongText,
+                        dateToShow,
+                        soKhach,
+                        lienHeDisplay, // Đã có email
+                        tongTienStr,   // Đã có tiền
+                        ngayTra,
+                        maKH
                 });
             }
 

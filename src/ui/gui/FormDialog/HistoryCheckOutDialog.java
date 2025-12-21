@@ -186,34 +186,48 @@ public class HistoryCheckOutDialog extends JDialog {
             for (Object[] row : dataList) {
                 String maPhong = row[2].toString();
                 String maPhieu = row[5].toString();
-                Phong phong = null;
-                try { phong = phongDAO.getPhongById(maPhong); } catch (Exception e) {}
 
-                long soDem = 1;
+                // --- SỬA ĐOẠN NÀY: ƯU TIÊN LẤY TIỀN TỪ DATABASE ---
                 double tongTien = 0;
-                if (phong != null) {
+
+                // 1. Lấy tổng tiền thực tế từ Hóa đơn (Index 10 trong DAO)
+                if (row.length > 10 && row[10] != null) {
                     try {
-                        LocalDate checkin = LocalDate.parse(row[3].toString(), DATE_FORMAT);
-                        LocalDate checkout = LocalDate.parse(row[4].toString(), DATE_FORMAT);
-                        soDem = ChronoUnit.DAYS.between(checkin, checkout);
-                        if (soDem == 0) soDem = 1;
-                        tongTien = phong.getGiaTienMotDem() * soDem;
-                    } catch (Exception e) {
-                        soDem = 1;
-                        tongTien = phong.getGiaTienMotDem();
+                        tongTien = Double.parseDouble(row[10].toString());
+                    } catch (NumberFormatException e) {
+                        tongTien = 0;
                     }
                 }
+
+                // 2. Fallback: Chỉ tính thủ công nếu chưa có hóa đơn (ít khi xảy ra ở màn hình lịch sử)
+                if (tongTien <= 0) {
+                    Phong phong = null;
+                    try { phong = phongDAO.getPhongById(maPhong); } catch (Exception e) {}
+
+                    if (phong != null) {
+                        try {
+                            LocalDate checkin = LocalDate.parse(row[3].toString(), DATE_FORMAT);
+                            LocalDate checkout = LocalDate.parse(row[4].toString(), DATE_FORMAT);
+                            long soDem = ChronoUnit.DAYS.between(checkin, checkout);
+                            if (soDem <= 0) soDem = 1;
+                            tongTien = phong.getGiaTienMotDem() * soDem;
+                        } catch (Exception e) {
+                            tongTien = phong.getGiaTienMotDem();
+                        }
+                    }
+                }
+                // --------------------------------------------------
 
                 tableModel.addRow(new Object[]{
                         maPhieu,
                         row[0].toString(),
                         maPhong,
-                        (phong != null && phong.getLoaiPhong() != null) ? phong.getLoaiPhong().getTenLoaiPhong() : "N/A",
+                        "Phòng " + maPhong, // Hoặc lấy loại phòng nếu có
                         row[3].toString(),
                         row[4].toString(),
-                        (phong != null) ? phong.getSoChua() : "N/A",
-                        tongTien,
-                        maPhieu // Giá trị cho cột nút
+                        "1", // Số khách mặc định hoặc lấy từ DAO nếu có
+                        tongTien, // <-- SỐ TIỀN KHỚP VỚI BILL
+                        maPhieu
                 });
             }
             lblTongSo.setText("Tổng số: " + tableModel.getRowCount() + " đặt phòng đã check-out");

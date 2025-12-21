@@ -289,157 +289,227 @@ public class BillDialog extends JDialog {
 
     private KhuyenMai_DAO khuyenMaiDAO; // Thêm DAO Khuyến mãi
 
-    /** Tạo phần Tổng cộng, Thuế, Khuyến mãi, Chữ ký và Form nhập Mã giảm giá */
     private JPanel createBillingDetailsPanel() {
-        // Khởi tạo DAO Khuyến mãi nếu chưa có
+        // Khởi tạo DAO Khuyến mãi
         try {
-            if (khuyenMaiDAO == null)
-                khuyenMaiDAO = new KhuyenMai_DAO();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            if (khuyenMaiDAO == null) khuyenMaiDAO = new KhuyenMai_DAO();
+        } catch (Exception e) { e.printStackTrace(); }
 
-        JPanel detailsPanel = new JPanel(new BorderLayout(0, 15));
+        JPanel detailsPanel = new JPanel(new BorderLayout(0, 10));
         detailsPanel.setOpaque(false);
+        detailsPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
 
-        // --- Bảng chi tiết (Giữ nguyên logic cũ) ---
-        String[] columnNames = { "NGÀY", "CHI TIẾT", "SỐ TIỀN" };
+        // --- 1. Cấu trúc bảng hiện đại ---
+        String[] columnNames = { "STT", "Nội dung", "ĐVT", "SL", "Đơn giá", "Thành tiền" };
+
         DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            public boolean isCellEditable(int row, int column) { return false; }
         };
 
-        double subTotal = 0; // Tính tổng tiền hàng (chưa VAT, KM)
+        double subTotalCalculated = 0; // Tính tổng lại để hiển thị
+        int stt = 1;
 
-        // Thêm chi tiết phòng
+        // --- 2. Xử lý Chi tiết Phòng (Dùng Logic ngược để đảm bảo khớp tiền) ---
         if (dsChiTietPhong != null) {
             for (ChiTietHoaDon_Phong ctPhong : dsChiTietPhong) {
                 PhieuDatPhong pdp = ctPhong.getPhieuDatPhong();
                 Phong phong = (pdp != null) ? pdp.getPhong() : null;
-                LoaiPhongEntity lp = (phong != null) ? phong.getLoaiPhong() : null;
 
                 if (pdp != null && phong != null) {
-                    String maPhong = phong.getMaPhong();
-                    String tenLoaiPhong = (lp != null) ? lp.getTenLoaiPhong() : "";
-                    LocalDateTime ngayDen = pdp.getNgayNhanPhong();
-                    LocalDateTime ngayDi = pdp.getNgayTraPhong();
-                    String ngayStr = (ngayDen != null) ? ngayDen.format(DATE_FORMATTER_VN) : "N/A";
+                    String tenPhong = "Phòng " + phong.getMaPhong();
+                    String loaiPhong = (phong.getLoaiPhong() != null) ? phong.getLoaiPhong().getTenLoaiPhong() : "";
 
-                    long soDem = 0;
-                    if (ngayDen != null && ngayDi != null) {
-                        soDem = ChronoUnit.DAYS.between(ngayDen.toLocalDate(), ngayDi.toLocalDate());
-                        if (soDem == 0 && ngayDen.toLocalTime().isBefore(ngayDi.toLocalTime()))
-                            soDem = 1;
-                        if (soDem <= 0)
-                            soDem = 1;
-                    } else {
-                        soDem = 1;
+                    // LẤY TIỀN THẬT TỪ DB
+                    double thanhTienPhong = ctPhong.getThanhTien(); // Số tiền đã lưu trong DB
+                    double donGia = ctPhong.getDonGiaLucDat();      // Giá lúc đặt
+
+                    // LOGIC NGƯỢC: Tính số đêm từ tiền (để đảm bảo khớp 100%)
+                    long soDem = 1;
+                    if (donGia > 0) {
+                        soDem = Math.round(thanhTienPhong / donGia);
+                    }
+                    if (soDem <= 0) soDem = 1;
+
+                    // Format ngày tháng hiển thị
+                    LocalDateTime den = pdp.getNgayNhanPhong();
+                    LocalDateTime di = pdp.getNgayTraPhong();
+                    String timeRange = "";
+                    if (den != null && di != null) {
+                        timeRange = String.format("(%s - %s)",
+                                den.format(DateTimeFormatter.ofPattern("dd/MM")),
+                                di.format(DateTimeFormatter.ofPattern("dd/MM")));
                     }
 
-                    String chiTiet = "Tiền phòng " + maPhong + " - " + tenLoaiPhong + " (" + soDem + " đêm)";
-                    double donGiaLucDat = ctPhong.getDonGiaLucDat();
-                    double thanhTienPhong = donGiaLucDat * soDem;
-                    subTotal += thanhTienPhong;
-                    tableModel.addRow(new Object[] { ngayStr, chiTiet, MONEY_FORMAT.format(thanhTienPhong) });
+                    // Thêm dòng
+                    tableModel.addRow(new Object[] {
+                            stt++,
+                            "<html><b>" + tenPhong + "</b> - " + loaiPhong + "<br><i style='color:gray;font-size:10px'>" + timeRange + "</i></html>",
+                            "Đêm",
+                            soDem, // Hiển thị đúng số đêm tính từ tiền
+                            MONEY_FORMAT.format(donGia),
+                            MONEY_FORMAT.format(thanhTienPhong)
+                    });
+
+                    subTotalCalculated += thanhTienPhong;
                 }
             }
         }
 
-        // Thêm chi tiết dịch vụ
+        // --- 3. Xử lý Chi tiết Dịch vụ ---
         if (dsChiTietDichVu != null) {
             for (ChiTietHoaDon_DichVu ctDV : dsChiTietDichVu) {
                 DichVu dv = ctDV.getDichVu();
                 if (dv != null) {
-                    String tenDV = dv.getTenDV();
-                    int soLuong = ctDV.getSoLuong();
-                    String chiTiet = tenDV + (soLuong > 1 ? " (SL: " + soLuong + ")" : "");
                     double thanhTienDV = ctDV.getThanhTien();
-                    subTotal += thanhTienDV;
-                    String ngayStr = (hoaDon != null && hoaDon.getNgayLap() != null)
-                            ? hoaDon.getNgayLap().format(DATE_FORMATTER_VN)
-                            : "N/A";
-                    tableModel.addRow(new Object[] { ngayStr, chiTiet, MONEY_FORMAT.format(thanhTienDV) });
+                    double donGia = ctDV.getDonGia(); // Lấy giá lúc đặt
+                    int soLuong = ctDV.getSoLuong();
+
+                    // Fallback: Nếu thành tiền = 0 (khuyến mãi hoặc lỗi), vẫn hiện
+                    if (thanhTienDV == 0 && soLuong > 0 && donGia > 0) {
+                        thanhTienDV = soLuong * donGia;
+                    }
+
+                    tableModel.addRow(new Object[] {
+                            stt++,
+                            dv.getTenDV(),
+                            "Lần", // Hoặc lấy dv.getDonViTinh() nếu có
+                            soLuong,
+                            MONEY_FORMAT.format(donGia),
+                            MONEY_FORMAT.format(thanhTienDV)
+                    });
+                    subTotalCalculated += thanhTienDV;
                 }
             }
         }
 
+        // --- 4. Tùy chỉnh giao diện bảng ---
         JTable table = new JTable(tableModel);
-        table.setRowHeight(25);
-        table.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 12));
-        table.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        table.setRowHeight(35); // Dòng cao hơn
+        table.setShowVerticalLines(false);
+        table.setIntercellSpacing(new Dimension(0,0));
+
+        // Header
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+        table.getTableHeader().setBackground(new Color(240, 240, 240));
+        table.getTableHeader().setPreferredSize(new Dimension(0, 30));
+
+        // Column Widths & Alignment
         TableColumnModel tcm = table.getColumnModel();
-        tcm.getColumn(0).setPreferredWidth(120);
-        tcm.getColumn(1).setPreferredWidth(350);
-        tcm.getColumn(2).setPreferredWidth(100);
+        tcm.getColumn(0).setMaxWidth(40); // STT
+        tcm.getColumn(1).setPreferredWidth(250); // Nội dung
+        tcm.getColumn(2).setMaxWidth(50); // ĐVT
+        tcm.getColumn(3).setMaxWidth(50); // SL
+        tcm.getColumn(4).setPreferredWidth(100); // Đơn giá
+        tcm.getColumn(5).setPreferredWidth(100); // Thành tiền
+
+        // Renderers
+        javax.swing.table.DefaultTableCellRenderer centerRenderer = new javax.swing.table.DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        tcm.getColumn(0).setCellRenderer(centerRenderer);
+        tcm.getColumn(2).setCellRenderer(centerRenderer);
+        tcm.getColumn(3).setCellRenderer(centerRenderer);
+
         javax.swing.table.DefaultTableCellRenderer rightRenderer = new javax.swing.table.DefaultTableCellRenderer();
         rightRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
-        tcm.getColumn(2).setCellRenderer(rightRenderer);
+        rightRenderer.setBorder(new EmptyBorder(0,0,0,10)); // Padding phải
+        tcm.getColumn(4).setCellRenderer(rightRenderer);
+        tcm.getColumn(5).setCellRenderer(rightRenderer);
 
         JScrollPane scrollPane = new JScrollPane(table);
-        int preferredHeight = Math.min(
-                table.getRowCount() * table.getRowHeight() + table.getTableHeader().getPreferredSize().height + 5, 300);
-        scrollPane.setPreferredSize(new Dimension(0, preferredHeight));
+        scrollPane.getViewport().setBackground(Color.WHITE);
+        scrollPane.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.LIGHT_GRAY));
+        scrollPane.setPreferredSize(new Dimension(0, 250)); // Chiều cao cố định
 
         detailsPanel.add(scrollPane, BorderLayout.CENTER);
 
-        // --- Phần Tổng cộng, Thuế, Khuyến mãi, Chữ ký ---
+        // --- 5. Phần Tổng tiền (Footer) ---
         JPanel bottomPanel = new JPanel();
         bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
         bottomPanel.setOpaque(false);
+        bottomPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
 
-        bottomPanel.add(createTotalRow("Tổng tiền hàng:", MONEY_FORMAT.format(subTotal) + " đ"));
-
+        // Tính toán lại các khoản
         double discountAmount = 0;
         KhuyenMai km = (hoaDon != null) ? hoaDon.getKhuyenMai() : null;
         if (km != null) {
             double chietKhau = km.getChietKhau() / 100.0;
-            discountAmount = subTotal * chietKhau;
-            String kmName = km.getTenKhuyenMai();
+            discountAmount = subTotalCalculated * chietKhau;
             if (discountAmount > 0) {
-                bottomPanel.add(createTotalRow(kmName + " (" + String.format("%.0f", chietKhau * 100) + "%):",
-                        "- " + MONEY_FORMAT.format(discountAmount) + " đ"));
+                bottomPanel.add(createTotalRow("Giảm giá (" + km.getTenKhuyenMai() + "):",
+                        "- " + MONEY_FORMAT.format(discountAmount) + " đ", false));
             }
         }
 
-        double subTotalAfterDiscount = subTotal - discountAmount;
-        bottomPanel.add(createTotalRow("Thành tiền:", MONEY_FORMAT.format(subTotalAfterDiscount) + " đ"));
+        double vatRate = (hoaDon != null) ? hoaDon.getVat() / 100.0 : 0.1;
+        double tienTruocThue = subTotalCalculated - discountAmount;
+        double vatAmount = tienTruocThue * vatRate;
+        double finalTotal = tienTruocThue + vatAmount;
 
-        double vatRate = (hoaDon != null) ? hoaDon.getVat() / 100.0 : 0.0;
-        double vatAmount = subTotalAfterDiscount * vatRate;
-        if (vatAmount > 0) {
-            bottomPanel.add(createTotalRow("Thuế VAT (" + String.format("%.0f", vatRate * 100) + "%):",
-                    MONEY_FORMAT.format(vatAmount) + " đ"));
+        // Ưu tiên lấy tổng tiền từ DB nếu khớp (để tránh sai số làm tròn 1-2 đồng)
+        if (hoaDon != null && Math.abs(hoaDon.getTongTien() - finalTotal) < 1000) {
+            finalTotal = hoaDon.getTongTien();
         }
 
-        double finalTotal = subTotalAfterDiscount + vatAmount;
-        JPanel finalTotalPanel = createTotalRow("Tổng cộng:", MONEY_FORMAT.format(finalTotal) + " đ");
-        for (Component c : finalTotalPanel.getComponents()) {
-            if (c instanceof JLabel)
-                ((JLabel) c).setFont(((JLabel) c).getFont().deriveFont(Font.BOLD, 14f));
-        }
-        bottomPanel.add(finalTotalPanel);
+        bottomPanel.add(createTotalRow("Cộng tiền hàng:", MONEY_FORMAT.format(subTotalCalculated) + " đ", false));
+        bottomPanel.add(createTotalRow("Thuế VAT (" + (int)(vatRate*100) + "%):", MONEY_FORMAT.format(vatAmount) + " đ", false));
 
-        JLabel vatLabel = new JLabel("Đã bao gồm thuế VAT");
-        vatLabel.setFont(vatLabel.getFont().deriveFont(Font.ITALIC, 11f));
-        vatLabel.setForeground(Color.GRAY);
-        vatLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        bottomPanel.add(vatLabel);
-        bottomPanel.add(Box.createVerticalStrut(30));
+        // Dòng kẻ ngang
+        JSeparator sep = new JSeparator();
+        sep.setForeground(Color.LIGHT_GRAY);
+        bottomPanel.add(Box.createVerticalStrut(5));
+        bottomPanel.add(sep);
+        bottomPanel.add(Box.createVerticalStrut(5));
 
-        JPanel signaturePanel = new JPanel(new GridLayout(1, 2, 100, 0));
+        // Tổng cộng to đậm
+        bottomPanel.add(createTotalRow("TỔNG CỘNG:", MONEY_FORMAT.format(finalTotal) + " đ", true));
+
+        // Chữ ký
+        JPanel signaturePanel = new JPanel(new GridLayout(1, 2));
         signaturePanel.setOpaque(false);
-        signaturePanel.setBorder(new EmptyBorder(0, 50, 0, 50));
-        JLabel thuNganLabel = new JLabel("Thu ngân", SwingConstants.CENTER);
-        JLabel khachLabel = new JLabel("Khách", SwingConstants.CENTER);
-        signaturePanel.add(thuNganLabel);
-        signaturePanel.add(khachLabel);
-        signaturePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        signaturePanel.setBorder(new EmptyBorder(30, 20, 20, 20));
+
+        JLabel lblThuNgan = new JLabel("<html><center><b>Thu ngân</b><br><i>(Ký, họ tên)</i></center></html>", SwingConstants.CENTER);
+        JLabel lblKhach = new JLabel("<html><center><b>Khách hàng</b><br><i>(Ký, họ tên)</i></center></html>", SwingConstants.CENTER);
+
+        signaturePanel.add(lblThuNgan);
+        signaturePanel.add(lblKhach);
         bottomPanel.add(signaturePanel);
 
         detailsPanel.add(bottomPanel, BorderLayout.SOUTH);
         return detailsPanel;
+    }
+
+    /** Helper tạo dòng tổng tiền */
+    private JPanel createTotalRow(String label, String value, boolean isBold) {
+        JPanel row = new JPanel(new BorderLayout());
+        row.setOpaque(false);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+
+        JLabel lblName = new JLabel(label);
+        JLabel lblVal = new JLabel(value);
+
+        if (isBold) {
+            lblName.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            lblVal.setFont(new Font("Segoe UI", Font.BOLD, 18));
+            lblVal.setForeground(new Color(220, 53, 69)); // Màu đỏ cho tổng tiền
+        } else {
+            lblName.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            lblVal.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        }
+
+        lblVal.setPreferredSize(new Dimension(150, 20));
+        lblVal.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        row.add(lblName, BorderLayout.CENTER);
+        row.add(lblVal, BorderLayout.EAST);
+
+        // Căn lề phải toàn bộ panel con
+        JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        wrapper.setOpaque(false);
+        wrapper.add(row);
+
+        return row; // Add trực tiếp row vào BoxLayout sẽ giãn, add wrapper nếu muốn căn phải chặt
     }
 
     /** Phương thức phụ trợ tạo một hàng trong phần tổng tiền */

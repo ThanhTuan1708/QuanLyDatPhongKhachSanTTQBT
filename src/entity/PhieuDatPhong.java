@@ -10,15 +10,18 @@ public class PhieuDatPhong {
     private LocalDateTime ngayTraPhong;
     private KhachHang khachHang;
     private Phong phong;
-    // Thêm trạng thái phiếu đặt phòng nếu cần (hiện tại chưa có trong sơ đồ rõ ràng)
-    // private TrangThaiPhieuDat trangThai;
+    // --- THÊM THUỘC TÍNH NÀY ---
+    private NhanVien nhanVien;
+    // ---------------------------
+
+    private String trangThai; // Nếu có
 
     // Constructors
     public PhieuDatPhong() {
     }
 
     public PhieuDatPhong(String maPhieu) {
-        this.maPhieu = maPhieu;
+
     }
 
     public PhieuDatPhong(String maPhieu, LocalDateTime ngayDatPhong, LocalDateTime ngayNhanPhong, LocalDateTime ngayTraPhong, KhachHang khachHang, Phong phong) {
@@ -31,6 +34,13 @@ public class PhieuDatPhong {
     }
 
     // Getters and Setters
+    public NhanVien getNhanVien() {
+        return nhanVien;
+    }
+
+    public void setNhanVien(NhanVien nhanVien) {
+        this.nhanVien = nhanVien;
+    }
     public String getMaPhieu() { return maPhieu; }
     public void setMaPhieu(String maPhieu) { this.maPhieu = maPhieu; }
     public LocalDateTime getNgayDatPhong() { return ngayDatPhong; }

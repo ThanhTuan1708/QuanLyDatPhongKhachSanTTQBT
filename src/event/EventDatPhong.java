@@ -521,6 +521,8 @@ public class EventDatPhong {
                 // SỬA: Bỏ 'nv' khỏi constructor (vì CSDL không có cột 'maNV')
                 PhieuDatPhong pdp = new PhieuDatPhong(maPhieu, ngayDat, ngayNhan, ngayTra, kh, phong);
 
+                pdp.setNhanVien(nv);
+
                 danhSachPDPDaTao.add(pdp);
 
                 double donGiaLucDat = phong.getGiaTienMotDem();
@@ -662,6 +664,8 @@ public class EventDatPhong {
                     successMessage.toString(),
                     "Đặt phòng thành công",
                     JOptionPane.INFORMATION_MESSAGE);
+
+            
 
             // 2. Cập nhật UI
             view.getSelectedRoomIds().clear();

@@ -107,37 +107,22 @@ public class HoaDon_DAO {
         // Không đóng connection, để transaction quản lý
     }
 
-    /**
-     * Tìm mã hóa đơn dựa trên mã phiếu đặt phòng.
-     * (SỬA: Logic truy vấn theo CSDL)
-     */
     public String findMaHoaDonByMaPhieu(String maPhieu) throws SQLException {
         String maHD = null;
         Connection con = ConnectDB.getConnection();
 
-        // Bước 1: Tìm maPhong từ maPhieu
-        String maPhong = null;
-        String sqlFindPhong = "SELECT maPhong FROM dbo.PhieuDatPhong WHERE maPhieu = ?";
-        try (PreparedStatement stmtFind = con.prepareStatement(sqlFindPhong)) {
-            stmtFind.setString(1, maPhieu);
-            try (ResultSet rsFind = stmtFind.executeQuery()) {
-                if (rsFind.next()) {
-                    maPhong = rsFind.getString("maPhong");
-                }
-            }
-        }
-        if (maPhong == null) {
-            throw new SQLException("Không tìm thấy phòng cho phiếu: " + maPhieu);
-        }
+        // Query kết hợp: Tìm hóa đơn có chứa phòng đó VÀ phải cùng Khách Hàng với phiếu đặt phòng
+        // Điều này đảm bảo không lấy nhầm hóa đơn cũ của khách khác ở cùng phòng đó.
+        String sql = "SELECT TOP 1 hd.maHoaDon " +
+                "FROM HoaDon hd " +
+                "JOIN ChiTietHoaDon_Phong ctp ON hd.maHoaDon = ctp.maHoaDon " +
+                "JOIN PhieuDatPhong pdp ON hd.maKH = pdp.maKH " + // Ràng buộc: Phải cùng khách hàng
+                "WHERE pdp.maPhieu = ? " +
+                "  AND ctp.maPhong = pdp.maPhong " + // Ràng buộc: Phải đúng phòng trong phiếu
+                "ORDER BY hd.maHoaDon DESC"; // Lấy cái mới nhất
 
-        // Bước 2: Tìm Hóa đơn chứa maPhong đó
-        String sqlFindHD = "SELECT TOP 1 maHoaDon " +
-                "FROM dbo.ChiTietHoaDon_Phong " +
-                "WHERE maPhong = ? " +
-                "ORDER BY maHoaDon DESC"; // Lấy hóa đơn mới nhất của phòng này
-
-        try (PreparedStatement stmt = con.prepareStatement(sqlFindHD)) {
-            stmt.setString(1, maPhong);
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+            stmt.setString(1, maPhieu);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     maHD = rs.getString("maHoaDon");

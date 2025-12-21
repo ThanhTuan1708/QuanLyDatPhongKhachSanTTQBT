@@ -22,47 +22,23 @@ public class PhieuDatPhong_DAO {
      */
     public boolean addPhieuDatPhong(PhieuDatPhong pdp, String trangThai, Connection con) throws SQLException {
         // SỬA: Thêm cột trangThai được truyền vào tham số
-        String sql = "INSERT INTO PhieuDatPhong (maPhieu, ngayDatPhong, ngayNhanPhong, ngayTraPhong, maKH, maPhong, trangThai) "
-                +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO PhieuDatPhong (maPhieu, ngayDatPhong, ngayNhanPhong, ngayTraPhong, maNV, maKH, maPhong, trangThai) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
             pstmt.setString(1, pdp.getMaPhieu());
             pstmt.setTimestamp(2, Timestamp.valueOf(pdp.getNgayDatPhong()));
             pstmt.setTimestamp(3, Timestamp.valueOf(pdp.getNgayNhanPhong()));
             pstmt.setTimestamp(4, Timestamp.valueOf(pdp.getNgayTraPhong()));
-            // Dòng maNV (số 5 cũ) ĐÃ BỊ XÓA
-            pstmt.setString(5, pdp.getKhachHang().getMaKH());
-            pstmt.setString(6, pdp.getPhong().getMaPhong());
-            pstmt.setString(7, trangThai);
+            pstmt.setString(5, pdp.getNhanVien().getMaNV());
+            pstmt.setString(6, pdp.getKhachHang().getMaKH());
+            pstmt.setString(7, pdp.getPhong().getMaPhong());
+            pstmt.setString(8, trangThai);
 
             int n = pstmt.executeUpdate();
             return n > 0;
         } catch (SQLException e) {
             System.err.println("Lỗi khi thêm phiếu đặt phòng (transaction): " + e.getMessage());
-            e.printStackTrace();
-            throw e;
-        }
-    }
-
-    public boolean addPhieuDatPhong(PhieuDatPhong pdp, String trangThai) throws SQLException {
-        Connection con = ConnectDB.getConnection();
-        String sql = "INSERT INTO PhieuDatPhong (maPhieu, ngayDatPhong, ngayNhanPhong, ngayTraPhong, maKH, maPhong, trangThai) "
-                +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
-            pstmt.setString(1, pdp.getMaPhieu());
-            pstmt.setTimestamp(2, Timestamp.valueOf(pdp.getNgayDatPhong()));
-            pstmt.setTimestamp(3, Timestamp.valueOf(pdp.getNgayNhanPhong()));
-            pstmt.setTimestamp(4, Timestamp.valueOf(pdp.getNgayTraPhong()));
-            pstmt.setString(5, pdp.getKhachHang().getMaKH());
-            pstmt.setString(6, pdp.getPhong().getMaPhong());
-            pstmt.setString(7, trangThai);
-
-            int n = pstmt.executeUpdate();
-            return n > 0;
-        } catch (SQLException e) {
-            System.err.println("Lỗi khi thêm phiếu đặt phòng: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }
@@ -157,43 +133,39 @@ public class PhieuDatPhong_DAO {
         return maPhong;
     }
 
+    /**
+     * SỬA: Lấy dữ liệu hiển thị (Code mới - Ngắn gọn và Nhanh hơn nhiều)
+     */
     public List<Object[]> getFilteredBookingData(String searchText, String selectedFilterUI) throws SQLException {
         List<Object[]> dataList = new ArrayList<>();
         Connection con = ConnectDB.getConnection();
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-        // SỬA 1: Thêm pdp.trangThai vào câu SELECT
-        String sql = "SELECT kh.hoTen, kh.sdt, p.maPhong, pdp.ngayNhanPhong, pdp.ngayTraPhong, " +
-                "pdp.maPhieu, pdp.trangThai, kh.maKH " + // <-- Lấy pdp.trangThai thay vì ttp.tenTrangThai
+        // --- SQL MỚI: JOIN TRỰC TIẾP QUA pdp.maHoaDon ---
+        String sql = "SELECT kh.hoTen, kh.sdt, kh.email, p.maPhong, pdp.ngayNhanPhong, pdp.ngayTraPhong, " +
+                "pdp.maPhieu, pdp.trangThai, kh.maKH, " +
+                "ISNULL(hd.tongTien, 0) as tongTienHD " + // Lấy tiền trực tiếp
                 "FROM PhieuDatPhong pdp " +
                 "JOIN KhachHang kh ON pdp.maKH = kh.maKH " +
                 "JOIN Phong p ON pdp.maPhong = p.maPhong " +
+                "LEFT JOIN HoaDon hd ON pdp.maHoaDon = hd.maHoaDon " + // <-- JOIN ĐƠN GIẢN
                 "WHERE 1=1";
 
-        // SỬA 2: Lọc theo trạng thái của PHIẾU ĐẶT PHÒNG (dùng Params để tránh lỗi
-        // Unicode)
-        boolean hasStatusFilter = (selectedFilterUI != null && !selectedFilterUI.equals("Tất cả"));
-        if (hasStatusFilter) {
+        if (selectedFilterUI != null && !selectedFilterUI.equals("Tất cả")) {
             sql += " AND pdp.trangThai = ?";
         }
-
-        // Lọc theo từ khóa tìm kiếm
-        boolean hasSearch = (searchText != null && !searchText.isEmpty());
-        if (hasSearch) {
+        if (searchText != null && !searchText.isEmpty()) {
             sql += " AND (kh.hoTen LIKE ? OR kh.sdt LIKE ? OR p.maPhong LIKE ? OR pdp.maPhieu LIKE ?)";
         }
-
-        // Sắp xếp: Phiếu mới nhất lên đầu
         sql += " ORDER BY pdp.ngayNhanPhong DESC";
 
         try (PreparedStatement stmt = con.prepareStatement(sql)) {
+            // ... (Phần set tham số giữ nguyên như cũ) ...
             int paramIndex = 1;
-
-            if (hasStatusFilter) {
-                stmt.setString(paramIndex++, selectedFilterUI); // Driver thường tự xử lý Unicode với setString
+            if (selectedFilterUI != null && !selectedFilterUI.equals("Tất cả")) {
+                stmt.setString(paramIndex++, selectedFilterUI);
             }
-
-            if (hasSearch) {
+            if (searchText != null && !searchText.isEmpty()) {
                 String searchPattern = "%" + searchText + "%";
                 stmt.setString(paramIndex++, searchPattern);
                 stmt.setString(paramIndex++, searchPattern);
@@ -203,44 +175,37 @@ public class PhieuDatPhong_DAO {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
+                    // ... (Phần lấy dữ liệu giữ nguyên) ...
                     String tenKH = rs.getString("hoTen");
                     String sdt = rs.getString("sdt");
                     String maPhong = rs.getString("maPhong");
-                    Timestamp tsNhan = rs.getTimestamp("ngayNhanPhong");
-                    Timestamp tsTra = rs.getTimestamp("ngayTraPhong");
+                    String email = rs.getString("email");
+                    if (email == null) email = "";
+
+                    double tongTienHD = rs.getDouble("tongTienHD"); // Lấy tiền
+
                     String maPhieu = rs.getString("maPhieu");
                     String maKH = rs.getString("maKH");
-
-                    // SỬA 3: Lấy trạng thái trực tiếp từ DB
                     String trangThaiPhieu = rs.getString("trangThai");
-
-                    // Xử lý ngày tháng an toàn null
+                    Timestamp tsNhan = rs.getTimestamp("ngayNhanPhong");
+                    Timestamp tsTra = rs.getTimestamp("ngayTraPhong");
                     String ngayNhanStr = (tsNhan != null) ? tsNhan.toLocalDateTime().format(dtf) : "";
                     String ngayTraStr = (tsTra != null) ? tsTra.toLocalDateTime().format(dtf) : "";
 
-                    // Mapping trạng thái sang ID để UI xử lý màu sắc (nếu cần)
                     int statusUI = 0;
                     if (trangThaiPhieu != null) {
-                        if (trangThaiPhieu.equalsIgnoreCase("Đã xác nhận"))
-                            statusUI = 1;
-                        else if (trangThaiPhieu.equalsIgnoreCase("Đã nhận phòng"))
-                            statusUI = 2;
-                        else if (trangThaiPhieu.equalsIgnoreCase("Đã trả phòng"))
-                            statusUI = 3;
+                        if (trangThaiPhieu.equalsIgnoreCase("Đã xác nhận")) statusUI = 1;
+                        else if (trangThaiPhieu.equalsIgnoreCase("Đã nhận phòng")) statusUI = 2;
+                        else if (trangThaiPhieu.equalsIgnoreCase("Đã trả phòng")) statusUI = 3;
                     }
 
                     Object[] row = {
                             tenKH, sdt, maPhong, ngayNhanStr, ngayTraStr, maPhieu,
-                            trangThaiPhieu, // Hiển thị text trạng thái đúng từ DB
-                            statusUI,
-                            maKH
+                            trangThaiPhieu, statusUI, maKH, email, tongTienHD
                     };
                     dataList.add(row);
                 }
             }
-        } catch (SQLException e) {
-            System.err.println("Lỗi filter: " + e.getMessage());
-            e.printStackTrace();
         }
         return dataList;
     }
@@ -289,6 +254,22 @@ public class PhieuDatPhong_DAO {
         }
 
         return 0;
+    }
+
+    /**
+     * MỚI: Cập nhật mã hóa đơn vào phiếu đặt phòng sau khi thanh toán
+     */
+    public boolean updateMaHoaDon(String maPhieu, String maHoaDon) {
+        String sql = "UPDATE PhieuDatPhong SET maHoaDon = ? WHERE maPhieu = ?";
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maHoaDon);
+            ps.setString(2, maPhieu);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
 }

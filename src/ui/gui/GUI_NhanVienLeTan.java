@@ -3171,33 +3171,9 @@ public class GUI_NhanVienLeTan extends JFrame {
             header.setOpaque(false);
             header.add(createTitlePanel(), BorderLayout.NORTH);
             header.add(createToggleAndHistoryPanel(), BorderLayout.CENTER);
-            header.add(createBookingInfoPanel(), BorderLayout.SOUTH);
             return header;
         }
 
-        private JPanel createBookingInfoPanel() {
-
-            JPanel panel = new JPanel(new GridLayout(1, 6, 15, 0));
-            panel.setOpaque(false);
-            panel.setBorder(new EmptyBorder(5, 0, 5, 0));
-
-            panel.add(new JLabel("Mã phiếu:"));
-            lblMaPhieu = new JLabel("-");
-            lblMaPhieu.setFont(new Font("SansSerif", Font.BOLD, 13));
-            panel.add(lblMaPhieu);
-
-            panel.add(new JLabel("Phòng:"));
-            lblPhong = new JLabel("-");
-            lblPhong.setFont(new Font("SansSerif", Font.BOLD, 13));
-            panel.add(lblPhong);
-
-            panel.add(new JLabel("Khách:"));
-            lblTenKhach = new JLabel("-");
-            lblTenKhach.setFont(new Font("SansSerif", Font.BOLD, 13));
-            panel.add(lblTenKhach);
-
-            return panel;
-        }
 
         /**
          * Helper: Tạo Panel Tiêu đề

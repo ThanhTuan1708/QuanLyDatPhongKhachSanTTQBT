@@ -41,7 +41,8 @@ public class BookingFormDialog extends JDialog {
     private List<JCheckBox> chkDichVuList;
     private JPanel suggestedPromosPanel; // Panel chứa các mã khuyến mãi gợi ý
 
-    public BookingFormDialog(Frame owner, List<Map<String, Object>> selectedRoomDetails, List<DichVu> dsDichVu, EventDatPhong controller, boolean isCheckinNow) {
+    public BookingFormDialog(Frame owner, List<Map<String, Object>> selectedRoomDetails, List<DichVu> dsDichVu,
+            EventDatPhong controller, boolean isCheckinNow) {
         super(owner, "Xác nhận thông tin Đặt phòng", true);
         this.controller = controller;
         this.selectedRoomDetails = selectedRoomDetails;
@@ -143,7 +144,7 @@ public class BookingFormDialog extends JDialog {
         scrollPane.setOpaque(false);
         scrollPane.getViewport().setOpaque(false);
         scrollPane.setBorder(new EmptyBorder(0, 10, 10, 10));
-        
+
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setOpaque(false);
         wrapper.add(scrollPane, BorderLayout.CENTER);
@@ -171,8 +172,7 @@ public class BookingFormDialog extends JDialog {
                     room.get("maPhong"),
                     room.get("tenLoaiPhong"),
                     currencyFormatter.format(room.get("giaTien")),
-                    room.get("soChua")
-            );
+                    room.get("soChua"));
             JLabel roomLabel = new JLabel(roomInfo);
             roomsPanel.add(roomLabel);
         }
@@ -189,7 +189,7 @@ public class BookingFormDialog extends JDialog {
 
         // Promo code
         panel.add(new JLabel("<html><b>Mã khuyến mãi:</b></html>"));
-        
+
         JPanel promoInputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         promoInputPanel.setOpaque(false);
         txtMaKhuyenMai = new JTextField(10); // Thu nhỏ ô nhập liệu
@@ -197,22 +197,22 @@ public class BookingFormDialog extends JDialog {
         promoInputPanel.add(txtMaKhuyenMai);
         promoInputPanel.add(btnApplyKm);
         panel.add(promoInputPanel);
-        
+
         lblKmInfo = new JLabel(" ");
         lblKmInfo.setFont(lblKmInfo.getFont().deriveFont(Font.ITALIC, 11f));
         panel.add(lblKmInfo);
-        
+
         // Suggested promos panel
         suggestedPromosPanel = new JPanel();
         suggestedPromosPanel.setLayout(new BoxLayout(suggestedPromosPanel, BoxLayout.Y_AXIS));
         suggestedPromosPanel.setOpaque(false);
-        
+
         JScrollPane promoScrollPane = new JScrollPane(suggestedPromosPanel);
         promoScrollPane.setBorder(BorderFactory.createTitledBorder("Gợi ý"));
         promoScrollPane.setOpaque(false);
         promoScrollPane.getViewport().setOpaque(false);
         promoScrollPane.setPreferredSize(new Dimension(0, 120));
-        
+
         panel.add(promoScrollPane);
 
         panel.add(Box.createVerticalGlue());
@@ -233,7 +233,8 @@ public class BookingFormDialog extends JDialog {
             try {
                 confirmBooking();
             } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(this, "Lỗi cơ sở dữ liệu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Lỗi cơ sở dữ liệu: " + ex.getMessage(), "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -249,8 +250,7 @@ public class BookingFormDialog extends JDialog {
                 TitledBorder.DEFAULT_JUSTIFICATION,
                 TitledBorder.DEFAULT_POSITION,
                 new Font("Segoe UI", Font.BOLD, 14),
-                GUI_NhanVienLeTan.ACCENT_BLUE
-        );
+                GUI_NhanVienLeTan.ACCENT_BLUE);
     }
 
     private void setupEventListeners() {
@@ -263,11 +263,19 @@ public class BookingFormDialog extends JDialog {
         });
         txtMaKhuyenMai.getDocument().addDocumentListener(new DocumentListener() {
             @Override
-            public void insertUpdate(DocumentEvent e) { updateSuggestedPromos(); }
+            public void insertUpdate(DocumentEvent e) {
+                updateSuggestedPromos();
+            }
+
             @Override
-            public void removeUpdate(DocumentEvent e) { updateSuggestedPromos(); }
+            public void removeUpdate(DocumentEvent e) {
+                updateSuggestedPromos();
+            }
+
             @Override
-            public void changedUpdate(DocumentEvent e) { updateSuggestedPromos(); }
+            public void changedUpdate(DocumentEvent e) {
+                updateSuggestedPromos();
+            }
         });
     }
 
@@ -279,8 +287,10 @@ public class BookingFormDialog extends JDialog {
             String currentInput = txtMaKhuyenMai.getText().trim().toLowerCase();
 
             List<KhuyenMai> availablePromos = allPromos.stream()
-                    .filter(km -> km.getLuotSuDung() > 0 && (km.getNgayKetThuc() == null || km.getNgayKetThuc().after(new Date())))
-                    .filter(km -> km.getMaKhuyenMai().toLowerCase().contains(currentInput) || km.getTenKhuyenMai().toLowerCase().contains(currentInput))
+                    .filter(km -> km.getLuotSuDung() > 0
+                            && (km.getNgayKetThuc() == null || km.getNgayKetThuc().after(new Date())))
+                    .filter(km -> km.getMaKhuyenMai().toLowerCase().contains(currentInput)
+                            || km.getTenKhuyenMai().toLowerCase().contains(currentInput))
                     .collect(Collectors.toList());
 
             if (!availablePromos.isEmpty()) {
@@ -298,14 +308,13 @@ public class BookingFormDialog extends JDialog {
         suggestedPromosPanel.revalidate();
         suggestedPromosPanel.repaint();
     }
-    
+
     private JPanel createPromoSuggestionPanel(KhuyenMai km) {
         JPanel panel = new JPanel(new BorderLayout(10, 0));
         panel.setBackground(new Color(240, 245, 255));
         panel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(210, 220, 240)),
-                new EmptyBorder(8, 12, 8, 12)
-        ));
+                new EmptyBorder(8, 12, 8, 12)));
         panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         JLabel nameLabel = new JLabel(km.getTenKhuyenMai());
@@ -326,10 +335,12 @@ public class BookingFormDialog extends JDialog {
                 txtMaKhuyenMai.setText(km.getMaKhuyenMai());
                 applyPromoCode();
             }
+
             @Override
             public void mouseEntered(MouseEvent e) {
                 panel.setBackground(new Color(220, 230, 250));
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
                 panel.setBackground(new Color(240, 245, 255));
@@ -350,7 +361,8 @@ public class BookingFormDialog extends JDialog {
             KhuyenMai_DAO kmDao = new KhuyenMai_DAO();
             KhuyenMai km = kmDao.getKhuyenMaiById(code);
 
-            if (km == null || km.getLuotSuDung() <= 0 || (km.getNgayKetThuc() != null && km.getNgayKetThuc().before(new Date()))) {
+            if (km == null || km.getLuotSuDung() <= 0
+                    || (km.getNgayKetThuc() != null && km.getNgayKetThuc().before(new Date()))) {
                 lblKmInfo.setText("Mã không hợp lệ hoặc đã hết hạn.");
                 lblKmInfo.setForeground(Color.RED);
             } else {
@@ -381,15 +393,17 @@ public class BookingFormDialog extends JDialog {
         String sdt = txtSoDienThoai.getText().trim();
 
         if (tenKH.isEmpty() || email.isEmpty() || sdt.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin khách hàng.", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin khách hàng.", "Thiếu thông tin",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
+
         Date fromDate = controller.getView().getFromDateChooser().getDate();
         Date toDate = controller.getView().getToDateChooser().getDate();
-        
+
         if (fromDate == null || toDate == null) {
-             JOptionPane.showMessageDialog(this, "Vui lòng chọn ngày nhận và ngày trả phòng.", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn ngày nhận và ngày trả phòng.", "Thiếu thông tin",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -411,12 +425,20 @@ public class BookingFormDialog extends JDialog {
         bookingInfo.put("tenKH", tenKH);
         bookingInfo.put("email", email);
         bookingInfo.put("sdt", sdt);
-        bookingInfo.put("ngayNhan", fromDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-        bookingInfo.put("ngayTra", toDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        bookingInfo.put("ngayNhan", fromDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        bookingInfo.put("ngayTra", toDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         bookingInfo.put("yeuCau", txtYeuCau.getText().trim());
         bookingInfo.put("dichVuIds", selectedServiceIds);
         bookingInfo.put("phongIds", selectedRoomIdsList);
-        bookingInfo.put("maKhuyenMai", txtMaKhuyenMai.isEnabled() ? txtMaKhuyenMai.getText().trim() : null);
+        // Logic lấy mã: Nếu nút là "Xóa" tức là đã áp dụng thành công -> lấy text. Nếu
+        // không thì null.
+        String maKM = null;
+        if (btnApplyKm.getText().equals("Xóa") && !txtMaKhuyenMai.getText().trim().isEmpty()) {
+            maKM = txtMaKhuyenMai.getText().trim();
+        }
+        bookingInfo.put("maKhuyenMai", maKM);
         bookingInfo.put("isCheckinNow", this.isCheckinNow);
 
         controller.handleConfirmBooking(bookingInfo);

@@ -32,7 +32,6 @@ import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
 
-
 // SQL (chỉ cần cho try-catch)
 import java.sql.*;
 import java.text.DecimalFormat;
@@ -41,7 +40,6 @@ import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.DayOfWeek;
-
 
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -92,6 +90,8 @@ public class GUI_NhanVienLeTan extends JFrame {
     // highlight-start
     private NhanVien nhanVienHienTai; // Biến lưu nhân viên đăng nhập
     private static final String CHECK_IN_OUT_CONTENT = "CHECK_IN_OUT_CONTENT";
+    private PanelCheckInCheckOut panelCheckInCheckOut; // Promote to field
+    private PanelLeTanContent panelLeTanContent; // Promote to field
 
     // highlight-end
 
@@ -119,9 +119,8 @@ public class GUI_NhanVienLeTan extends JFrame {
         contentPanelContainer = new JPanel(cardLayout);
         contentPanelContainer.setBackground(MAIN_BG);
 
-
         // 3. Tạo các Panel nội dung riêng biệt
-        PanelLeTanContent panelLeTanContent = new PanelLeTanContent(nhanVienDangNhap);
+        panelLeTanContent = new PanelLeTanContent(nhanVienDangNhap);
         // highlight-start
         // Truyền nhanVienHienTai vào PanelDatPhongContent
         PanelDatPhongContent panelDatPhongContent = new PanelDatPhongContent(this.nhanVienHienTai);
@@ -130,8 +129,7 @@ public class GUI_NhanVienLeTan extends JFrame {
         PanelKhachHangContent panelKhachHangContent = new PanelKhachHangContent();
         PanelDichVuContent panelDichVuContent = new PanelDichVuContent();
         PanelPhongContent panelPhongContent = new PanelPhongContent();
-        PanelCheckInCheckOut panelCheckInCheckOut = new PanelCheckInCheckOut(this, this.nhanVienHienTai, datPhongController);
-
+        panelCheckInCheckOut = new PanelCheckInCheckOut(this, this.nhanVienHienTai, datPhongController);
 
         // 4. Thêm các Panel nội dung vào CardLayout
         contentPanelContainer.add(panelLeTanContent, "LE_TAN_CONTENT");
@@ -140,7 +138,6 @@ public class GUI_NhanVienLeTan extends JFrame {
         contentPanelContainer.add(panelDichVuContent, "DICH_VU_CONTENT");
         contentPanelContainer.add(panelPhongContent, "PHONG_CONTENT");
         contentPanelContainer.add(panelCheckInCheckOut, "CHECK_IN_OUT_CONTENT");
-
 
         // 5. Thêm Panel CardLayout vào CENTER của JFrame
         add(contentPanelContainer, BorderLayout.CENTER);
@@ -235,8 +232,7 @@ public class GUI_NhanVienLeTan extends JFrame {
         JLabel role = new JLabel(
                 nhanVienHienTai.getChucVu() != null
                         ? nhanVienHienTai.getChucVu().getLabel()
-                        : "Khách"
-        );
+                        : "Khách");
         // --- Kết thúc sửa ---
         // highlight-end
 
@@ -285,7 +281,7 @@ public class GUI_NhanVienLeTan extends JFrame {
      * Helper: Đặt trạng thái active cho nút được chọn và reset các nút khác
      */
     private void setActiveButton(JButton activeButton) {
-        JButton[] allButtons = {btnDashboard, btnDatPhong, btnKhachHang, btnDichVu, btnPhong, btnCheckInCheckOut};
+        JButton[] allButtons = { btnDashboard, btnDatPhong, btnKhachHang, btnDichVu, btnPhong, btnCheckInCheckOut };
         for (JButton btn : allButtons) {
             if (btn == activeButton) {
                 btn.setForeground(Color.WHITE);
@@ -313,12 +309,15 @@ public class GUI_NhanVienLeTan extends JFrame {
         // Cập nhật trạng thái active của nút menu tương ứng
         if (panelName.equals("LE_TAN_CONTENT")) {
             setActiveButton(btnDashboard);
+            if (panelLeTanContent != null)
+                panelLeTanContent.reloadDashboardStats();
         } else if (panelName.equals("DAT_PHONG_CONTENT")) {
             setActiveButton(btnDatPhong);
-        }
-        else if (panelName.equals("CHECK_IN_OUT_CONTENT")) {
+        } else if (panelName.equals("CHECK_IN_OUT_CONTENT")) {
             setActiveButton(btnCheckInCheckOut);
-        }else if (panelName.equals("PHONG_CONTENT")) {
+            if (panelCheckInCheckOut != null)
+                panelCheckInCheckOut.refreshData();
+        } else if (panelName.equals("PHONG_CONTENT")) {
             setActiveButton(btnPhong);
         } else if (panelName.equals("KHACH_HANG_CONTENT")) {
             setActiveButton(btnKhachHang);
@@ -353,16 +352,16 @@ public class GUI_NhanVienLeTan extends JFrame {
                 new GUI_NhanVienLeTan(nhanVienLogin).setVisible(true);
             } catch (Exception e) { // Bắt Exception chung
                 e.printStackTrace();
-                JOptionPane.showMessageDialog(null, "Không thể khởi động ứng dụng: " + e.getMessage(), "Lỗi nghiêm trọng", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Không thể khởi động ứng dụng: " + e.getMessage(),
+                        "Lỗi nghiêm trọng", JOptionPane.ERROR_MESSAGE);
             }
             // highlight-end
         });
     }
 
-
     // =================================================================================
-// PANEL NỘI DUNG 1: MÀN HÌNH DASHBOARD 
-// =================================================================================
+    // PANEL NỘI DUNG 1: MÀN HÌNH DASHBOARD
+    // =================================================================================
     class PanelLeTanContent extends JPanel {
         private NhanVien nhanVien;
         private final Color STAT_BG_1 = new Color(218, 240, 255);
@@ -518,8 +517,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             lblCheckOut = new JLabel(String.valueOf(pdpDAO.demCheckOutHomNay()));
 
             JLabel lblHours = new JLabel(
-                    String.valueOf(lichDAO.tinhTongGioLamTrongTuan(nhanVien.getMaNV()))
-            );
+                    String.valueOf(lichDAO.tinhTongGioLamTrongTuan(nhanVien.getMaNV())));
 
             JPanel boxHours = createStatBox(lblHours, "Giờ tuần này", STAT_BG_1);
             JPanel boxCheckIn = createStatBox(lblCheckIn, "Check-in", STAT_BG_2);
@@ -527,12 +525,10 @@ public class GUI_NhanVienLeTan extends JFrame {
 
             // Click → mở form → reload lại dashboard
             EventDashBoardLeTan.addStatBoxClickEvent(
-                    boxCheckIn, "checkin", this::reloadDashboardStats
-            );
+                    boxCheckIn, "checkin", this::reloadDashboardStats);
 
             EventDashBoardLeTan.addStatBoxClickEvent(
-                    boxCheckOut, "checkout", this::reloadDashboardStats
-            );
+                    boxCheckOut, "checkout", this::reloadDashboardStats);
 
             right.add(boxHours);
             right.add(boxCheckIn);
@@ -584,8 +580,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                 dayRow.setBackground(Color.WHITE);
                 dayRow.setBorder(new CompoundBorder(
                         new EmptyBorder(8, 8, 8, 8),
-                        new LineBorder(new Color(240, 240, 245))
-                ));
+                        new LineBorder(new Color(240, 240, 245))));
                 dayRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
 
                 // --- Cột ngày ---
@@ -675,8 +670,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                 if (ngayLam.equals(today)) {
                     dayRow.setBorder(new CompoundBorder(
                             new EmptyBorder(8, 8, 8, 8),
-                            new LineBorder(new Color(100, 150, 255), 2, true)
-                    ));
+                            new LineBorder(new Color(100, 150, 255), 2, true)));
                 }
 
                 grid.add(dayRow);
@@ -694,14 +688,22 @@ public class GUI_NhanVienLeTan extends JFrame {
 
         private String formatDayName(DayOfWeek day) {
             switch (day) {
-                case MONDAY: return "Thứ Hai";
-                case TUESDAY: return "Thứ Ba";
-                case WEDNESDAY: return "Thứ Tư";
-                case THURSDAY: return "Thứ Năm";
-                case FRIDAY: return "Thứ Sáu";
-                case SATURDAY: return "Thứ Bảy";
-                case SUNDAY: return "Chủ Nhật";
-                default: return "";
+                case MONDAY:
+                    return "Thứ Hai";
+                case TUESDAY:
+                    return "Thứ Ba";
+                case WEDNESDAY:
+                    return "Thứ Tư";
+                case THURSDAY:
+                    return "Thứ Năm";
+                case FRIDAY:
+                    return "Thứ Sáu";
+                case SATURDAY:
+                    return "Thứ Bảy";
+                case SUNDAY:
+                    return "Chủ Nhật";
+                default:
+                    return "";
             }
         }
 
@@ -719,14 +721,13 @@ public class GUI_NhanVienLeTan extends JFrame {
             // --- Lấy dữ liệu từ SQL ---
             NhiemVuCaLam_DAO dao = new NhiemVuCaLam_DAO();
 
-            //  TỰ ĐỘNG CẬP NHẬT TRẠNG THÁI THEO GIỜ
+            // TỰ ĐỘNG CẬP NHẬT TRẠNG THÁI THEO GIỜ
             dao.capNhatTrangThaiNhiemVuHomNay(nhanVien.getMaNV());
 
-            //  SAU ĐÓ MỚI LOAD DATA
+            // SAU ĐÓ MỚI LOAD DATA
             List<NhiemVu> list = dao.getNhiemVuHomNay(nhanVien.getMaNV());
 
-
-            String[] columns = {"Thời gian", "Nhiệm vụ", "Trạng thái", "Ghi chú"};
+            String[] columns = { "Thời gian", "Nhiệm vụ", "Trạng thái", "Ghi chú" };
             Object[][] data = new Object[list.size()][4];
 
             for (int i = 0; i < list.size(); i++) {
@@ -749,13 +750,13 @@ public class GUI_NhanVienLeTan extends JFrame {
             table.setRowHeight(40);
             table.getTableHeader().setReorderingAllowed(false);
 
-
             // Renderer trạng thái
             table.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer() {
                 @Override
                 public Component getTableCellRendererComponent(JTable table, Object value,
-                                                               boolean isSelected, boolean hasFocus, int row, int column) {
-                    JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                        boolean isSelected, boolean hasFocus, int row, int column) {
+                    JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row,
+                            column);
                     label.setHorizontalAlignment(SwingConstants.CENTER);
                     label.setBorder(new EmptyBorder(4, 8, 4, 8));
                     if (value != null) {
@@ -769,7 +770,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                         } else if (status.equals("Chưa xong")) {
                             label.setBackground(new Color(255, 245, 230));
                             label.setForeground(new Color(180, 110, 20));
-                        }else if (status.equals("Chờ xử lý")) {
+                        } else if (status.equals("Chờ xử lý")) {
                             label.setBackground(new Color(246, 239, 189));
                             label.setForeground(new Color(168, 139, 0));
                         }
@@ -802,16 +803,14 @@ public class GUI_NhanVienLeTan extends JFrame {
             stats.add(createStatCard(
                     new JLabel(tongGio + "h"),
                     "Tổng giờ làm",
-                    STAT_BG_1
-            ));
+                    STAT_BG_1));
 
             // ===== Ca làm =====
             int[] thongKe = lichLamViecDAO.getThongKeCaTuan(maNV);
             stats.add(createStatCard(
                     new JLabel(thongKe[0] + "/" + thongKe[1]),
                     "Ca hoàn thành",
-                    new Color(220, 255, 230)
-            ));
+                    new Color(220, 255, 230)));
 
             // ===== CHECK IN =====
             lblCheckInToday = new JLabel(String.valueOf(pdpDAO.demCheckInHomNay()));
@@ -819,8 +818,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             JPanel cardCheckIn = createStatCard(
                     lblCheckInToday,
                     "Check-in hôm nay",
-                    new Color(245, 235, 255)
-            );
+                    new Color(245, 235, 255));
 
             cardCheckIn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             cardCheckIn.addMouseListener(new MouseAdapter() {
@@ -838,8 +836,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             JPanel cardCheckOut = createStatCard(
                     lblCheckOutToday,
                     "Check-out hôm nay",
-                    new Color(255, 240, 230)
-            );
+                    new Color(255, 240, 230));
 
             cardCheckOut.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             cardCheckOut.addMouseListener(new MouseAdapter() {
@@ -856,16 +853,14 @@ public class GUI_NhanVienLeTan extends JFrame {
             stats.add(createStatCard(
                     new JLabel(String.valueOf(soGhiChu)),
                     "Yêu cầu",
-                    new Color(255, 235, 245)
-            ));
+                    new Color(255, 235, 245)));
 
             // ===== Tăng ca =====
             int tangCa = lichLamViecDAO.getTongGioTangCaInt(maNV);
             stats.add(createStatCard(
                     new JLabel(tangCa + "h"),
                     "Tăng ca",
-                    new Color(250, 245, 230)
-            ));
+                    new Color(250, 245, 230)));
 
             return stats;
         }
@@ -893,8 +888,7 @@ public class GUI_NhanVienLeTan extends JFrame {
         private JPanel createStatCard(
                 JLabel valueLabel,
                 String label,
-                Color bg
-        ) {
+                Color bg) {
             JPanel card = new JPanel(new BorderLayout());
             card.setBackground(bg);
             card.setBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER));
@@ -934,9 +928,9 @@ public class GUI_NhanVienLeTan extends JFrame {
             }
         }
     }
-// =================================================================================
-// PANEL NỘI DUNG 2: ĐẶT PHÒNG
-// =================================================================================
+    // =================================================================================
+    // PANEL NỘI DUNG 2: ĐẶT PHÒNG
+    // =================================================================================
 
     public static class PanelDatPhongContent extends JPanel {
         // --- Biến tham chiếu DAO ---
@@ -947,7 +941,7 @@ public class GUI_NhanVienLeTan extends JFrame {
         private JTextField searchField;
         private JComboBox<String> bookingFilterComboBox;
         private JDateChooser fromDateChooser; // Từ ngày
-        private JDateChooser toDateChooser;   // Đến ngày
+        private JDateChooser toDateChooser; // Đến ngày
         private JSpinner adultSpinner;
         private JSpinner childSpinner;
         private JPanel cardListPanelContainer;
@@ -980,13 +974,14 @@ public class GUI_NhanVienLeTan extends JFrame {
                 this.phieuDatPhongDAO = new PhieuDatPhong_DAO();
                 this.phongDAO = new Phong_DAO();
                 this.controller = new EventDatPhong(this, nhanVienDangNhap);
-            } catch (Exception e) { /* ... */ }
+            } catch (Exception e) {
+                /* ... */ }
 
             // Thiết lập layout và nền (Giữ nguyên)
             setLayout(new BorderLayout()); /* ... */
 
             searchField = new JTextField();
-            bookingFilterComboBox = new JComboBox<>(new String[]{"Tất cả", "Đã xác nhận", "Đã nhận phòng"});
+            bookingFilterComboBox = new JComboBox<>(new String[] { "Tất cả", "Đã xác nhận", "Đã nhận phòng" });
             cardListPanelContainer = new JPanel();
             roomGridPanel = new JPanel();
             filterButtonsPanel = new JPanel();
@@ -1015,20 +1010,62 @@ public class GUI_NhanVienLeTan extends JFrame {
         }
 
         // --- Các Getter cho Controller ---
-        public JTextField getSearchField() { return searchField; }
-        public JComboBox<String> getBookingFilterComboBox() { return bookingFilterComboBox; }
-        public JPanel getCardListPanelContainer() { return cardListPanelContainer; }
-        public JPanel getRoomGridPanel() { return roomGridPanel; }
-        public JPanel getFilterButtonsPanel() { return filterButtonsPanel; }
-        public ButtonGroup getTypeGroup() { return typeGroup; }
-        public ButtonGroup getPeopleGroup() { return peopleGroup; }
-        public ButtonGroup getFloorGroup() { return floorGroup; }
-        public ButtonGroup getStatusGroup() { return statusGroup; }
-        public Set<String> getSelectedRoomIds() { return selectedRoomIds; }
-        public JDateChooser getFromDateChooser() { return fromDateChooser; }
-        public JDateChooser getToDateChooser() { return toDateChooser; }
-        public JSpinner getAdultSpinner() { return adultSpinner; }
-        public JSpinner getChildSpinner() { return childSpinner; }
+        public JTextField getSearchField() {
+            return searchField;
+        }
+
+        public JComboBox<String> getBookingFilterComboBox() {
+            return bookingFilterComboBox;
+        }
+
+        public JPanel getCardListPanelContainer() {
+            return cardListPanelContainer;
+        }
+
+        public JPanel getRoomGridPanel() {
+            return roomGridPanel;
+        }
+
+        public JPanel getFilterButtonsPanel() {
+            return filterButtonsPanel;
+        }
+
+        public ButtonGroup getTypeGroup() {
+            return typeGroup;
+        }
+
+        public ButtonGroup getPeopleGroup() {
+            return peopleGroup;
+        }
+
+        public ButtonGroup getFloorGroup() {
+            return floorGroup;
+        }
+
+        public ButtonGroup getStatusGroup() {
+            return statusGroup;
+        }
+
+        public Set<String> getSelectedRoomIds() {
+            return selectedRoomIds;
+        }
+
+        public JDateChooser getFromDateChooser() {
+            return fromDateChooser;
+        }
+
+        public JDateChooser getToDateChooser() {
+            return toDateChooser;
+        }
+
+        public JSpinner getAdultSpinner() {
+            return adultSpinner;
+        }
+
+        public JSpinner getChildSpinner() {
+            return childSpinner;
+        }
+
         public JButton getBtnBookLater() {
             return btnBookLater;
         }
@@ -1099,6 +1136,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                         searchField.setForeground(UIManager.getColor("TextField.foreground"));
                     }
                 }
+
                 @Override
                 public void focusLost(FocusEvent e) {
                     if (searchField.getText().isEmpty()) {
@@ -1107,7 +1145,8 @@ public class GUI_NhanVienLeTan extends JFrame {
                     }
                 }
             });
-            searchField.setBorder(new CompoundBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER), new EmptyBorder(5, 8, 5, 8)));
+            searchField.setBorder(
+                    new CompoundBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER), new EmptyBorder(5, 8, 5, 8)));
             // ... (Code UI ComboBox y như cũ)
             searchPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
             return searchPanel;
@@ -1137,14 +1176,16 @@ public class GUI_NhanVienLeTan extends JFrame {
                 for (Object[] rowData : data) {
                     try {
                         // Mapping Object[] từ DAO:
-                        // {hoTen, sdt, maPhong, ngayNhanStr, ngayTraStr, maPhieu, tenTrangThai(Phong), status(UI), maKH}
+                        // {hoTen, sdt, maPhong, ngayNhanStr, ngayTraStr, maPhieu, tenTrangThai(Phong),
+                        // status(UI), maKH}
                         String name = (String) rowData[0];
                         String phone = (String) rowData[1];
                         String roomNum = (String) rowData[2];
                         String ngayNhan = (String) rowData[3];
                         String ngayTra = (String) rowData[4];
                         String bookingId = (String) rowData[5]; // maPhieu
-                        // String tenTrangThaiPhong = (String) rowData[6]; // Trạng thái phòng (Sẵn sàng, Đã thuê...)
+                        // String tenTrangThaiPhong = (String) rowData[6]; // Trạng thái phòng (Sẵn
+                        // sàng, Đã thuê...)
                         int statusUI = (int) rowData[7]; // Trạng thái UI (1=Xác nhận, 2=Nhận phòng)
                         // String maKH = (String) rowData[8];
 
@@ -1161,7 +1202,8 @@ public class GUI_NhanVienLeTan extends JFrame {
                             LocalDate checkin = LocalDate.parse(ngayNhan, dtf);
                             LocalDate checkout = LocalDate.parse(ngayTra, dtf);
                             long durationDays = ChronoUnit.DAYS.between(checkin, checkout);
-                            if(durationDays == 0) durationDays = 1; // Ít nhất 1 đêm
+                            if (durationDays == 0)
+                                durationDays = 1; // Ít nhất 1 đêm
 
                             priceStr = String.format("%,.0f đ", pricePerNight * durationDays);
                         } catch (Exception eCalc) {
@@ -1173,10 +1215,9 @@ public class GUI_NhanVienLeTan extends JFrame {
                         cardListPanelContainer.add(createBookingCard(
                                 name, phone, roomNum,
                                 "Nhận: " + ngayNhan, // line1_sub
-                                "Trả: " + ngayTra,    // line2_sub
-                                "Mã: " + bookingId,   // line3_sub
-                                priceStr, statusUI, bookingId, controller
-                        ));
+                                "Trả: " + ngayTra, // line2_sub
+                                "Mã: " + bookingId, // line3_sub
+                                priceStr, statusUI, bookingId, controller));
                         cardListPanelContainer.add(Box.createVerticalStrut(10));
                     } catch (Exception e) {
                         System.err.println("Lỗi nghiêm trọng khi tạo thẻ đặt phòng: " + e.getMessage());
@@ -1193,11 +1234,13 @@ public class GUI_NhanVienLeTan extends JFrame {
         /**
          * Tạo thẻ đặt phòng (gắn listener gọi controller).
          */
-        private JPanel createBookingCard(String name, String phone, String roomNum, String line1_sub, String line2_sub, String line3_sub, String price, int status, String bookingId, EventDatPhong ctrl) {
+        private JPanel createBookingCard(String name, String phone, String roomNum, String line1_sub, String line2_sub,
+                String line3_sub, String price, int status, String bookingId, EventDatPhong ctrl) {
             JPanel card = new JPanel();
             card.setLayout(new BoxLayout(card, BoxLayout.X_AXIS));
             card.setBackground(GUI_NhanVienLeTan.COLOR_WHITE);
-            card.setBorder(BorderFactory.createCompoundBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER), new EmptyBorder(12, 8, 12, 12)));
+            card.setBorder(BorderFactory.createCompoundBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER),
+                    new EmptyBorder(12, 8, 12, 12)));
             card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
             card.setAlignmentX(Component.LEFT_ALIGNMENT);
             card.add(createVerticalInfoPanel(name, phone, 180));
@@ -1257,8 +1300,10 @@ public class GUI_NhanVienLeTan extends JFrame {
             card.add(actionButton);
             card.add(Box.createHorizontalStrut(5));
             JButton btnEdit = createCardActionButton("📄", Color.BLUE, "Xem hóa đơn", bookingId, ctrl::handleShowBill);
-            JButton btnView = createCardActionButton("👁️", new Color(108, 117, 125), "Xem chi tiết", bookingId, ctrl::handleViewBooking);
-            JButton btnDelete = createCardActionButton("🗑️", Color.RED, "Xóa đặt phòng", bookingId, ctrl::handleDeleteBooking);
+            JButton btnView = createCardActionButton("👁️", new Color(108, 117, 125), "Xem chi tiết", bookingId,
+                    ctrl::handleViewBooking);
+            JButton btnDelete = createCardActionButton("🗑️", Color.RED, "Xóa đặt phòng", bookingId,
+                    ctrl::handleDeleteBooking);
             card.add(btnEdit);
             card.add(btnView);
             card.add(btnDelete);
@@ -1268,7 +1313,8 @@ public class GUI_NhanVienLeTan extends JFrame {
         /**
          * Helper tạo nút biểu tượng
          */
-        private JButton createCardActionButton(String unicodeChar, Color color, String tooltip, String id, java.util.function.Consumer<String> action) {
+        private JButton createCardActionButton(String unicodeChar, Color color, String tooltip, String id,
+                java.util.function.Consumer<String> action) {
             JButton button = new JButton(unicodeChar);
             button.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
             button.setForeground(color);
@@ -1332,7 +1378,6 @@ public class GUI_NhanVienLeTan extends JFrame {
             JTextFieldDateEditor fromEditor = (JTextFieldDateEditor) fromDateChooser.getDateEditor();
             fromEditor.setEditable(false);
             fromEditor.setBackground(Color.WHITE);
-
 
             // Date chooser for "to date"
             toDateChooser = new JDateChooser();
@@ -1426,7 +1471,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             filterButtonsPanel = new JPanel();
             filterButtonsPanel.setLayout(new BoxLayout(filterButtonsPanel, BoxLayout.Y_AXIS));
             filterButtonsPanel.setOpaque(false);
-            
+
             // Panel for room type filters
             JPanel typePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
             typePanel.setOpaque(false);
@@ -1438,7 +1483,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             JToggleButton btnFamily = createFilterToggleButton("Gia đình", typeGroup, false, controller);
             JToggleButton btnPresident = createFilterToggleButton("Tổng thống", typeGroup, false, controller);
             styleActiveTypeButton(btnAllTypes);
-            
+
             // Panel for floor filters
             JPanel floorPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
             floorPanel.setOpaque(false);
@@ -1492,7 +1537,6 @@ public class GUI_NhanVienLeTan extends JFrame {
 
             return filterButtonsPanel;
 
-            
         }
 
         /**
@@ -1515,6 +1559,7 @@ public class GUI_NhanVienLeTan extends JFrame {
         /**
          * Vẽ lại lưới phòng
          * (SỬA: Truyền moTa và soChua vào createRoomCard)
+         * 
          * @param data Danh sách phòng (List<Phong>) từ DAO
          */
         public void populateRoomCards(List<Phong> data) {
@@ -1523,7 +1568,8 @@ public class GUI_NhanVienLeTan extends JFrame {
                 for (Phong phong : data) {
                     try {
                         String roomNum = phong.getMaPhong();
-                        String roomType = (phong.getLoaiPhong() != null) ? phong.getLoaiPhong().getTenLoaiPhong() : "N/A";
+                        String roomType = (phong.getLoaiPhong() != null) ? phong.getLoaiPhong().getTenLoaiPhong()
+                                : "N/A";
                         // highlight-start
                         // Lấy moTa và soChua từ entity Phong
                         String moTa = (phong.getMoTa() != null) ? phong.getMoTa() : "";
@@ -1541,7 +1587,8 @@ public class GUI_NhanVienLeTan extends JFrame {
 
                         // highlight-start
                         // Gọi hàm createRoomCard với tham số mới
-                        JPanel card = createRoomCard(roomNum, roomType, moTa, soNguoi, price, isAvailable, roomId, tenTrangThai, controller);
+                        JPanel card = createRoomCard(roomNum, roomType, moTa, soNguoi, price, isAvailable, roomId,
+                                tenTrangThai, controller);
                         // highlight-end
                         roomGridPanel.add(card);
                     } catch (Exception e) {
@@ -1560,28 +1607,31 @@ public class GUI_NhanVienLeTan extends JFrame {
          * Tạo thẻ phòng (gắn listener gọi controller)
          * (ĐÃ SỬA: Hiển thị Mô tả + Số người thay vì Tầng/Diện tích)
          *
-         * @param roomNum     Mã phòng (ví dụ: "P101")
-         * @param roomType    Loại phòng (ví dụ: "Tiêu chuẩn")
-         * @param moTa        Mô tả chi tiết phòng
-         * @param soNguoi     Số người ở tối đa
-         * @param price       Giá phòng đã định dạng (ví dụ: "500.000 đ")
-         * @param isAvailable Phòng có sẵn sàng không (true/false)
-         * @param roomId      Mã phòng (dùng cho sự kiện)
+         * @param roomNum      Mã phòng (ví dụ: "P101")
+         * @param roomType     Loại phòng (ví dụ: "Tiêu chuẩn")
+         * @param moTa         Mô tả chi tiết phòng
+         * @param soNguoi      Số người ở tối đa
+         * @param price        Giá phòng đã định dạng (ví dụ: "500.000 đ")
+         * @param isAvailable  Phòng có sẵn sàng không (true/false)
+         * @param roomId       Mã phòng (dùng cho sự kiện)
          * @param tenTrangThai Tên trạng thái (ví dụ: "Sẵn sàng")
-         * @param ctrl        Controller xử lý sự kiện (hoặc this nếu tích hợp)
+         * @param ctrl         Controller xử lý sự kiện (hoặc this nếu tích hợp)
          * @return JPanel hiển thị thông tin phòng
          */
         // Sửa lại tham số đầu vào của hàm
-        private JPanel createRoomCard(String roomNum, String roomType, String moTa, int soNguoi, String price, boolean isAvailable, String roomId, String tenTrangThai, EventDatPhong ctrl) {
+        private JPanel createRoomCard(String roomNum, String roomType, String moTa, int soNguoi, String price,
+                boolean isAvailable, String roomId, String tenTrangThai, EventDatPhong ctrl) {
             JPanel card = new JPanel(new BorderLayout(0, 8)); // Giảm khoảng cách dọc
             card.setBackground(GUI_NhanVienLeTan.COLOR_WHITE);
             // Giảm padding và border nếu cần
-            card.setBorder(BorderFactory.createCompoundBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER), new EmptyBorder(10, 10, 10, 10)));
+            card.setBorder(BorderFactory.createCompoundBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER),
+                    new EmptyBorder(10, 10, 10, 10)));
             // --- Selected state ---
             boolean isSelected = selectedRoomIds.contains(roomId);
 
             // --- Phần trên: Mã phòng và Trạng thái --- (có badge "Đã chọn" khi selected)
-            JPanel topPanel = new JPanel(new BorderLayout()); topPanel.setOpaque(false);
+            JPanel topPanel = new JPanel(new BorderLayout());
+            topPanel.setOpaque(false);
             JLabel numLabel = new JLabel(roomNum);
             numLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
 
@@ -1635,7 +1685,8 @@ public class GUI_NhanVienLeTan extends JFrame {
             card.add(centerPanel, BorderLayout.CENTER);
 
             // --- Phần dưới: Giá và Nút chọn --- (Giữ nguyên)
-            JPanel bottomPanel = new JPanel(new BorderLayout()); bottomPanel.setOpaque(false);
+            JPanel bottomPanel = new JPanel(new BorderLayout());
+            bottomPanel.setOpaque(false);
             JLabel priceLabel = new JLabel("<html><b>" + price + "</b> /đêm</html>");
             priceLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             JButton selectButton = new JButton();
@@ -1666,7 +1717,8 @@ public class GUI_NhanVienLeTan extends JFrame {
 
             // Thêm viền tím nếu được chọn (Giữ nguyên)
             if (isSelected && isAvailable) {
-                card.setBorder(BorderFactory.createCompoundBorder(new LineBorder(new Color(138, 43, 226), 2), new EmptyBorder(11, 11, 11, 11)));
+                card.setBorder(BorderFactory.createCompoundBorder(new LineBorder(new Color(138, 43, 226), 2),
+                        new EmptyBorder(11, 11, 11, 11)));
             }
 
             return card;
@@ -1723,12 +1775,17 @@ public class GUI_NhanVienLeTan extends JFrame {
         private static class StatusColors {
             Color bg;
             Color fg;
-            StatusColors(Color bg, Color fg) { this.bg = bg; this.fg = fg; }
+
+            StatusColors(Color bg, Color fg) {
+                this.bg = bg;
+                this.fg = fg;
+            }
         }
 
         /** Logic lấy màu trạng thái */
         private StatusColors getStatusColors(String status) {
-            if (status == null) status = ""; // Tránh NullPointerException
+            if (status == null)
+                status = ""; // Tránh NullPointerException
             switch (status) {
                 case "Sẵn sàng":
                     return new StatusColors(GUI_NhanVienLeTan.STATUS_GREEN_BG, GUI_NhanVienLeTan.STATUS_GREEN_FG);
@@ -1747,7 +1804,8 @@ public class GUI_NhanVienLeTan extends JFrame {
         /**
          * Helper: Tạo JToggleButton lọc phòng
          */
-        private JToggleButton createFilterToggleButton(String text, ButtonGroup group, boolean selected, EventDatPhong ctrl) {
+        private JToggleButton createFilterToggleButton(String text, ButtonGroup group, boolean selected,
+                EventDatPhong ctrl) {
             JToggleButton button = new JToggleButton(text, selected);
             button.setFocusPainted(false);
             button.addActionListener(e -> {
@@ -1846,7 +1904,8 @@ public class GUI_NhanVienLeTan extends JFrame {
                 return dataList.toArray(new Object[0][]);
             } catch (SQLException e) {
                 e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Lỗi tải danh sách đặt phòng: " + e.getMessage(), "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Lỗi tải danh sách đặt phòng: " + e.getMessage(), "Lỗi CSDL",
+                        JOptionPane.ERROR_MESSAGE);
                 return new Object[0][0]; // Trả về mảng rỗng
             }
         }
@@ -1867,17 +1926,18 @@ public class GUI_NhanVienLeTan extends JFrame {
                 return dataList;
             } catch (SQLException e) {
                 e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Lỗi tải danh sách phòng: " + e.getMessage(), "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Lỗi tải danh sách phòng: " + e.getMessage(), "Lỗi CSDL",
+                        JOptionPane.ERROR_MESSAGE);
                 return new ArrayList<Phong>(); // Trả về List rỗng
             }
         }
     }
 
-// =================================================================================
-// PANEL NỘI DUNG 3: KHÁCH HÀNG
-// =================================================================================
+    // =================================================================================
+    // PANEL NỘI DUNG 3: KHÁCH HÀNG
+    // =================================================================================
 
-    public class PanelKhachHangContent extends  JPanel {
+    public class PanelKhachHangContent extends JPanel {
         private List<entity.KhachHang> customers; // Danh sách gốc
         private List<entity.KhachHang> filteredCustomers; // Sau khi lọc / tìm kiếm
         private JPanel listPanel;
@@ -1899,7 +1959,9 @@ public class GUI_NhanVienLeTan extends JFrame {
             } catch (SQLException e) {
                 e.printStackTrace();
                 // Hiển thị lỗi cho người dùng
-                JOptionPane.showMessageDialog(this, "Lỗi nghiêm trọng: Không thể tải danh sách khách hàng.\n" + e.getMessage(), "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi nghiêm trọng: Không thể tải danh sách khách hàng.\n" + e.getMessage(), "Lỗi CSDL",
+                        JOptionPane.ERROR_MESSAGE);
                 customers = new ArrayList<>(); // Khởi tạo danh sách rỗng để tránh lỗi NullPointer sau này
             }
             // *** KẾT THÚC SỬA LỖI ***
@@ -1955,8 +2017,8 @@ public class GUI_NhanVienLeTan extends JFrame {
             JPanel searchPanel = new JPanel(new BorderLayout(10, 0));
             searchPanel.setOpaque(false);
 
-            //  Không khai báo lại biến cục bộ
-            searchField = new JTextField("");  // <-- dùng biến instance
+            // Không khai báo lại biến cục bộ
+            searchField = new JTextField(""); // <-- dùng biến instance
 
             String placeholder = " Tìm kiếm theo mã NV, họ tên, số điện thoại, email, CCCD...";
             Color placeholderColor = Color.GRAY;
@@ -1983,7 +2045,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                 }
             });
 
-            //  Sự kiện gõ chữ để lọc tự động
+            // Sự kiện gõ chữ để lọc tự động
             searchField.addKeyListener(new KeyAdapter() {
                 @Override
                 public void keyReleased(KeyEvent e) {
@@ -2063,7 +2125,8 @@ public class GUI_NhanVienLeTan extends JFrame {
             String email = (kh.getEmail() != null) ? kh.getEmail() : "N/A";
             String cccd = (kh.getCCCD() != null) ? kh.getCCCD() : "N/A";
             int stayCount = kh.getSoLanLuuTru();
-            String lastStay = (kh.getNgayLuuTruGanNhat() != null) ? kh.getNgayLuuTruGanNhat().toString() : "Chưa lưu trú";
+            String lastStay = (kh.getNgayLuuTruGanNhat() != null) ? kh.getNgayLuuTruGanNhat().toString()
+                    : "Chưa lưu trú";
             String totalSpend = formatCurrency(kh.getTongChiTieu());
             String tier = (kh.getHangThanhVien() != null) ? kh.getHangThanhVien() : "Standard"; // (Không cần nữa)
             double rating = kh.getDanhGiaTrungBinh();
@@ -2128,7 +2191,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             vipLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
             vipLabel.setForeground(Color.WHITE);
             vipLabel.setOpaque(true);
-            vipLabel.setBackground(getTierColor(tier));   // liên quan màu theo hạng
+            vipLabel.setBackground(getTierColor(tier)); // liên quan màu theo hạng
             vipLabel.setBorder(new EmptyBorder(4, 10, 4, 10));
             vipLabel.setPreferredSize(new Dimension(80, 25));
 
@@ -2149,7 +2212,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             JButton delete = new JButton("🗑");
             edit.setForeground(Color.blue);
             delete.setForeground(Color.red);
-            for (JButton b : new JButton[]{edit, delete}) {
+            for (JButton b : new JButton[] { edit, delete }) {
                 b.setFocusPainted(false);
                 b.setBorderPainted(false);
                 b.setContentAreaFilled(false);
@@ -2163,7 +2226,8 @@ public class GUI_NhanVienLeTan extends JFrame {
                     controller.handleEditKhachHang(kh);
                 } catch (SQLException e) {
                     e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Lỗi CSDL khi mở form sửa: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Lỗi CSDL khi mở form sửa: " + e.getMessage(), "Lỗi",
+                            JOptionPane.ERROR_MESSAGE);
                 }
             });
 
@@ -2172,7 +2236,8 @@ public class GUI_NhanVienLeTan extends JFrame {
                     controller.handleDeleteKhachHang(kh);
                 } catch (SQLException e) {
                     e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Lỗi CSDL khi xóa: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Lỗi CSDL khi xóa: " + e.getMessage(), "Lỗi",
+                            JOptionPane.ERROR_MESSAGE);
                 }
             });
             right.add(edit);
@@ -2209,14 +2274,21 @@ public class GUI_NhanVienLeTan extends JFrame {
         // Logic lấy màu cho hạng thành viên
         // Lấy màu theo hạng VIP, an toàn với null
         private Color getTierColor(String tier) {
-            if (tier == null) return Color.GRAY;
+            if (tier == null)
+                return Color.GRAY;
             switch (tier) {
-                case "Platinum": return new Color(162, 126, 251);
-                case "Gold": return new Color(237, 207, 79, 239);
-                case "Silver": return new Color(177, 170, 170);
-                case "Bronze": return new Color(255, 191, 110);
-                case "Standard": return new Color(99, 132, 244);
-                default: return Color.GRAY;
+                case "Platinum":
+                    return new Color(162, 126, 251);
+                case "Gold":
+                    return new Color(237, 207, 79, 239);
+                case "Silver":
+                    return new Color(177, 170, 170);
+                case "Bronze":
+                    return new Color(255, 191, 110);
+                case "Standard":
+                    return new Color(99, 132, 244);
+                default:
+                    return Color.GRAY;
             }
         }
 
@@ -2265,7 +2337,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             container.add(header, BorderLayout.NORTH);
 
             // Thẻ thống kê có cuộn
-            summaryPanel = createSummaryPanel();  // lưu tham chiếu
+            summaryPanel = createSummaryPanel(); // lưu tham chiếu
             JScrollPane scrollSummary = new JScrollPane(summaryPanel);
             scrollSummary.setBorder(null);
             scrollSummary.setPreferredSize(new Dimension(0, 200));
@@ -2275,7 +2347,6 @@ public class GUI_NhanVienLeTan extends JFrame {
 
             return container;
         }
-
 
         private JPanel createSummaryPanel() {
             JPanel summary = new JPanel();
@@ -2309,7 +2380,8 @@ public class GUI_NhanVienLeTan extends JFrame {
 
         private void refreshStats() {
             lblTongKH.setText(String.valueOf(dao.countAllKhachHang()));
-            lblTieuDung.setText(NumberFormat.getInstance(Locale.forLanguageTag("vi-VN")).format(dao.sumTongChiTieu()) + " đ");
+            lblTieuDung.setText(
+                    NumberFormat.getInstance(Locale.forLanguageTag("vi-VN")).format(dao.sumTongChiTieu()) + " đ");
             lblDanhGia.setText(String.format("%.1f", dao.avgDanhGia()));
             lblStandard.setText(String.valueOf(dao.countKhachHangByTier("Standard")));
             lblPlatinum.setText(String.valueOf(dao.countKhachHangByTier("Platinum")));
@@ -2335,6 +2407,7 @@ public class GUI_NhanVienLeTan extends JFrame {
 
             return card;
         }
+
         public void reloadData() throws SQLException {
             customers = dao.getAllKhachHang();
             filteredCustomers = new ArrayList<>(customers);
@@ -2345,8 +2418,8 @@ public class GUI_NhanVienLeTan extends JFrame {
     }
 
     // =================================================================================
-// PANEL NỘI DUNG 4: QUẢN LÝ PHÒNG (ĐÃ THÊM TÍNH NĂNG MỚI)
-// =================================================================================
+    // PANEL NỘI DUNG 4: QUẢN LÝ PHÒNG (ĐÃ THÊM TÍNH NĂNG MỚI)
+    // =================================================================================
     public static class PanelPhongContent extends JPanel {
         private EventPhong controller;
         private JTextField searchField;
@@ -2378,10 +2451,21 @@ public class GUI_NhanVienLeTan extends JFrame {
             controller.initListeners();
         }
 
-        public JButton getBtnAdd() { return btnAdd; }
-        public JTextField getSearchField() { return searchField; }
-        public JComboBox<String> getStatusFilter() { return statusFilter; }
-        public JComboBox<String> getTypeFilter() { return typeFilter; }
+        public JButton getBtnAdd() {
+            return btnAdd;
+        }
+
+        public JTextField getSearchField() {
+            return searchField;
+        }
+
+        public JComboBox<String> getStatusFilter() {
+            return statusFilter;
+        }
+
+        public JComboBox<String> getTypeFilter() {
+            return typeFilter;
+        }
 
         private JPanel createHeader() {
             JPanel header = new JPanel(new BorderLayout());
@@ -2419,6 +2503,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                         searchField.setForeground(defaultColor);
                     }
                 }
+
                 @Override
                 public void focusLost(FocusEvent e) {
                     if (searchField.getText().isEmpty()) {
@@ -2433,8 +2518,8 @@ public class GUI_NhanVienLeTan extends JFrame {
             bar.add(searchField, BorderLayout.CENTER);
             JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
             filterPanel.setOpaque(false);
-            statusFilter = new JComboBox<>(new String[]{"Tất cả trạng thái"});
-            typeFilter = new JComboBox<>(new String[]{"Tất cả loại"});
+            statusFilter = new JComboBox<>(new String[] { "Tất cả trạng thái" });
+            typeFilter = new JComboBox<>(new String[] { "Tất cả loại" });
             filterPanel.add(statusFilter);
             filterPanel.add(typeFilter);
             bar.add(filterPanel, BorderLayout.EAST);
@@ -2565,7 +2650,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             edit.setForeground(Color.blue);
             view.setForeground(new Color(0, 180, 0));
             delete.setForeground(Color.red);
-            for (JButton b : new JButton[]{edit, view, delete}) {
+            for (JButton b : new JButton[] { edit, view, delete }) {
                 b.setFocusPainted(false);
                 b.setBorderPainted(false);
                 b.setContentAreaFilled(false);
@@ -2587,8 +2672,13 @@ public class GUI_NhanVienLeTan extends JFrame {
 
         // Lớp Helper cho màu Trạng thái
         private static class StatusColors {
-            Color bg; Color fg;
-            StatusColors(Color bg, Color fg) { this.bg = bg; this.fg = fg; }
+            Color bg;
+            Color fg;
+
+            StatusColors(Color bg, Color fg) {
+                this.bg = bg;
+                this.fg = fg;
+            }
         }
 
         // Logic lấy màu trạng thái
@@ -2642,7 +2732,8 @@ public class GUI_NhanVienLeTan extends JFrame {
             grid.add(createSchemaCard("201", "Suite cao cấp", "4", "2.8M", GUI_NhanVienLeTan.STATUS_RED_BG.darker()));
             grid.add(createSchemaCard("301", "View biển", "3", "3.5M", GUI_NhanVienLeTan.STATUS_ORANGE_BG.darker()));
             grid.add(createSchemaCard("404", "Gia đình", "6", "4.5M", GUI_NhanVienLeTan.STATUS_YELLOW_BG.darker()));
-            grid.add(createSchemaCard("501", "Suite Tổng thống", "4", "9.0M", GUI_NhanVienLeTan.STATUS_GREEN_BG.darker()));
+            grid.add(createSchemaCard("501", "Suite Tổng thống", "4", "9.0M",
+                    GUI_NhanVienLeTan.STATUS_GREEN_BG.darker()));
             grid.add(createSchemaCard("102", "Tiêu chuẩn", "2", "1.2M", GUI_NhanVienLeTan.STATUS_GREEN_BG.darker()));
 
             JScrollPane scroll = new JScrollPane(grid);
@@ -2705,299 +2796,313 @@ public class GUI_NhanVienLeTan extends JFrame {
         }
     }
 
-// =================================================================================
-// PANEL NỘI DUNG 5: DỊCH VỤ
-// =================================================================================
+    // =================================================================================
+    // PANEL NỘI DUNG 5: DỊCH VỤ
+    // =================================================================================
 
     public static class PanelDichVuContent extends JPanel {
-    private EventDichVu controller;
+        private EventDichVu controller;
 
-    private JPanel listPanel;
-    private JButton btnAdd;
-    private JTextField searchField;
-    private JButton searchButton;
-    public PanelDichVuContent() {
-        setLayout(new BorderLayout(15, 15));
-        setBackground(GUI_NhanVienLeTan.MAIN_BG);
-        setBorder(new EmptyBorder(18, 18, 18, 18));
+        private JPanel listPanel;
+        private JButton btnAdd;
+        private JTextField searchField;
+        private JButton searchButton;
 
-        // KHỞI TẠO DAO VÀ CONTROLLER
-        try {
+        public PanelDichVuContent() {
+            setLayout(new BorderLayout(15, 15));
+            setBackground(GUI_NhanVienLeTan.MAIN_BG);
+            setBorder(new EmptyBorder(18, 18, 18, 18));
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        this.controller = new EventDichVu(this);
+            // KHỞI TẠO DAO VÀ CONTROLLER
+            try {
 
-        add(createHeader(), BorderLayout.NORTH);
-        add(createMainContent(), BorderLayout.CENTER);
-
-        // GẮN LISTENER VÀ TẢI DỮ LIỆU
-        controller.initListeners();
-        controller.loadDichVuData(); // Tải dữ liệu ban đầu
-    }
-    public JButton getBtnAdd() { return btnAdd; }
-    public JTextField getSearchField() { return searchField; }
-    public JButton getSearchButton() { return searchButton; }
-    // Tiêu đề + nút thêm dịch vụ
-    private JPanel createHeader() {
-        JPanel header = new JPanel(new BorderLayout());
-        header.setOpaque(false);
-        // Consistent bottom padding
-        header.setBorder(new EmptyBorder(0, 0, 15, 0));
-        JLabel title = new JLabel("Quản lý Dịch vụ");
-        title.setFont(new Font("SansSerif", Font.BOLD, 20));
-        header.add(title, BorderLayout.WEST);
-
-        return header;
-    }
-
-    // Chia làm 2 phần: danh sách dịch vụ và danh mục dịch vụ
-    private JPanel createMainContent() {
-        JPanel content = new JPanel();
-        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.setOpaque(false);
-
-        // THÊM THANH TÌM KIẾM
-        content.add(createSearchFilterPanel());
-        content.add(Box.createVerticalStrut(15)); // Khoảng cách
-
-        // Danh sách dịch vụ ở trên
-        content.add(createServiceListPanel());
-        content.add(Box.createVerticalStrut(20)); // khoảng cách
-
-        // Danh mục dịch vụ ở dưới
-        content.add(createServiceCategoryPanel());
-
-        return content;
-    }
-
-    // THÊM PHƯƠNG THỨC NÀY
-    private JPanel createSearchFilterPanel() {
-        JPanel searchPanel = new JPanel(new BorderLayout(10, 0));
-        searchPanel.setOpaque(false);
-
-        searchField = new JTextField("");
-        String placeholder = " Tìm kiếm dịch vụ...";
-        // ... (Copy code placeholder từ PanelKhachHangContent) ...
-        searchField.setText(placeholder);
-        searchField.setForeground(Color.GRAY);
-        searchField.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (searchField.getText().equals(placeholder)) {
-                    searchField.setText("");
-                    searchField.setForeground(UIManager.getColor("TextField.foreground"));
-                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (searchField.getText().isEmpty()) {
-                    searchField.setText(placeholder);
-                    searchField.setForeground(Color.GRAY);
-                }
-            }
-        });
-        searchField.setBorder(new CompoundBorder(
-                new LineBorder(GUI_NhanVienLeTan.CARD_BORDER),
-                new EmptyBorder(5, 8, 5, 8)));
+            this.controller = new EventDichVu(this);
 
-        searchButton = new JButton("Tìm");
-        searchButton.setFocusPainted(false);
+            add(createHeader(), BorderLayout.NORTH);
+            add(createMainContent(), BorderLayout.CENTER);
 
-        searchPanel.add(searchField, BorderLayout.CENTER);
-        searchPanel.add(searchButton, BorderLayout.EAST);
-        searchPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        return searchPanel;
-    }
-
-    // Danh sách dịch vụ chi tiết
-    private JScrollPane createServiceListPanel() {
-        listPanel = new JPanel();
-        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
-        listPanel.setOpaque(false);
-        listPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-
-        JScrollPane scroll = new JScrollPane(listPanel);
-        scroll.setBorder(null);
-        scroll.getViewport().setBackground(GUI_NhanVienLeTan.MAIN_BG);
-        scroll.setPreferredSize(new Dimension(0, 400));
-        scroll.getVerticalScrollBar().setUnitIncrement(15);
-        scroll.setAlignmentX(Component.LEFT_ALIGNMENT);
-        return scroll;
-    }
-    /**
-     * Vẽ lại danh sách thẻ dịch vụ từ List<DichVu>
-     * @param dsDV Danh sách dịch vụ
-     */
-    public void populateDichVuList(List<DichVu> dsDV) {
-        listPanel.removeAll(); // Xóa thẻ cũ
-
-        if (dsDV == null || dsDV.isEmpty()) {
-            listPanel.add(new JLabel("Không tìm thấy dịch vụ nào."));
-        } else {
-            for (DichVu dv : dsDV) {
-                // Tạo thẻ mới từ đối tượng DichVu
-                JPanel card = createServiceCard(dv); // Gọi hàm đã sửa
-                listPanel.add(card);
-                listPanel.add(Box.createVerticalStrut(10));
-            }
+            // GẮN LISTENER VÀ TẢI DỮ LIỆU
+            controller.initListeners();
+            controller.loadDichVuData(); // Tải dữ liệu ban đầu
         }
 
-        listPanel.revalidate();
-        listPanel.repaint();
+        public JButton getBtnAdd() {
+            return btnAdd;
+        }
+
+        public JTextField getSearchField() {
+            return searchField;
+        }
+
+        public JButton getSearchButton() {
+            return searchButton;
+        }
+
+        // Tiêu đề + nút thêm dịch vụ
+        private JPanel createHeader() {
+            JPanel header = new JPanel(new BorderLayout());
+            header.setOpaque(false);
+            // Consistent bottom padding
+            header.setBorder(new EmptyBorder(0, 0, 15, 0));
+            JLabel title = new JLabel("Quản lý Dịch vụ");
+            title.setFont(new Font("SansSerif", Font.BOLD, 20));
+            header.add(title, BorderLayout.WEST);
+
+            return header;
+        }
+
+        // Chia làm 2 phần: danh sách dịch vụ và danh mục dịch vụ
+        private JPanel createMainContent() {
+            JPanel content = new JPanel();
+            content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+            content.setOpaque(false);
+
+            // THÊM THANH TÌM KIẾM
+            content.add(createSearchFilterPanel());
+            content.add(Box.createVerticalStrut(15)); // Khoảng cách
+
+            // Danh sách dịch vụ ở trên
+            content.add(createServiceListPanel());
+            content.add(Box.createVerticalStrut(20)); // khoảng cách
+
+            // Danh mục dịch vụ ở dưới
+            content.add(createServiceCategoryPanel());
+
+            return content;
+        }
+
+        // THÊM PHƯƠNG THỨC NÀY
+        private JPanel createSearchFilterPanel() {
+            JPanel searchPanel = new JPanel(new BorderLayout(10, 0));
+            searchPanel.setOpaque(false);
+
+            searchField = new JTextField("");
+            String placeholder = " Tìm kiếm dịch vụ...";
+            // ... (Copy code placeholder từ PanelKhachHangContent) ...
+            searchField.setText(placeholder);
+            searchField.setForeground(Color.GRAY);
+            searchField.addFocusListener(new FocusAdapter() {
+                @Override
+                public void focusGained(FocusEvent e) {
+                    if (searchField.getText().equals(placeholder)) {
+                        searchField.setText("");
+                        searchField.setForeground(UIManager.getColor("TextField.foreground"));
+                    }
+                }
+
+                @Override
+                public void focusLost(FocusEvent e) {
+                    if (searchField.getText().isEmpty()) {
+                        searchField.setText(placeholder);
+                        searchField.setForeground(Color.GRAY);
+                    }
+                }
+            });
+            searchField.setBorder(new CompoundBorder(
+                    new LineBorder(GUI_NhanVienLeTan.CARD_BORDER),
+                    new EmptyBorder(5, 8, 5, 8)));
+
+            searchButton = new JButton("Tìm");
+            searchButton.setFocusPainted(false);
+
+            searchPanel.add(searchField, BorderLayout.CENTER);
+            searchPanel.add(searchButton, BorderLayout.EAST);
+            searchPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+            return searchPanel;
+        }
+
+        // Danh sách dịch vụ chi tiết
+        private JScrollPane createServiceListPanel() {
+            listPanel = new JPanel();
+            listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+            listPanel.setOpaque(false);
+            listPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            JScrollPane scroll = new JScrollPane(listPanel);
+            scroll.setBorder(null);
+            scroll.getViewport().setBackground(GUI_NhanVienLeTan.MAIN_BG);
+            scroll.setPreferredSize(new Dimension(0, 400));
+            scroll.getVerticalScrollBar().setUnitIncrement(15);
+            scroll.setAlignmentX(Component.LEFT_ALIGNMENT);
+            return scroll;
+        }
+
+        /**
+         * Vẽ lại danh sách thẻ dịch vụ từ List<DichVu>
+         * 
+         * @param dsDV Danh sách dịch vụ
+         */
+        public void populateDichVuList(List<DichVu> dsDV) {
+            listPanel.removeAll(); // Xóa thẻ cũ
+
+            if (dsDV == null || dsDV.isEmpty()) {
+                listPanel.add(new JLabel("Không tìm thấy dịch vụ nào."));
+            } else {
+                for (DichVu dv : dsDV) {
+                    // Tạo thẻ mới từ đối tượng DichVu
+                    JPanel card = createServiceCard(dv); // Gọi hàm đã sửa
+                    listPanel.add(card);
+                    listPanel.add(Box.createVerticalStrut(10));
+                }
+            }
+
+            listPanel.revalidate();
+            listPanel.repaint();
+        }
+
+        // Một thẻ dịch vụ chi tiết
+        // Sửa chữ ký phương thức
+        private JPanel createServiceCard(DichVu dv) {
+            String name = dv.getTenDV();
+            String price = String.format("%,.0f đ", dv.getGiaTien()); // Use getGiaTien
+
+            // highlight-start
+            // XÓA HOẶC COMMENT OUT CÁC DÒNG NÀY VÌ donViTinh KHÔNG CÒN TỒN TẠI
+            // String donVi = dv.getDonViTinh(); // <<< LỖI Ở ĐÂY
+            // if(donVi != null && !donVi.isEmpty()){
+            // price += " / " + donVi;
+            // }
+            // highlight-end
+
+            // (Logic trạng thái "Còn" hay "Hết" cần thêm vào Entity/DAO nếu muốn)
+            String status = "Còn";
+            String desc = dv.getMoTa();
+            double rating = 4.5; // (Tạm thời hard-code)
+
+            // --- BẮT ĐẦU CODE GIAO DIỆN (Giữ nguyên) ---
+            JPanel card = new JPanel(new BorderLayout(10, 10));
+            card.setBackground(Color.WHITE);
+            card.setBorder(
+                    new CompoundBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER), new EmptyBorder(10, 10, 10, 10)));
+
+            JLabel title = new JLabel(name);
+            title.setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+            JLabel priceLabel = new JLabel(price); // Dùng biến price
+            priceLabel.setForeground(new Color(0, 128, 0));
+
+            JLabel statusLabel = new JLabel(status); // Dùng biến status
+            statusLabel
+                    .setForeground(status.equals("Còn") ? GUI_NhanVienLeTan.COLOR_GREEN : GUI_NhanVienLeTan.COLOR_RED);
+
+            JLabel descLabel = new JLabel("<html><i>" + desc + "</i></html>"); // Dùng biến desc
+            descLabel.setForeground(GUI_NhanVienLeTan.COLOR_TEXT_MUTED);
+
+            JLabel ratingLabel = new JLabel("★ " + rating); // Dùng biến rating
+            ratingLabel.setForeground(new Color(255, 165, 0));
+
+            JPanel info = new JPanel();
+            info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
+            info.setOpaque(false);
+            info.add(title);
+            info.add(priceLabel);
+            info.add(statusLabel);
+            info.add(descLabel);
+            info.add(ratingLabel);
+
+            JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            actions.setOpaque(false);
+
+            // Sửa các nút này
+            JButton edit = createIconButton("✎", Color.BLUE);
+            JButton view = createIconButton("👁", new Color(0, 180, 0)); // (Chưa có sự kiện)
+            JButton delete = createIconButton("🗑", Color.RED);
+
+            // === GẮN SỰ KIỆN VÀO NÚT ===
+            edit.addActionListener(e -> controller.handleShowEditForm(dv));
+            delete.addActionListener(e -> controller.handleDeleteDichVu(dv));
+            // view.addActionListener(e -> ...);
+
+            actions.add(edit);
+            actions.add(view);
+            actions.add(delete);
+
+            card.add(info, BorderLayout.CENTER);
+            card.add(actions, BorderLayout.EAST);
+            return card;
+        }
+
+        // Danh mục dịch vụ theo nhóm
+        private JPanel createServiceCategoryPanel() {
+            JPanel grid = new JPanel(new GridLayout(2, 3, 15, 15)); // 2 hàng, 3 cột
+            grid.setOpaque(false);
+            grid.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            // Thẻ danh mục dịch vụ mô phỏng
+            grid.add(createCategoryCard("Spa & Massage", "300000 đ", new Color(255, 230, 230)));
+            grid.add(createCategoryCard("Nhà hàng cao cấp", "500000 đ", new Color(230, 255, 230)));
+            grid.add(createCategoryCard("Xe đưa đón sân bay", "300000 đ", new Color(230, 240, 255)));
+            grid.add(createCategoryCard("Phòng gym & fitness", "300000 đ", new Color(255, 245, 230)));
+            grid.add(createCategoryCard("Room service 24/7", "300000 đ", new Color(240, 240, 255)));
+
+            // Tiêu đề + nút thêm
+            JPanel wrapper = new JPanel();
+            wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
+            wrapper.setOpaque(false);
+            wrapper.setBorder(new EmptyBorder(10, 0, 0, 0));
+
+            JLabel title = new JLabel("Danh mục dịch vụ");
+            title.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            title.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            btnAdd = new JButton("+ Thêm dịch vụ");
+            btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            btnAdd.setBackground(GUI_NhanVienLeTan.ACCENT_BLUE);
+            btnAdd.setForeground(Color.WHITE);
+            btnAdd.setBorderPainted(false);
+            btnAdd.setFocusPainted(false);
+            btnAdd.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnAdd.setBorder(new EmptyBorder(8, 15, 8, 15));
+
+            wrapper.add(title);
+            wrapper.add(Box.createVerticalStrut(10));
+            wrapper.add(btnAdd); // Thêm nút vào wrapper
+            wrapper.add(Box.createVerticalStrut(10));
+            wrapper.add(grid); // Thêm lưới vào wrapper
+
+            return wrapper;
+        }
+
+        // Một thẻ danh mục dịch vụ
+        private JPanel createCategoryCard(String name, String price, Color bg) {
+            JPanel card = new JPanel(new BorderLayout());
+            card.setBackground(bg);
+            card.setBorder(
+                    new CompoundBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER), new EmptyBorder(10, 10, 10, 10)));
+
+            JLabel nameLabel = new JLabel(name);
+            nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+            JLabel priceLabel = new JLabel(price);
+            priceLabel.setForeground(Color.DARK_GRAY);
+
+            card.add(nameLabel, BorderLayout.CENTER);
+            card.add(priceLabel, BorderLayout.SOUTH);
+            return card;
+        }
+
+        // Phương thức tạo nút Icon bằng Unicode/Emoji cho Dịch vụ
+        private JButton createIconButton(String text, Color color) {
+            JButton btn = new JButton(text);
+            btn.setFont(new Font("Segoe UI Emoji", Font.BOLD, 12));
+            btn.setForeground(color);
+            btn.setBorderPainted(false);
+            btn.setContentAreaFilled(false);
+            btn.setFocusPainted(false);
+            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            return btn;
+        }
     }
 
-    // Một thẻ dịch vụ chi tiết
-    // Sửa chữ ký phương thức
-    private JPanel createServiceCard(DichVu dv) {
-        String name = dv.getTenDV();
-        String price = String.format("%,.0f đ", dv.getGiaTien()); // Use getGiaTien
-
-        // highlight-start
-        // XÓA HOẶC COMMENT OUT CÁC DÒNG NÀY VÌ donViTinh KHÔNG CÒN TỒN TẠI
-        // String donVi = dv.getDonViTinh(); // <<< LỖI Ở ĐÂY
-        // if(donVi != null && !donVi.isEmpty()){
-        //     price += " / " + donVi;
-        // }
-        // highlight-end
-
-        // (Logic trạng thái "Còn" hay "Hết" cần thêm vào Entity/DAO nếu muốn)
-        String status = "Còn";
-        String desc = dv.getMoTa();
-        double rating = 4.5; // (Tạm thời hard-code)
-
-        // --- BẮT ĐẦU CODE GIAO DIỆN (Giữ nguyên) ---
-        JPanel card = new JPanel(new BorderLayout(10, 10));
-        card.setBackground(Color.WHITE);
-        card.setBorder(
-                new CompoundBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER), new EmptyBorder(10, 10, 10, 10)));
-
-        JLabel title = new JLabel(name);
-        title.setFont(new Font("Segoe UI", Font.BOLD, 14));
-
-        JLabel priceLabel = new JLabel(price); // Dùng biến price
-        priceLabel.setForeground(new Color(0, 128, 0));
-
-        JLabel statusLabel = new JLabel(status); // Dùng biến status
-        statusLabel.setForeground(status.equals("Còn") ? GUI_NhanVienLeTan.COLOR_GREEN : GUI_NhanVienLeTan.COLOR_RED);
-
-        JLabel descLabel = new JLabel("<html><i>" + desc + "</i></html>"); // Dùng biến desc
-        descLabel.setForeground(GUI_NhanVienLeTan.COLOR_TEXT_MUTED);
-
-        JLabel ratingLabel = new JLabel("★ " + rating); // Dùng biến rating
-        ratingLabel.setForeground(new Color(255, 165, 0));
-
-        JPanel info = new JPanel();
-        info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
-        info.setOpaque(false);
-        info.add(title);
-        info.add(priceLabel);
-        info.add(statusLabel);
-        info.add(descLabel);
-        info.add(ratingLabel);
-
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        actions.setOpaque(false);
-
-        // Sửa các nút này
-        JButton edit = createIconButton("✎", Color.BLUE);
-        JButton view = createIconButton("👁", new Color(0, 180, 0)); // (Chưa có sự kiện)
-        JButton delete = createIconButton("🗑", Color.RED);
-
-        // === GẮN SỰ KIỆN VÀO NÚT ===
-        edit.addActionListener(e -> controller.handleShowEditForm(dv));
-        delete.addActionListener(e -> controller.handleDeleteDichVu(dv));
-        // view.addActionListener(e -> ...);
-
-        actions.add(edit);
-        actions.add(view);
-        actions.add(delete);
-
-        card.add(info, BorderLayout.CENTER);
-        card.add(actions, BorderLayout.EAST);
-        return card;
-    }
-
-    // Danh mục dịch vụ theo nhóm
-    private JPanel createServiceCategoryPanel() {
-        JPanel grid = new JPanel(new GridLayout(2, 3, 15, 15)); // 2 hàng, 3 cột
-        grid.setOpaque(false);
-        grid.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        // Thẻ danh mục dịch vụ mô phỏng
-        grid.add(createCategoryCard("Spa & Massage", "300000 đ", new Color(255, 230, 230)));
-        grid.add(createCategoryCard("Nhà hàng cao cấp", "500000 đ", new Color(230, 255, 230)));
-        grid.add(createCategoryCard("Xe đưa đón sân bay", "300000 đ", new Color(230, 240, 255)));
-        grid.add(createCategoryCard("Phòng gym & fitness", "300000 đ", new Color(255, 245, 230)));
-        grid.add(createCategoryCard("Room service 24/7", "300000 đ", new Color(240, 240, 255)));
-
-        // Tiêu đề + nút thêm
-        JPanel wrapper = new JPanel();
-        wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
-        wrapper.setOpaque(false);
-        wrapper.setBorder(new EmptyBorder(10, 0, 0, 0));
-
-        JLabel title = new JLabel("Danh mục dịch vụ");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        title.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        btnAdd = new JButton("+ Thêm dịch vụ");
-        btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnAdd.setBackground(GUI_NhanVienLeTan.ACCENT_BLUE);
-        btnAdd.setForeground(Color.WHITE);
-        btnAdd.setBorderPainted(false);
-        btnAdd.setFocusPainted(false);
-        btnAdd.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnAdd.setBorder(new EmptyBorder(8, 15, 8, 15));
-
-        wrapper.add(title);
-        wrapper.add(Box.createVerticalStrut(10));
-        wrapper.add(btnAdd); // Thêm nút vào wrapper
-        wrapper.add(Box.createVerticalStrut(10));
-        wrapper.add(grid); // Thêm lưới vào wrapper
-
-        return wrapper;
-    }
-
-    // Một thẻ danh mục dịch vụ
-    private JPanel createCategoryCard(String name, String price, Color bg) {
-        JPanel card = new JPanel(new BorderLayout());
-        card.setBackground(bg);
-        card.setBorder(
-                new CompoundBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER), new EmptyBorder(10, 10, 10, 10)));
-
-        JLabel nameLabel = new JLabel(name);
-        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-
-        JLabel priceLabel = new JLabel(price);
-        priceLabel.setForeground(Color.DARK_GRAY);
-
-        card.add(nameLabel, BorderLayout.CENTER);
-        card.add(priceLabel, BorderLayout.SOUTH);
-        return card;
-    }
-
-    // Phương thức tạo nút Icon bằng Unicode/Emoji cho Dịch vụ
-    private JButton createIconButton(String text, Color color) {
-        JButton btn = new JButton(text);
-        btn.setFont(new Font("Segoe UI Emoji", Font.BOLD, 12));
-        btn.setForeground(color);
-        btn.setBorderPainted(false);
-        btn.setContentAreaFilled(false);
-        btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        return btn;
-    }
-}
-
-// File: GUI_NhanVienLeTan.java
-// (Tìm đến cuối file và THAY THẾ TOÀN BỘ lớp PanelCheckInCheckOut)
+    // File: GUI_NhanVienLeTan.java
+    // (Tìm đến cuối file và THAY THẾ TOÀN BỘ lớp PanelCheckInCheckOut)
 
     // =================================================================================
-// <<< PANEL NỘI DUNG 6: CHECK-IN / CHECK-OUT (ĐÃ SỬA LỖI) >>>
-// =================================================================================
+    // <<< PANEL NỘI DUNG 6: CHECK-IN / CHECK-OUT (ĐÃ SỬA LỖI) >>>
+    // =================================================================================
     public static class PanelCheckInCheckOut extends JPanel {
 
         // --- Định dạng ---
@@ -3040,7 +3145,23 @@ public class GUI_NhanVienLeTan extends JFrame {
             this.controller.initController();
             this.controller.loadData();
         }
+
+        public void refreshData() {
+            if (controller != null) {
+                controller.loadData();
+            }
+        }
+
         // highlight-end
+
+        public void setBookingInfo(String maPhieu, String phong, String tenKhach) {
+            if (lblMaPhieu != null)
+                lblMaPhieu.setText(maPhieu);
+            if (lblPhong != null)
+                lblPhong.setText(phong);
+            if (lblTenKhach != null)
+                lblTenKhach.setText(tenKhach);
+        }
 
         /**
          * TẠO HEADER (Gộp Title, Toggles, History)
@@ -3128,7 +3249,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             toggleGroup.add(btnToggleCheckOut);
 
             // Style mặc định ban đầu
-            styleToggleButton(btnToggleCheckIn, true);  // Mặc định chọn Check In
+            styleToggleButton(btnToggleCheckIn, true); // Mặc định chọn Check In
             styleToggleButton(btnToggleCheckOut, false);
 
             btnToggleCheckIn.setSelected(true);
@@ -3151,13 +3272,11 @@ public class GUI_NhanVienLeTan extends JFrame {
             btnHistory.setFocusPainted(false);
             btnHistory.setBorder(new CompoundBorder(
                     new LineBorder(CARD_BORDER),
-                    new EmptyBorder(8, 15, 8, 15)
-            ));
+                    new EmptyBorder(8, 15, 8, 15)));
             btnHistory.setCursor(new Cursor(Cursor.HAND_CURSOR));
             rightButtonsPanel.add(btnHistory);
             return rightButtonsPanel;
         }
-
 
         // Trong class PanelCheckInCheckOut của GUI_NhanVienLeTan.java
 
@@ -3170,7 +3289,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
             // --- QUAN TRỌNG: Bắt buộc phải có 2 dòng này để màu nền hiển thị đúng ---
-            btn.setOpaque(true);            // Cho phép tô màu nền
+            btn.setOpaque(true); // Cho phép tô màu nền
             btn.setContentAreaFilled(true); // Tô màu toàn bộ vùng nội dung
 
             if (active) {
@@ -3186,8 +3305,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                 // Viền xám mỏng + padding bên trong
                 btn.setBorder(new CompoundBorder(
                         new LineBorder(CARD_BORDER),
-                        new EmptyBorder(7, 19, 7, 19)
-                ));
+                        new EmptyBorder(7, 19, 7, 19)));
             }
         }
 
@@ -3234,8 +3352,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             txtWrapper.setBackground(COLOR_WHITE);
             txtWrapper.setBorder(new CompoundBorder(
                     new LineBorder(CARD_BORDER),
-                    new EmptyBorder(5, 10, 5, 10))
-            );
+                    new EmptyBorder(5, 10, 5, 10)));
 
             JLabel searchIcon = new JLabel("<html>&#x1F50D;</html>");
             searchIcon.setFont(new Font("SansSerif", Font.PLAIN, 14));
@@ -3246,12 +3363,16 @@ public class GUI_NhanVienLeTan extends JFrame {
             txtSearch.setBorder(null);
             txtSearch.setOpaque(false);
             txtSearch.addFocusListener(new FocusAdapter() {
-                @Override public void focusGained(FocusEvent e) {
+                @Override
+                public void focusGained(FocusEvent e) {
                     if (txtSearch.getText().equals(" Tìm theo tên, phòng, SĐT, email...")) {
-                        txtSearch.setText(""); txtSearch.setForeground(Color.BLACK);
+                        txtSearch.setText("");
+                        txtSearch.setForeground(Color.BLACK);
                     }
                 }
-                @Override public void focusLost(FocusEvent e) {
+
+                @Override
+                public void focusLost(FocusEvent e) {
                     if (txtSearch.getText().isEmpty()) {
                         txtSearch.setText(" Tìm theo tên, phòng, SĐT, email...");
                         txtSearch.setForeground(Color.GRAY);
@@ -3268,10 +3389,10 @@ public class GUI_NhanVienLeTan extends JFrame {
             btnSearch.setBackground(ACCENT_BLUE);
             btnSearch.setForeground(Color.WHITE);
             // --- THÊM CÁC DÒNG NÀY ĐỂ HIỆN MÀU ---
-            btnSearch.setOpaque(true);            // Bắt buộc hiển thị màu nền
+            btnSearch.setOpaque(true); // Bắt buộc hiển thị màu nền
             btnSearch.setContentAreaFilled(true); // Cho phép tô màu vùng nội dung
-            btnSearch.setBorderPainted(false);    // Bỏ viền mặc định để nút trông phẳng và đẹp hơn
-            btnSearch.setFocusPainted(false);     // Bỏ viền khi click
+            btnSearch.setBorderPainted(false); // Bỏ viền mặc định để nút trông phẳng và đẹp hơn
+            btnSearch.setFocusPainted(false); // Bỏ viền khi click
             btnSearch.setCursor(new Cursor(Cursor.HAND_CURSOR));
             // Tạo padding cho nút để trông đầy đặn hơn
             btnSearch.setBorder(new EmptyBorder(8, 20, 8, 20));
@@ -3280,11 +3401,11 @@ public class GUI_NhanVienLeTan extends JFrame {
             JPanel searchGroup = new JPanel(new BorderLayout(5, 0)); // 5px khoảng cách giữa thanh và nút
             searchGroup.setOpaque(false);
             searchGroup.add(txtWrapper, BorderLayout.CENTER); // Thanh tìm kiếm giãn hết cỡ
-            searchGroup.add(btnSearch, BorderLayout.EAST);    // Nút nằm bên phải
+            searchGroup.add(btnSearch, BorderLayout.EAST); // Nút nằm bên phải
 
-            // Thêm cụm tìm kiếm vào bên trái (CENTER của layout cha để nó đẩy cụm kia sang phải)
+            // Thêm cụm tìm kiếm vào bên trái (CENTER của layout cha để nó đẩy cụm kia sang
+            // phải)
             panel.add(searchGroup, BorderLayout.CENTER);
-
 
             // =================================================================
             // 2. CỤM NGÀY & NÚT HÀNH ĐỘNG (BÊN PHẢI)
@@ -3312,10 +3433,12 @@ public class GUI_NhanVienLeTan extends JFrame {
                 footer.setLayout(new BorderLayout());
                 footer.add(nullButton, BorderLayout.WEST);
                 footer.add(todayButton, BorderLayout.EAST);
-            } catch (Exception e) { e.printStackTrace(); }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             JTextFieldDateEditor editor = (JTextFieldDateEditor) dateChooser.getDateEditor();
-            editor.setBorder(new CompoundBorder( new LineBorder(CARD_BORDER), new EmptyBorder(10, 10, 10, 10) ));
+            editor.setBorder(new CompoundBorder(new LineBorder(CARD_BORDER), new EmptyBorder(10, 10, 10, 10)));
             editor.setEditable(false);
             String placeholder = " nn/mm/yyyy";
             editor.setText(placeholder);
@@ -3358,14 +3481,19 @@ public class GUI_NhanVienLeTan extends JFrame {
 
         private JScrollPane createTablePanel() {
             // Tên cột hiển thị (Check-in/Check-out dùng chung cấu trúc)
-            String[] columnNames = {"", "MÃ ĐP", "KHÁCH HÀNG", "PHÒNG", "LOẠI PHÒNG", "THỜI GIAN", "KHÁCH", "LIÊN HỆ", "TẠM TÍNH", "NGÀY TRẢ", "MÃ KH"};
+            String[] columnNames = { "", "MÃ ĐP", "KHÁCH HÀNG", "PHÒNG", "LOẠI PHÒNG", "THỜI GIAN", "KHÁCH", "LIÊN HỆ",
+                    "TẠM TÍNH", "NGÀY TRẢ", "MÃ KH" };
 
             tableModel = new DefaultTableModel(columnNames, 0) {
-                @Override public Class<?> getColumnClass(int columnIndex) {
-                    if (columnIndex == 0) return Boolean.class;
+                @Override
+                public Class<?> getColumnClass(int columnIndex) {
+                    if (columnIndex == 0)
+                        return Boolean.class;
                     return String.class;
                 }
-                @Override public boolean isCellEditable(int row, int column) {
+
+                @Override
+                public boolean isCellEditable(int row, int column) {
                     return column == 0; // Chỉ cho phép check box
                 }
             };
@@ -3393,7 +3521,9 @@ public class GUI_NhanVienLeTan extends JFrame {
             // Cột 0: Checkbox
             tcm.getColumn(0).setMaxWidth(40);
             tcm.getColumn(0).setCellRenderer(new DefaultTableCellRenderer() {
-                @Override public Component getTableCellRendererComponent(JTable table, Object value, boolean isSel, boolean hasFoc, int row, int col) {
+                @Override
+                public Component getTableCellRendererComponent(JTable table, Object value, boolean isSel,
+                        boolean hasFoc, int row, int col) {
                     JCheckBox cb = new JCheckBox();
                     cb.setHorizontalAlignment(JLabel.CENTER);
                     cb.setSelected(value != null && (boolean) value);
@@ -3410,7 +3540,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             // Cột 2: Khách hàng (Icon người)
             // Cột 2: Khách hàng (Icon người)
             tcm.getColumn(2).setPreferredWidth(220); // Độ rộng mong muốn
-            tcm.getColumn(2).setMinWidth(220);       // BẮT BUỘC: Không được nhỏ hơn 220px
+            tcm.getColumn(2).setMinWidth(220); // BẮT BUỘC: Không được nhỏ hơn 220px
             tcm.getColumn(2).setCellRenderer(new ModernCellRenderer(ModernCellRenderer.TYPE_ICON_TEXT, "👤"));
 
             // Cột 3: Phòng (Icon giường)
@@ -3439,8 +3569,10 @@ public class GUI_NhanVienLeTan extends JFrame {
             tcm.getColumn(8).setCellRenderer(new ModernCellRenderer(ModernCellRenderer.TYPE_MONEY));
 
             // Ẩn cột dữ liệu phụ (Ngày trả thực, Mã KH)
-            tcm.getColumn(9).setMinWidth(0); tcm.getColumn(9).setMaxWidth(0);
-            tcm.getColumn(10).setMinWidth(0); tcm.getColumn(10).setMaxWidth(0);
+            tcm.getColumn(9).setMinWidth(0);
+            tcm.getColumn(9).setMaxWidth(0);
+            tcm.getColumn(10).setMinWidth(0);
+            tcm.getColumn(10).setMaxWidth(0);
 
             JScrollPane scrollPane = new JScrollPane(table);
             scrollPane.getViewport().setBackground(Color.WHITE);
@@ -3460,7 +3592,8 @@ public class GUI_NhanVienLeTan extends JFrame {
             }
 
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int col) {
                 String text = (value != null) ? value.toString().toUpperCase() : "";
                 setText(text);
 
@@ -3472,12 +3605,10 @@ public class GUI_NhanVienLeTan extends JFrame {
                     setHorizontalAlignment(JLabel.RIGHT);
                     // --- QUAN TRỌNG: Padding phải 30px để khớp với dữ liệu bên dưới ---
                     setBorder(new CompoundBorder(bottomLine, new EmptyBorder(0, 10, 0, 30)));
-                }
-                else if (col == 0 || col == 6) { // Cột Checkbox & Số khách
+                } else if (col == 0 || col == 6) { // Cột Checkbox & Số khách
                     setHorizontalAlignment(JLabel.CENTER);
                     setBorder(new CompoundBorder(bottomLine, new EmptyBorder(0, 10, 0, 10)));
-                }
-                else { // Các cột còn lại (Tên, Phòng...)
+                } else { // Các cột còn lại (Tên, Phòng...)
                     setHorizontalAlignment(JLabel.LEFT);
                     setBorder(new CompoundBorder(bottomLine, new EmptyBorder(0, 10, 0, 10)));
                 }
@@ -3497,14 +3628,18 @@ public class GUI_NhanVienLeTan extends JFrame {
             private int type;
             private String iconSymbol;
 
-            public ModernCellRenderer(int type) { this(type, ""); }
+            public ModernCellRenderer(int type) {
+                this(type, "");
+            }
+
             public ModernCellRenderer(int type, String iconSymbol) {
                 this.type = type;
                 this.iconSymbol = iconSymbol;
             }
 
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int col) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
                 String text = (value != null) ? value.toString() : "";
 
@@ -3544,7 +3679,8 @@ public class GUI_NhanVienLeTan extends JFrame {
                         String[] parts = text.split("\n");
                         String p1 = parts.length > 0 ? parts[0] : text;
                         String p2 = parts.length > 1 ? parts[1] : "";
-                        setText("<html><div style='margin-bottom: 2px'>📞 " + p1 + "</div><div style='color: gray; font-size:10px'>✉ " + p2 + "</div></html>");
+                        setText("<html><div style='margin-bottom: 2px'>📞 " + p1
+                                + "</div><div style='color: gray; font-size:10px'>✉ " + p2 + "</div></html>");
                         setHorizontalAlignment(JLabel.LEFT);
                         break;
 
@@ -3580,30 +3716,65 @@ public class GUI_NhanVienLeTan extends JFrame {
         }
 
         // --- CÁC GETTER ---
-        public JToggleButton getBtnToggleCheckIn() { return btnToggleCheckIn; }
-        public JToggleButton getBtnToggleCheckOut() { return btnToggleCheckOut; }
-        public JTextField getTxtSearch() { return txtSearch; }
-        public JButton getBtnSearch() { return btnSearch; }
-        public JDateChooser getDateChooser() { return dateChooser; }
-        public JTable getTable() { return table; }
-        public DefaultTableModel getTableModel() { return tableModel; }
-        public JButton getBtnMainAction() { return btnMainAction; }
-        public JButton getBtnHistory() { return btnHistory; }
-        public JCheckBox getChkSelectAll() { return chkSelectAll; }
-        public Frame getOwnerFrame() { return ownerFrame; }
+        public JToggleButton getBtnToggleCheckIn() {
+            return btnToggleCheckIn;
+        }
+
+        public JToggleButton getBtnToggleCheckOut() {
+            return btnToggleCheckOut;
+        }
+
+        public JTextField getTxtSearch() {
+            return txtSearch;
+        }
+
+        public JButton getBtnSearch() {
+            return btnSearch;
+        }
+
+        public JDateChooser getDateChooser() {
+            return dateChooser;
+        }
+
+        public JTable getTable() {
+            return table;
+        }
+
+        public DefaultTableModel getTableModel() {
+            return tableModel;
+        }
+
+        public JButton getBtnMainAction() {
+            return btnMainAction;
+        }
+
+        public JButton getBtnHistory() {
+            return btnHistory;
+        }
+
+        public JCheckBox getChkSelectAll() {
+            return chkSelectAll;
+        }
+
+        public Frame getOwnerFrame() {
+            return ownerFrame;
+        }
 
         // --- CÁC SETTER ---
-        public void setLblDaChonText(String text) { lblDaChon.setText(text); }
+        public void setLblDaChonText(String text) {
+            lblDaChon.setText(text);
+        }
+
         public void setBtnMainActionState(String text, boolean enabled) {
             btnMainAction.setText(text);
             btnMainAction.setEnabled(enabled);
         }
+
         public void updateMainActionButtonColor(boolean isCheckInMode) {
             if (isCheckInMode) {
                 btnMainAction.setBackground(ACCENT_BLUE);
                 btnMainAction.setForeground(Color.BLACK);
-            }
-            else {
+            } else {
                 btnMainAction.setBackground(COLOR_ORANGE);
                 btnMainAction.setForeground(Color.BLACK);
             }
@@ -3615,17 +3786,27 @@ public class GUI_NhanVienLeTan extends JFrame {
         // *** SỬA LỖI 2: Thêm 'public' ***
         public static class CustomerInfo {
             public String name, phone;
-            public CustomerInfo(String name, String phone) { this.name = name; this.phone = phone; }
+
+            public CustomerInfo(String name, String phone) {
+                this.name = name;
+                this.phone = phone;
+            }
         }
+
         public static class ContactInfo {
             public String phone, email;
-            public ContactInfo(String phone, String email) { this.phone = phone; this.email = email; }
+
+            public ContactInfo(String phone, String email) {
+                this.phone = phone;
+                this.email = email;
+            }
         }
         // highlight-end
 
         private static class CustomerCellRenderer extends DefaultTableCellRenderer {
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int col) {
                 // highlight-start
                 // *** SỬA LỖI 3: 'panel' might not have been initialized ***
                 if (value instanceof CustomerInfo) {
@@ -3651,16 +3832,19 @@ public class GUI_NhanVienLeTan extends JFrame {
             // Thêm tham số alignment vào constructor
             public HtmlIconRenderer(String htmlEntity, int alignment) {
                 super();
-                this.iconHtml = "<html><span style='font-family: SansSerif; font-size: 11pt; color: #6c757d;'>" + htmlEntity + "</span>&nbsp;&nbsp;";
+                this.iconHtml = "<html><span style='font-family: SansSerif; font-size: 11pt; color: #6c757d;'>"
+                        + htmlEntity + "</span>&nbsp;&nbsp;";
                 setHorizontalAlignment(alignment); // Thiết lập căn lề
             }
+
             // Giữ lại constructor cũ nếu cần (mặc định Left)
             public HtmlIconRenderer(String htmlEntity) {
                 this(htmlEntity, JLabel.LEFT);
             }
 
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int col) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
                 c.setBackground(isSelected ? table.getSelectionBackground() : Color.WHITE);
                 setBorder(new MatteBorder(0, 0, 1, 0, CARD_BORDER));
@@ -3670,7 +3854,8 @@ public class GUI_NhanVienLeTan extends JFrame {
 
         private static class ContactCellRenderer extends DefaultTableCellRenderer {
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int col) {
                 // highlight-start
                 // *** SỬA LỖI 3: 'panel' might not have been initialized ***
                 if (value instanceof ContactInfo) {
@@ -3696,22 +3881,33 @@ public class GUI_NhanVienLeTan extends JFrame {
         }
 
         private static class MoneyCellRenderer extends DefaultTableCellRenderer {
-            public MoneyCellRenderer() { super(); setHorizontalAlignment(SwingConstants.RIGHT); }
+            public MoneyCellRenderer() {
+                super();
+                setHorizontalAlignment(SwingConstants.RIGHT);
+            }
+
             @Override
             public void setValue(Object value) {
-                if (value instanceof Number) { setText(MONEY_FORMAT.format(value)); }
-                else { super.setValue(value); }
+                if (value instanceof Number) {
+                    setText(MONEY_FORMAT.format(value));
+                } else {
+                    super.setValue(value);
+                }
                 setBorder(new CompoundBorder(new MatteBorder(0, 0, 1, 0, CARD_BORDER), new EmptyBorder(0, 0, 0, 10)));
             }
         }
 
         private static class BooleanCellRenderer extends JCheckBox implements TableCellRenderer {
             public BooleanCellRenderer() {
-                super(); setHorizontalAlignment(SwingConstants.CENTER);
-                setOpaque(true); setBorder(new MatteBorder(0, 0, 1, 0, CARD_BORDER));
+                super();
+                setHorizontalAlignment(SwingConstants.CENTER);
+                setOpaque(true);
+                setBorder(new MatteBorder(0, 0, 1, 0, CARD_BORDER));
             }
+
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int col) {
                 setBackground(isSelected ? table.getSelectionBackground() : Color.WHITE);
                 setSelected((Boolean) value);
                 return this;
@@ -3720,21 +3916,32 @@ public class GUI_NhanVienLeTan extends JFrame {
 
         private static class HeaderRenderer extends DefaultTableCellRenderer {
             public HeaderRenderer() {
-                super(); setHorizontalAlignment(SwingConstants.LEFT);
-                setOpaque(true); setBackground(new Color(248, 249, 250));
+                super();
+                setHorizontalAlignment(SwingConstants.LEFT);
+                setOpaque(true);
+                setBackground(new Color(248, 249, 250));
                 setFont(new Font("SansSerif", Font.BOLD, 12));
                 setForeground(COLOR_TEXT_MUTED);
-                setBorder(new CompoundBorder( new MatteBorder(0, 0, 2, 0, CARD_BORDER), new EmptyBorder(0, 5, 0, 5)));
+                setBorder(new CompoundBorder(new MatteBorder(0, 0, 2, 0, CARD_BORDER), new EmptyBorder(0, 5, 0, 5)));
             }
+
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int col) {
                 String headerText = (value == null) ? "" : value.toString().toUpperCase();
                 Component c = super.getTableCellRendererComponent(table, headerText, isSelected, hasFocus, row, col);
 
-                if (col == 0) { setHorizontalAlignment(SwingConstants.CENTER); }
-                else { setHorizontalAlignment(SwingConstants.LEFT); }
-                if (col == 4 || col == 6) { setHorizontalAlignment(SwingConstants.CENTER); }
-                if (col == 8) { setHorizontalAlignment(SwingConstants.RIGHT); }
+                if (col == 0) {
+                    setHorizontalAlignment(SwingConstants.CENTER);
+                } else {
+                    setHorizontalAlignment(SwingConstants.LEFT);
+                }
+                if (col == 4 || col == 6) {
+                    setHorizontalAlignment(SwingConstants.CENTER);
+                }
+                if (col == 8) {
+                    setHorizontalAlignment(SwingConstants.RIGHT);
+                }
 
                 return c;
             }
@@ -3745,12 +3952,14 @@ public class GUI_NhanVienLeTan extends JFrame {
          */
         public static class CheckInCustomerDialog extends JDialog {
             private boolean confirmed = false;
+            // Fields for user input
+            private JTextField txtName, txtCCCD, txtSDT, txtEmail, txtAddress;
 
             // SỬA: Thêm cccd, diaChi
             public CheckInCustomerDialog(Frame owner, int currentIndex, int totalCount,
-                                         String maPhieu, String phongInfo, String thoiGian,
-                                         String soKhach, String customerName,
-                                         String sdt, String email, String cccd, String diaChi) {
+                    String maPhieu, String phongInfo, String thoiGian,
+                    String soKhach, String customerName,
+                    String sdt, String email, String cccd, String diaChi) {
 
                 super(owner, "Xác nhận thông tin khách hàng", true);
                 setSize(600, 700);
@@ -3772,7 +3981,8 @@ public class GUI_NhanVienLeTan extends JFrame {
                 header.setOpaque(false);
                 JLabel title = new JLabel("Xác nhận thông tin khách hàng");
                 title.setFont(new Font("SansSerif", Font.BOLD, 18));
-                JLabel subtext = new JLabel(String.format("Khách %d / %d - Mã Đặt phòng: %s", currentIndex, totalCount, maPhieu));
+                JLabel subtext = new JLabel(
+                        String.format("Khách %d / %d - Mã Đặt phòng: %s", currentIndex, totalCount, maPhieu));
                 subtext.setFont(new Font("SansSerif", Font.PLAIN, 12));
                 subtext.setForeground(COLOR_TEXT_MUTED);
                 JProgressBar progressBar = new JProgressBar(0, totalCount);
@@ -3793,8 +4003,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                 box.setBackground(infoBg);
                 box.setBorder(new CompoundBorder(
                         new LineBorder(new Color(222, 226, 240)),
-                        new EmptyBorder(15, 15, 15, 15)
-                ));
+                        new EmptyBorder(15, 15, 15, 15)));
                 box.add(createDialogInfoPair("Mã đặt phòng:", maPhieu));
                 box.add(createDialogInfoPair("Phòng:", phongInfo));
                 box.add(createDialogInfoPair("Thời gian:", thoiGian));
@@ -3803,7 +4012,6 @@ public class GUI_NhanVienLeTan extends JFrame {
                 return infoPanel;
             }
 
-            // SỬA: Nhận cccd, diaChi
             private JPanel createDialogForm(String customerName, String sdt, String email, String cccd, String diaChi) {
                 JPanel formWrapper = new JPanel(new BorderLayout(0, 15));
                 formWrapper.setOpaque(false);
@@ -3815,31 +4023,69 @@ public class GUI_NhanVienLeTan extends JFrame {
                 gbc.fill = GridBagConstraints.HORIZONTAL;
                 gbc.anchor = GridBagConstraints.WEST;
                 int y = 0;
-                gbc.gridx = 0; gbc.gridy = y++; gbc.gridwidth = 4;
+                gbc.gridx = 0;
+                gbc.gridy = y++;
+                gbc.gridwidth = 4;
                 JLabel info = new JLabel("<html><b>ⓘ</b> Vui lòng kiểm tra và cập nhật thông tin khách hàng</html>");
                 info.setForeground(ACCENT_BLUE);
                 formPanel.add(info, gbc);
                 gbc.gridwidth = 1;
 
-                gbc.gridx = 0; gbc.gridy = y++; gbc.gridwidth = 4;
-                formPanel.add(createDialogFormPair("Họ và tên *", customerName), gbc);
+                gbc.gridx = 0;
+                gbc.gridy = y++;
+                gbc.gridwidth = 4;
+                txtName = createTextField(customerName);
+                formPanel.add(createDialogFormPairWithField("Họ và tên *", txtName), gbc);
 
-                gbc.gridx = 0; gbc.gridy = y++; gbc.gridwidth = 4;
-                formPanel.add(createDialogFormPair("CMND / CCCD *", cccd), gbc); // <-- SỬA
+                gbc.gridx = 0;
+                gbc.gridy = y++;
+                gbc.gridwidth = 4;
+                txtCCCD = createTextField(cccd);
+                formPanel.add(createDialogFormPairWithField("CMND / CCCD *", txtCCCD), gbc);
 
-                gbc.gridx = 0; gbc.gridy = y; gbc.gridwidth = 2; gbc.weightx = 0.5;
-                formPanel.add(createDialogFormPair("Số điện thoại *", sdt), gbc);
+                gbc.gridx = 0;
+                gbc.gridy = y;
+                gbc.gridwidth = 2;
+                gbc.weightx = 0.5;
+                txtSDT = createTextField(sdt);
+                formPanel.add(createDialogFormPairWithField("Số điện thoại *", txtSDT), gbc);
 
-                gbc.gridx = 2; gbc.gridy = y++; gbc.gridwidth = 2; gbc.weightx = 0.5;
-                formPanel.add(createDialogFormPair("Email *", email), gbc);
-                gbc.gridwidth = 1; gbc.weightx = 0;
+                gbc.gridx = 2;
+                gbc.gridy = y++;
+                gbc.gridwidth = 2;
+                gbc.weightx = 0.5;
+                txtEmail = createTextField(email);
+                formPanel.add(createDialogFormPairWithField("Email *", txtEmail), gbc);
+                gbc.gridwidth = 1;
+                gbc.weightx = 0;
 
-                gbc.gridx = 0; gbc.gridy = y++; gbc.gridwidth = 4;
-                formPanel.add(createDialogFormPair("Địa chỉ *", diaChi), gbc); // <-- SỬA
+                gbc.gridx = 0;
+                gbc.gridy = y++;
+                gbc.gridwidth = 4;
+                txtAddress = createTextField(diaChi);
+                formPanel.add(createDialogFormPairWithField("Địa chỉ *", txtAddress), gbc);
 
                 formWrapper.add(formPanel, BorderLayout.CENTER);
                 formWrapper.add(createDialogFooter(), BorderLayout.SOUTH);
                 return formWrapper;
+            }
+
+            private JTextField createTextField(String value) {
+                JTextField txt = new JTextField(value);
+                txt.setBorder(new CompoundBorder(
+                        new LineBorder(CARD_BORDER),
+                        new EmptyBorder(8, 8, 8, 8)));
+                return txt;
+            }
+
+            private JPanel createDialogFormPairWithField(String label, JTextField txtField) {
+                JPanel panel = new JPanel(new BorderLayout(0, 3));
+                panel.setOpaque(false);
+                JLabel lbl = new JLabel(label);
+                lbl.setFont(new Font("SansSerif", Font.BOLD, 12));
+                panel.add(lbl, BorderLayout.NORTH);
+                panel.add(txtField, BorderLayout.CENTER);
+                return panel;
             }
 
             private JPanel createDialogFormPair(String label, String value) {
@@ -3850,8 +4096,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                 JTextField txt = new JTextField(value);
                 txt.setBorder(new CompoundBorder(
                         new LineBorder(CARD_BORDER),
-                        new EmptyBorder(8, 8, 8, 8)
-                ));
+                        new EmptyBorder(8, 8, 8, 8)));
                 panel.add(lbl, BorderLayout.NORTH);
                 panel.add(txt, BorderLayout.CENTER);
                 return panel;
@@ -3876,8 +4121,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                 footer.setOpaque(false);
                 footer.setBorder(new CompoundBorder(
                         new MatteBorder(1, 0, 0, 0, CARD_BORDER),
-                        new EmptyBorder(10, 0, 0, 0)
-                ));
+                        new EmptyBorder(10, 0, 0, 0)));
                 JButton btnBack = new JButton("← Quay lại");
                 btnBack.setFont(new Font("SansSerif", Font.PLAIN, 12));
                 btnBack.setForeground(Color.BLACK);
@@ -3910,19 +4154,37 @@ public class GUI_NhanVienLeTan extends JFrame {
                 btn.setFocusPainted(false);
                 btn.setBorder(new CompoundBorder(
                         new LineBorder(bg == COLOR_WHITE ? CARD_BORDER : bg.darker()),
-                        new EmptyBorder(8, 15, 8, 15)
-                ));
+                        new EmptyBorder(8, 15, 8, 15)));
             }
 
-            public boolean isConfirmed() { return confirmed; }
+            public boolean isConfirmed() {
+                return confirmed;
+            }
+
+            public String getCustomerName() {
+                return txtName.getText();
+            }
+
+            public String getCCCD() {
+                return txtCCCD.getText();
+            }
+
+            public String getPhone() {
+                return txtSDT.getText();
+            }
+
+            public String getEmail() {
+                return txtEmail.getText();
+            }
+
+            public String getAddress() {
+                return txtAddress.getText();
+            }
         }
-
-
 
         private JLabel lblMaPhieu;
         private JLabel lblPhong;
         private JLabel lblTenKhach;
-
 
         public void loadCheckInToday(List<String> maPhieuList) {
 
@@ -3936,33 +4198,33 @@ public class GUI_NhanVienLeTan extends JFrame {
                     .collect(Collectors.joining(","));
 
             String sql = """
-       SELECT pdp.maPhieu,
-       pdp.maKH,
-       kh.hoTen,
-       kh.sdt,
-       kh.email,
-       kh.cccd,
-       kh.diaChi,
-       p.maPhong,
-       lp.tenLoaiPhong,
-       pdp.ngayNhanPhong,
-       pdp.ngayTraPhong,
-       p.giaTienMotDem,
-       p.soChua,
-       CASE
-           WHEN DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong) <= 0
-           THEN 1
-           ELSE DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong)
-       END AS soDem
-       FROM PhieuDatPhong pdp
-       JOIN KhachHang kh ON pdp.maKH = kh.maKH
-       JOIN Phong p ON pdp.maPhong = p.maPhong
-       JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong
-       WHERE pdp.maPhieu IN (%s)
-       """.formatted(inSql);
+                    SELECT pdp.maPhieu,
+                    pdp.maKH,
+                    kh.hoTen,
+                    kh.sdt,
+                    kh.email,
+                    kh.cccd,
+                    kh.diaChi,
+                    p.maPhong,
+                    lp.tenLoaiPhong,
+                    pdp.ngayNhanPhong,
+                    pdp.ngayTraPhong,
+                    p.giaTienMotDem,
+                    p.soChua,
+                    CASE
+                        WHEN DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong) <= 0
+                        THEN 1
+                        ELSE DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong)
+                    END AS soDem
+                    FROM PhieuDatPhong pdp
+                    JOIN KhachHang kh ON pdp.maKH = kh.maKH
+                    JOIN Phong p ON pdp.maPhong = p.maPhong
+                    JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong
+                    WHERE pdp.maPhieu IN (%s)
+                    """.formatted(inSql);
 
             try (var con = ConnectDB.getConnection();
-                 var ps = con.prepareStatement(sql)) {
+                    var ps = con.prepareStatement(sql)) {
 
                 for (int i = 0; i < maPhieuList.size(); i++) {
                     ps.setString(i + 1, maPhieuList.get(i));
@@ -3977,18 +4239,18 @@ public class GUI_NhanVienLeTan extends JFrame {
                     int soDem = Math.max(rs.getInt("soDem"), 1);
                     long tamTinh = (long) rs.getInt("giaTienMotDem") * soDem;
 
-                    model.addRow(new Object[]{
-                            false,                               // 0 checkbox
-                            rs.getString("maPhieu"),             // 1
-                            rs.getString("hoTen"),               // 2
-                            rs.getString("maPhong"),             // 3
-                            rs.getString("tenLoaiPhong"),         // 4
-                            ngayNhan,                             // 5
-                            rs.getInt("soChua"),                  // 6
+                    model.addRow(new Object[] {
+                            false, // 0 checkbox
+                            rs.getString("maPhieu"), // 1
+                            rs.getString("hoTen"), // 2
+                            rs.getString("maPhong"), // 3
+                            rs.getString("tenLoaiPhong"), // 4
+                            ngayNhan, // 5
+                            rs.getInt("soChua"), // 6
                             rs.getString("sdt") + "\n" + rs.getString("email"), // 7
-                            String.format("%,d đ", tamTinh),      // 8
-                            rs.getTimestamp("ngayTraPhong"),      // 9 (ẨN)
-                            rs.getString("maKH")                  // 10 (ẨN)
+                            String.format("%,d đ", tamTinh), // 8
+                            rs.getTimestamp("ngayTraPhong"), // 9 (ẨN)
+                            rs.getString("maKH") // 10 (ẨN)
                     });
                 }
 
@@ -3998,13 +4260,12 @@ public class GUI_NhanVienLeTan extends JFrame {
                         this,
                         "Lỗi load check-in: " + e.getMessage(),
                         "Lỗi",
-                        JOptionPane.ERROR_MESSAGE
-                );
+                        JOptionPane.ERROR_MESSAGE);
             }
         }
 
-
         private boolean isCheckOutMode = true;
+
         private void switchToCheckOutUI() {
 
             isCheckOutMode = true;
@@ -4047,29 +4308,29 @@ public class GUI_NhanVienLeTan extends JFrame {
 
             // 3️⃣ SQL: chỉ lấy khách CHECK-OUT HÔM NAY
             String sql = """
-        SELECT pdp.maPhieu,
-               kh.hoTen,
-               p.maPhong,
-               lp.tenLoaiPhong,
-               pdp.ngayTraPhong,
-               p.soChua,
-               kh.sdt,
-               kh.email,
-               p.giaTienMotDem,
-               CASE
-                   WHEN DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong) <= 0
-                   THEN 1
-                   ELSE DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong)
-               END AS soDem
-        FROM PhieuDatPhong pdp
-        JOIN KhachHang kh ON pdp.maKH = kh.maKH
-        JOIN Phong p ON pdp.maPhong = p.maPhong
-        JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong
-        WHERE pdp.maPhieu IN (%s)
-        """.formatted(inSql);
+                    SELECT pdp.maPhieu,
+                           kh.hoTen,
+                           p.maPhong,
+                           lp.tenLoaiPhong,
+                           pdp.ngayTraPhong,
+                           p.soChua,
+                           kh.sdt,
+                           kh.email,
+                           p.giaTienMotDem,
+                           CASE
+                               WHEN DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong) <= 0
+                               THEN 1
+                               ELSE DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong)
+                           END AS soDem
+                    FROM PhieuDatPhong pdp
+                    JOIN KhachHang kh ON pdp.maKH = kh.maKH
+                    JOIN Phong p ON pdp.maPhong = p.maPhong
+                    JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong
+                    WHERE pdp.maPhieu IN (%s)
+                    """.formatted(inSql);
 
             try (var con = ConnectDB.getConnection();
-                 var ps = con.prepareStatement(sql)) {
+                    var ps = con.prepareStatement(sql)) {
 
                 // 4️⃣ Gán tham số IN
                 for (int i = 0; i < maPhieuList.size(); i++) {
@@ -4088,13 +4349,13 @@ public class GUI_NhanVienLeTan extends JFrame {
                     int soDem = Math.max(rs.getInt("soDem"), 1);
                     long tongTien = (long) rs.getInt("giaTienMotDem") * soDem;
 
-                    model.addRow(new Object[]{
-                            false,                                   // checkbox
+                    model.addRow(new Object[] {
+                            false, // checkbox
                             rs.getString("maPhieu"),
                             rs.getString("hoTen"),
                             rs.getString("maPhong"),
                             rs.getString("tenLoaiPhong"),
-                            ngayTra,                                 // 👉 NGÀY TRẢ
+                            ngayTra, // 👉 NGÀY TRẢ
                             rs.getInt("soChua"),
                             rs.getString("sdt") + "\n" + rs.getString("email"),
                             String.format("%,d đ", tongTien)
@@ -4107,18 +4368,13 @@ public class GUI_NhanVienLeTan extends JFrame {
                         this,
                         "Lỗi load check-out hôm nay: " + e.getMessage(),
                         "Lỗi",
-                        JOptionPane.ERROR_MESSAGE
-                );
+                        JOptionPane.ERROR_MESSAGE);
             }
         }
 
-
-
-
     } // <-- Dấu } kết thúc lớp PanelCheckInCheckOut
 
-
-    //danh sach check in
+    // danh sach check in
     public static class GUI_CheckIn extends JFrame {
         private Runnable callback;
 
@@ -4141,7 +4397,7 @@ public class GUI_NhanVienLeTan extends JFrame {
         // ================== CONSTRUCTOR ======================
         // =====================================================
         public GUI_CheckIn(Runnable callback) {
-            this();               // ⭐ GỌI KHỞI TẠO UI
+            this(); // ⭐ GỌI KHỞI TẠO UI
             this.callback = callback;
 
             addWindowListener(new WindowAdapter() {
@@ -4178,8 +4434,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             panelCheckIn = new PanelCheckInCheckOut(
                     this,
                     null,
-                    datPhongController
-            );
+                    datPhongController);
 
             mainPanel.add(panelDanhSach, "LIST");
             mainPanel.add(panelCheckIn, "CHECKIN");
@@ -4268,12 +4523,10 @@ public class GUI_NhanVienLeTan extends JFrame {
             // Số khách
             table.getColumnModel().getColumn(6).setCellRenderer(centerRenderer);
 
-
             // ===== COLUMN WIDTH =====
             table.getColumnModel().getColumn(0).setMaxWidth(40);
             table.getColumnModel().getColumn(0).setMinWidth(40);
             table.getColumnModel().getColumn(6).setMaxWidth(60);
-
 
             // ===== RENDERER TẠM TÍNH =====
             DefaultTableCellRenderer moneyRenderer = new DefaultTableCellRenderer();
@@ -4326,8 +4579,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                         this,
                         "Vui lòng chọn ít nhất 1 khách để check-in.",
                         "Thông báo",
-                        JOptionPane.WARNING_MESSAGE
-                );
+                        JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -4337,7 +4589,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             panelCheckIn.loadCheckInToday(maPhieuList);
         }
 
-        //xuống dòng
+        // xuống dòng
         private static class MultiLineCellRenderer extends JTextArea implements TableCellRenderer {
 
             public MultiLineCellRenderer() {
@@ -4387,8 +4639,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                     boolean hasFocus, int row, int column) {
 
                 super.getTableCellRendererComponent(
-                        table, value, isSelected, hasFocus, row, column
-                );
+                        table, value, isSelected, hasFocus, row, column);
 
                 if (isSelected) {
                     setBackground(table.getSelectionBackground());
@@ -4411,26 +4662,26 @@ public class GUI_NhanVienLeTan extends JFrame {
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
             String sql = """
-        SELECT pdp.maPhieu, kh.hoTen, kh.sdt, kh.email,
-               p.maPhong, lp.tenLoaiPhong, pdp.ngayNhanPhong,
-               p.giaTienMotDem, p.soChua,
-               CASE
-                   WHEN DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong) <= 0
-                   THEN 1
-                   ELSE DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong)
-               END AS soDem
-        FROM PhieuDatPhong pdp
-        JOIN KhachHang kh ON pdp.maKH = kh.maKH
-        JOIN Phong p ON pdp.maPhong = p.maPhong
-        JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong
-        WHERE CAST(pdp.ngayNhanPhong AS DATE) = CAST(GETDATE() AS DATE)
-          AND pdp.trangThai = N'Đã xác nhận'
-        ORDER BY pdp.ngayNhanPhong DESC
-        """;
+                    SELECT pdp.maPhieu, kh.hoTen, kh.sdt, kh.email,
+                           p.maPhong, lp.tenLoaiPhong, pdp.ngayNhanPhong,
+                           p.giaTienMotDem, p.soChua,
+                           CASE
+                               WHEN DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong) <= 0
+                               THEN 1
+                               ELSE DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong)
+                           END AS soDem
+                    FROM PhieuDatPhong pdp
+                    JOIN KhachHang kh ON pdp.maKH = kh.maKH
+                    JOIN Phong p ON pdp.maPhong = p.maPhong
+                    JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong
+                    WHERE CAST(pdp.ngayNhanPhong AS DATE) = CAST(GETDATE() AS DATE)
+                      AND pdp.trangThai = N'Đã xác nhận'
+                    ORDER BY pdp.ngayNhanPhong DESC
+                    """;
 
             try (var con = connectDB.ConnectDB.getConnection();
-                 var ps = con.prepareStatement(sql);
-                 var rs = ps.executeQuery()) {
+                    var ps = con.prepareStatement(sql);
+                    var rs = ps.executeQuery()) {
 
                 while (rs.next()) {
                     Timestamp ts = rs.getTimestamp("ngayNhanPhong");
@@ -4439,7 +4690,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                     int soDem = Math.max(rs.getInt("soDem"), 1);
                     long tamTinh = (long) rs.getInt("giaTienMotDem") * soDem;
 
-                    model.addRow(new Object[]{
+                    model.addRow(new Object[] {
                             false,
                             rs.getString("maPhieu"),
                             rs.getString("hoTen"),
@@ -4458,14 +4709,12 @@ public class GUI_NhanVienLeTan extends JFrame {
                         this,
                         "Lỗi load khách hôm nay: " + e.getMessage(),
                         "Lỗi",
-                        JOptionPane.ERROR_MESSAGE
-                );
+                        JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
-
-    //danh sach check out
+    // danh sach check out
     public static class GUI_CheckOut extends JFrame {
         private Runnable callback;
 
@@ -4489,7 +4738,7 @@ public class GUI_NhanVienLeTan extends JFrame {
         // =====================================================
 
         public GUI_CheckOut(Runnable callback) {
-            this();               // ⭐ GỌI KHỞI TẠO UI
+            this(); // ⭐ GỌI KHỞI TẠO UI
             this.callback = callback;
 
             addWindowListener(new WindowAdapter() {
@@ -4525,8 +4774,7 @@ public class GUI_NhanVienLeTan extends JFrame {
             panelCheckOut = new PanelCheckInCheckOut(
                     this,
                     null,
-                    datPhongController
-            );
+                    datPhongController);
 
             mainPanel.add(panelDanhSach, "LIST");
             mainPanel.add(panelCheckOut, "CHECKOUT");
@@ -4646,8 +4894,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                         this,
                         "Vui lòng chọn ít nhất 1 khách để check-out.",
                         "Thông báo",
-                        JOptionPane.WARNING_MESSAGE
-                );
+                        JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -4661,8 +4908,6 @@ public class GUI_NhanVienLeTan extends JFrame {
             panelCheckOut.revalidate();
             panelCheckOut.repaint();
         }
-
-
 
         // =================== XUỐNG DÒNG ===================
         private static class MultiLineCellRenderer extends JTextArea implements TableCellRenderer {
@@ -4714,8 +4959,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                     boolean hasFocus, int row, int column) {
 
                 super.getTableCellRendererComponent(
-                        table, value, isSelected, hasFocus, row, column
-                );
+                        table, value, isSelected, hasFocus, row, column);
 
                 if (isSelected) {
                     setBackground(table.getSelectionBackground());
@@ -4738,21 +4982,21 @@ public class GUI_NhanVienLeTan extends JFrame {
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
             String sql = """
-        SELECT pdp.maPhieu, kh.hoTen, kh.sdt, kh.email,
-               p.maPhong, lp.tenLoaiPhong, pdp.ngayTraPhong,
-               p.giaTienMotDem, p.soChua,
-               DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong) AS soDem
-        FROM PhieuDatPhong pdp
-        JOIN KhachHang kh ON pdp.maKH = kh.maKH
-        JOIN Phong p ON pdp.maPhong = p.maPhong
-        JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong
-        WHERE CAST(pdp.ngayTraPhong AS DATE) = CAST(GETDATE() AS DATE)
-          AND pdp.trangThai = N'Đã nhận phòng'
-        """;
+                    SELECT pdp.maPhieu, kh.hoTen, kh.sdt, kh.email,
+                           p.maPhong, lp.tenLoaiPhong, pdp.ngayTraPhong,
+                           p.giaTienMotDem, p.soChua,
+                           DATEDIFF(DAY, pdp.ngayNhanPhong, pdp.ngayTraPhong) AS soDem
+                    FROM PhieuDatPhong pdp
+                    JOIN KhachHang kh ON pdp.maKH = kh.maKH
+                    JOIN Phong p ON pdp.maPhong = p.maPhong
+                    JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong
+                    WHERE CAST(pdp.ngayTraPhong AS DATE) = CAST(GETDATE() AS DATE)
+                      AND pdp.trangThai = N'Đã nhận phòng'
+                    """;
 
             try (var con = connectDB.ConnectDB.getConnection();
-                 var ps = con.prepareStatement(sql);
-                 var rs = ps.executeQuery()) {
+                    var ps = con.prepareStatement(sql);
+                    var rs = ps.executeQuery()) {
 
                 while (rs.next()) {
                     Timestamp ts = rs.getTimestamp("ngayTraPhong");
@@ -4761,7 +5005,7 @@ public class GUI_NhanVienLeTan extends JFrame {
                     int soDem = Math.max(rs.getInt("soDem"), 1);
                     long tongTien = (long) rs.getInt("giaTienMotDem") * soDem;
 
-                    model.addRow(new Object[]{
+                    model.addRow(new Object[] {
                             false,
                             rs.getString("maPhieu"),
                             rs.getString("hoTen"),
@@ -4780,7 +5024,4 @@ public class GUI_NhanVienLeTan extends JFrame {
         }
     }
 
-
 }
-
-

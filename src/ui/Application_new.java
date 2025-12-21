@@ -12,12 +12,12 @@ import java.sql.SQLException;
 
 public class Application_new {
     public static NhanVien currentLoggedInNhanVien = null;
-    
+
     public static void main(String[] args) {
         try {
             // Set look and feel
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            
+
             // Kết nối CSDL
             Connection conn = ConnectDB.getConnection();
             if (conn != null && !conn.isClosed()) {
@@ -36,24 +36,24 @@ public class Application_new {
                     System.err.println("Lỗi khi đóng kết nối CSDL: " + e.getMessage());
                 }
             }));
-            
+
             SwingUtilities.invokeLater(() -> showLoginForm());
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null,
-                "Lỗi khởi động ứng dụng: " + e.getMessage(),
-                "Lỗi",
-                JOptionPane.ERROR_MESSAGE);
+                    "Lỗi khởi động ứng dụng: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
             System.exit(1);
         }
     }
-    
+
     private static void showLoginForm() {
         try {
             FormDangNhap login = new FormDangNhap();
             login.setVisible(true);
-            
+
             // Thread to wait for login form to close
             new Thread(() -> {
                 while (login.isVisible()) {
@@ -64,30 +64,30 @@ public class Application_new {
                         break;
                     }
                 }
-                
+
                 handleLoginResult(login);
-                
+
             }).start();
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null,
-                "Lỗi hiển thị form đăng nhập: " + e.getMessage(),
-                "Lỗi",
-                JOptionPane.ERROR_MESSAGE);
+                    "Lỗi hiển thị form đăng nhập: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
-    
+
     private static void handleLoginResult(FormDangNhap login) {
         try {
             currentLoggedInNhanVien = login.getLoggedInNhanVien();
-            
+
             if (currentLoggedInNhanVien != null) {
                 LoaiNhanVien roleEnum = currentLoggedInNhanVien.getChucVu();
-                
+
                 if (roleEnum != null) {
                     SwingUtilities.invokeLater(() -> {
                         System.out.println("Login successful. Role: " + roleEnum.getLabel());
-                        
+
                         try {
                             if (roleEnum == LoaiNhanVien.QUAN_LY) {
                                 new GUI_NhanVienQuanLy(currentLoggedInNhanVien).setVisible(true);
@@ -99,17 +99,17 @@ public class Application_new {
                         } catch (Exception e) {
                             e.printStackTrace();
                             JOptionPane.showMessageDialog(null,
-                                "Lỗi mở giao diện: " + e.getMessage(),
-                                "Lỗi",
-                                JOptionPane.ERROR_MESSAGE);
+                                    "Lỗi mở giao diện: " + e.getMessage(),
+                                    "Lỗi",
+                                    JOptionPane.ERROR_MESSAGE);
                             System.exit(1);
                         }
                     });
                 } else {
                     JOptionPane.showMessageDialog(null,
-                        "Không thể xác định chức vụ cho nhân viên.",
-                        "Lỗi Dữ liệu",
-                        JOptionPane.ERROR_MESSAGE);
+                            "Không thể xác định chức vụ cho nhân viên.",
+                            "Lỗi Dữ liệu",
+                            JOptionPane.ERROR_MESSAGE);
                     System.exit(1);
                 }
             } else {
@@ -119,9 +119,9 @@ public class Application_new {
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null,
-                "Lỗi xử lý đăng nhập: " + e.getMessage(),
-                "Lỗi",
-                JOptionPane.ERROR_MESSAGE);
+                    "Lỗi xử lý đăng nhập: " + e.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
             System.exit(1);
         }
     }

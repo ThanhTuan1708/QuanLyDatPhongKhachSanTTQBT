@@ -3,6 +3,7 @@ package ui.gui.FormDialog;
 // SỬA: Import các lớp DAO và Entity cần thiết
 import dao.ChiTietHoaDon_DAO;
 import dao.HoaDon_DAO; // Chỉ cần DAO chính và DAO chi tiết
+import dao.KhuyenMai_DAO; // Thêm DAO Khuyến mãi
 import entity.*; // Import tất cả entity
 import ui.gui.GUI_NhanVienLeTan; // Cần cho các hằng số màu
 
@@ -42,7 +43,8 @@ public class BillDialog extends JDialog {
 
     /**
      * Constructor cho BillDialog.
-     * @param owner Frame cha
+     * 
+     * @param owner    Frame cha
      * @param maHoaDon Mã hóa đơn cần hiển thị
      */
     public BillDialog(Frame owner, String maHoaDon) {
@@ -54,14 +56,16 @@ public class BillDialog extends JDialog {
             this.hoaDonDAO = new HoaDon_DAO();
             this.chiTietHoaDonDAO = new ChiTietHoaDon_DAO();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(owner, "Lỗi khởi tạo DAO: " + e.getMessage(), "Lỗi nghiêm trọng", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(owner, "Lỗi khởi tạo DAO: " + e.getMessage(), "Lỗi nghiêm trọng",
+                    JOptionPane.ERROR_MESSAGE);
             dispose();
             return;
         }
 
         // --- Tải dữ liệu từ CSDL ---
         if (!loadBillData()) {
-            JOptionPane.showMessageDialog(owner, "Không thể tải dữ liệu cho hóa đơn " + maHoaDon, "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(owner, "Không thể tải dữ liệu cho hóa đơn " + maHoaDon, "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
             dispose();
             return;
         }
@@ -174,9 +178,11 @@ public class BillDialog extends JDialog {
         JPanel subHeader = new JPanel(new BorderLayout());
         subHeader.setOpaque(false);
         // Lấy ngày lập hóa đơn từ dữ liệu đã load
-        LocalDateTime ngayLap = (hoaDon != null && hoaDon.getNgayLap() != null) ? hoaDon.getNgayLap() : LocalDateTime.now();
+        LocalDateTime ngayLap = (hoaDon != null && hoaDon.getNgayLap() != null) ? hoaDon.getNgayLap()
+                : LocalDateTime.now();
         // Sử dụng Locale tiếng Việt
-    DateTimeFormatter dayFormatter = DateTimeFormatter.ofPattern("'Ngày' dd 'tháng' MM 'năm' yyyy", java.util.Locale.forLanguageTag("vi-VN"));
+        DateTimeFormatter dayFormatter = DateTimeFormatter.ofPattern("'Ngày' dd 'tháng' MM 'năm' yyyy",
+                java.util.Locale.forLanguageTag("vi-VN"));
         subHeader.add(new JLabel(ngayLap.format(dayFormatter)), BorderLayout.WEST);
         subHeader.add(new JLabel("Số HĐ: " + maHoaDon), BorderLayout.EAST);
 
@@ -200,24 +206,25 @@ public class BillDialog extends JDialog {
         customerPanel.setOpaque(false);
         KhachHang kh = (hoaDon != null) ? hoaDon.getKhachHang() : null;
         customerPanel.add(createInfoRow("Tên", ": " + (kh != null ? kh.getTenKH() : "N/A")));
-        customerPanel.add(createInfoRow("Địa chỉ", ": " + (kh != null && kh.getDiaChi() != null ? kh.getDiaChi() : "...")));
+        customerPanel
+                .add(createInfoRow("Địa chỉ", ": " + (kh != null && kh.getDiaChi() != null ? kh.getDiaChi() : "...")));
         customerPanel.add(createInfoRow("Điện thoại", ": " + (kh != null ? kh.getSoDT() : "...")));
         customerPanel.add(createInfoRow("Mã số thuế", ": ...")); // Schema không có
 
         // Lấy danh sách mã phòng từ chi tiết hóa đơn
         StringBuilder maPhongStr = new StringBuilder(": ");
         if (dsChiTietPhong != null && !dsChiTietPhong.isEmpty()) {
-            for(ChiTietHoaDon_Phong ctPhong : dsChiTietPhong) {
+            for (ChiTietHoaDon_Phong ctPhong : dsChiTietPhong) {
                 if (ctPhong.getPhieuDatPhong() != null && ctPhong.getPhieuDatPhong().getPhong() != null) {
                     maPhongStr.append(ctPhong.getPhieuDatPhong().getPhong().getMaPhong()).append(", ");
                 }
             }
-            if (maPhongStr.length() > 2) maPhongStr.setLength(maPhongStr.length() - 2);
+            if (maPhongStr.length() > 2)
+                maPhongStr.setLength(maPhongStr.length() - 2);
         } else {
             maPhongStr.append("N/A");
         }
         customerPanel.add(createInfoRow("Phòng", maPhongStr.toString()));
-
 
         // --- Cột phải: Thông tin đặt phòng ---
         JPanel bookingPanel = new JPanel();
@@ -238,8 +245,10 @@ public class BillDialog extends JDialog {
             ngayDiStr = (ngayDi != null) ? ngayDi.format(DATE_TIME_FORMATTER_VN) : "N/A";
             if (ngayDen != null && ngayDi != null) {
                 soDem = ChronoUnit.DAYS.between(ngayDen.toLocalDate(), ngayDi.toLocalDate());
-                if (soDem == 0 && ngayDen.toLocalTime().isBefore(ngayDi.toLocalTime())) soDem = 1;
-                if(soDem <= 0) soDem = 1; // Đảm bảo ít nhất 1 đêm
+                if (soDem == 0 && ngayDen.toLocalTime().isBefore(ngayDi.toLocalTime()))
+                    soDem = 1;
+                if (soDem <= 0)
+                    soDem = 1; // Đảm bảo ít nhất 1 đêm
             } else {
                 soDem = 1; // Mặc định 1 đêm nếu thiếu ngày
             }
@@ -250,7 +259,6 @@ public class BillDialog extends JDialog {
         NhanVien nv = (hoaDon != null) ? hoaDon.getNhanVien() : null;
         bookingPanel.add(createInfoRow("Thu ngân", ": " + (nv != null ? nv.getTenNV() : "N/A")));
         bookingPanel.add(createInfoRow("Thanh toán", ": " + (hoaDon != null ? hoaDon.getHinhThucThanhToan() : "...")));
-
 
         infoPanel.add(customerPanel);
         infoPanel.add(bookingPanel);
@@ -276,20 +284,36 @@ public class BillDialog extends JDialog {
         return row;
     }
 
-    /** Tạo phần chi tiết hóa đơn (bảng) và tổng cộng */
+    // --- UI Logic MỚI: Thêm TextField nhập mã khuyến mãi ---
+    // (Đã xóa các biến input giảm giá interactive)
+
+    private KhuyenMai_DAO khuyenMaiDAO; // Thêm DAO Khuyến mãi
+
+    /** Tạo phần Tổng cộng, Thuế, Khuyến mãi, Chữ ký và Form nhập Mã giảm giá */
     private JPanel createBillingDetailsPanel() {
+        // Khởi tạo DAO Khuyến mãi nếu chưa có
+        try {
+            if (khuyenMaiDAO == null)
+                khuyenMaiDAO = new KhuyenMai_DAO();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         JPanel detailsPanel = new JPanel(new BorderLayout(0, 15));
         detailsPanel.setOpaque(false);
 
-        // --- Bảng chi tiết ---
-        String[] columnNames = {"NGÀY", "CHI TIẾT", "SỐ TIỀN"};
+        // --- Bảng chi tiết (Giữ nguyên logic cũ) ---
+        String[] columnNames = { "NGÀY", "CHI TIẾT", "SỐ TIỀN" };
         DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
-            @Override public boolean isCellEditable(int row, int column) { return false; }
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
 
         double subTotal = 0; // Tính tổng tiền hàng (chưa VAT, KM)
 
-        // Thêm chi tiết phòng vào bảng
+        // Thêm chi tiết phòng
         if (dsChiTietPhong != null) {
             for (ChiTietHoaDon_Phong ctPhong : dsChiTietPhong) {
                 PhieuDatPhong pdp = ctPhong.getPhieuDatPhong();
@@ -306,22 +330,24 @@ public class BillDialog extends JDialog {
                     long soDem = 0;
                     if (ngayDen != null && ngayDi != null) {
                         soDem = ChronoUnit.DAYS.between(ngayDen.toLocalDate(), ngayDi.toLocalDate());
-                        if (soDem == 0 && ngayDen.toLocalTime().isBefore(ngayDi.toLocalTime())) soDem = 1;
-                        if(soDem <= 0) soDem = 1; // Đảm bảo ít nhất 1 đêm
+                        if (soDem == 0 && ngayDen.toLocalTime().isBefore(ngayDi.toLocalTime()))
+                            soDem = 1;
+                        if (soDem <= 0)
+                            soDem = 1;
                     } else {
-                        soDem = 1; // Mặc định 1 đêm nếu thiếu ngày
+                        soDem = 1;
                     }
 
                     String chiTiet = "Tiền phòng " + maPhong + " - " + tenLoaiPhong + " (" + soDem + " đêm)";
                     double donGiaLucDat = ctPhong.getDonGiaLucDat();
                     double thanhTienPhong = donGiaLucDat * soDem;
                     subTotal += thanhTienPhong;
-                    tableModel.addRow(new Object[]{ngayStr, chiTiet, MONEY_FORMAT.format(thanhTienPhong)});
+                    tableModel.addRow(new Object[] { ngayStr, chiTiet, MONEY_FORMAT.format(thanhTienPhong) });
                 }
             }
         }
 
-        // Thêm chi tiết dịch vụ vào bảng
+        // Thêm chi tiết dịch vụ
         if (dsChiTietDichVu != null) {
             for (ChiTietHoaDon_DichVu ctDV : dsChiTietDichVu) {
                 DichVu dv = ctDV.getDichVu();
@@ -329,10 +355,12 @@ public class BillDialog extends JDialog {
                     String tenDV = dv.getTenDV();
                     int soLuong = ctDV.getSoLuong();
                     String chiTiet = tenDV + (soLuong > 1 ? " (SL: " + soLuong + ")" : "");
-                    double thanhTienDV = ctDV.getThanhTien(); // Lấy thành tiền đã tính
+                    double thanhTienDV = ctDV.getThanhTien();
                     subTotal += thanhTienDV;
-                    String ngayStr = (hoaDon != null && hoaDon.getNgayLap() != null) ? hoaDon.getNgayLap().format(DATE_FORMATTER_VN) : "N/A";
-                    tableModel.addRow(new Object[]{ngayStr, chiTiet, MONEY_FORMAT.format(thanhTienDV)});
+                    String ngayStr = (hoaDon != null && hoaDon.getNgayLap() != null)
+                            ? hoaDon.getNgayLap().format(DATE_FORMATTER_VN)
+                            : "N/A";
+                    tableModel.addRow(new Object[] { ngayStr, chiTiet, MONEY_FORMAT.format(thanhTienDV) });
                 }
             }
         }
@@ -342,23 +370,24 @@ public class BillDialog extends JDialog {
         table.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 12));
         table.setFont(new Font("SansSerif", Font.PLAIN, 12));
         TableColumnModel tcm = table.getColumnModel();
-        tcm.getColumn(0).setPreferredWidth(120); // Cột Ngày
-        tcm.getColumn(1).setPreferredWidth(350); // Cột Chi tiết
-        tcm.getColumn(2).setPreferredWidth(100); // Cột Số tiền
-        // Căn phải cột tiền
+        tcm.getColumn(0).setPreferredWidth(120);
+        tcm.getColumn(1).setPreferredWidth(350);
+        tcm.getColumn(2).setPreferredWidth(100);
         javax.swing.table.DefaultTableCellRenderer rightRenderer = new javax.swing.table.DefaultTableCellRenderer();
         rightRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
         tcm.getColumn(2).setCellRenderer(rightRenderer);
 
         JScrollPane scrollPane = new JScrollPane(table);
-        // Điều chỉnh chiều cao bảng dựa trên số dòng (tối đa ~10 dòng)
-        int preferredHeight = Math.min(table.getRowCount() * table.getRowHeight() + table.getTableHeader().getPreferredSize().height + 5, 300);
+        int preferredHeight = Math.min(
+                table.getRowCount() * table.getRowHeight() + table.getTableHeader().getPreferredSize().height + 5, 300);
         scrollPane.setPreferredSize(new Dimension(0, preferredHeight));
 
         detailsPanel.add(scrollPane, BorderLayout.CENTER);
 
         // --- Phần Tổng cộng, Thuế, Khuyến mãi, Chữ ký ---
-        JPanel bottomPanel = new JPanel(); bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS)); bottomPanel.setOpaque(false);
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
+        bottomPanel.setOpaque(false);
 
         bottomPanel.add(createTotalRow("Tổng tiền hàng:", MONEY_FORMAT.format(subTotal) + " đ"));
 
@@ -369,7 +398,8 @@ public class BillDialog extends JDialog {
             discountAmount = subTotal * chietKhau;
             String kmName = km.getTenKhuyenMai();
             if (discountAmount > 0) {
-                bottomPanel.add(createTotalRow(kmName + " (" + String.format("%.0f", chietKhau * 100) + "%):", "- " + MONEY_FORMAT.format(discountAmount) + " đ"));
+                bottomPanel.add(createTotalRow(kmName + " (" + String.format("%.0f", chietKhau * 100) + "%):",
+                        "- " + MONEY_FORMAT.format(discountAmount) + " đ"));
             }
         }
 
@@ -379,23 +409,33 @@ public class BillDialog extends JDialog {
         double vatRate = (hoaDon != null) ? hoaDon.getVat() / 100.0 : 0.0;
         double vatAmount = subTotalAfterDiscount * vatRate;
         if (vatAmount > 0) {
-            bottomPanel.add(createTotalRow("Thuế VAT (" + String.format("%.0f", vatRate * 100) + "%):", MONEY_FORMAT.format(vatAmount) + " đ"));
+            bottomPanel.add(createTotalRow("Thuế VAT (" + String.format("%.0f", vatRate * 100) + "%):",
+                    MONEY_FORMAT.format(vatAmount) + " đ"));
         }
 
         double finalTotal = subTotalAfterDiscount + vatAmount;
         JPanel finalTotalPanel = createTotalRow("Tổng cộng:", MONEY_FORMAT.format(finalTotal) + " đ");
-        for(Component c : finalTotalPanel.getComponents()) {
-            if (c instanceof JLabel) ((JLabel) c).setFont(((JLabel) c).getFont().deriveFont(Font.BOLD, 14f));
+        for (Component c : finalTotalPanel.getComponents()) {
+            if (c instanceof JLabel)
+                ((JLabel) c).setFont(((JLabel) c).getFont().deriveFont(Font.BOLD, 14f));
         }
         bottomPanel.add(finalTotalPanel);
 
-        JLabel vatLabel = new JLabel("Đã bao gồm thuế VAT"); vatLabel.setFont(vatLabel.getFont().deriveFont(Font.ITALIC, 11f)); vatLabel.setForeground(Color.GRAY); vatLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel vatLabel = new JLabel("Đã bao gồm thuế VAT");
+        vatLabel.setFont(vatLabel.getFont().deriveFont(Font.ITALIC, 11f));
+        vatLabel.setForeground(Color.GRAY);
+        vatLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         bottomPanel.add(vatLabel);
         bottomPanel.add(Box.createVerticalStrut(30));
 
-        JPanel signaturePanel = new JPanel(new GridLayout(1, 2, 100, 0)); signaturePanel.setOpaque(false); signaturePanel.setBorder(new EmptyBorder(0, 50, 0, 50));
-        JLabel thuNganLabel = new JLabel("Thu ngân", SwingConstants.CENTER); JLabel khachLabel = new JLabel("Khách", SwingConstants.CENTER);
-        signaturePanel.add(thuNganLabel); signaturePanel.add(khachLabel); signaturePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JPanel signaturePanel = new JPanel(new GridLayout(1, 2, 100, 0));
+        signaturePanel.setOpaque(false);
+        signaturePanel.setBorder(new EmptyBorder(0, 50, 0, 50));
+        JLabel thuNganLabel = new JLabel("Thu ngân", SwingConstants.CENTER);
+        JLabel khachLabel = new JLabel("Khách", SwingConstants.CENTER);
+        signaturePanel.add(thuNganLabel);
+        signaturePanel.add(khachLabel);
+        signaturePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         bottomPanel.add(signaturePanel);
 
         detailsPanel.add(bottomPanel, BorderLayout.SOUTH);
@@ -423,13 +463,11 @@ public class BillDialog extends JDialog {
     private void printBill() {
         System.out.println("Placeholder: Xử lý in hóa đơn " + maHoaDon);
         JOptionPane.showMessageDialog(this, "Chức năng In đang được phát triển.");
-        // Thêm code sử dụng Java Print Service hoặc thư viện JasperReports
     }
 
     private void downloadPdf() {
         System.out.println("Placeholder: Xử lý tải PDF hóa đơn " + maHoaDon);
         JOptionPane.showMessageDialog(this, "Chức năng Tải PDF đang được phát triển.");
-        // Thêm code sử dụng thư viện iTextPDF hoặc Apache PDFBox
     }
 
 } // Kết thúc lớp BillDialog

@@ -48,7 +48,8 @@ public class EventCheckInCheckOut {
     /**
      * Constructor
      */
-    public EventCheckInCheckOut(GUI_NhanVienLeTan.PanelCheckInCheckOut view, NhanVien nv, EventDatPhong datPhongController) {
+    public EventCheckInCheckOut(GUI_NhanVienLeTan.PanelCheckInCheckOut view, NhanVien nv,
+            EventDatPhong datPhongController) {
         this.view = view;
         this.nhanVienHienTai = nv;
         this.eventController = datPhongController;
@@ -59,7 +60,8 @@ public class EventCheckInCheckOut {
             this.phongDAO = new Phong_DAO();
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(view, "Lỗi khởi tạo DAO trong CheckIn: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(view, "Lỗi khởi tạo DAO trong CheckIn: " + e.getMessage(), "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -83,14 +85,38 @@ public class EventCheckInCheckOut {
         // 2. Nhấn Nút Tìm -> Gọi hàm loadData()
         view.getBtnSearch().addActionListener(e -> loadData());
 
-        // Lưu ý: Không gắn PropertyChangeListener cho dateChooser để tránh tự động reload
+        // Lưu ý: Không gắn PropertyChangeListener cho dateChooser để tránh tự động
+        // reload
 
         // Các sự kiện bảng
         view.getChkSelectAll().addActionListener(e -> toggleSelectAll(view.getChkSelectAll().isSelected()));
         view.getBtnMainAction().addActionListener(e -> performMainAction());
         view.getTableModel().addTableModelListener(e -> {
-            if (e.getColumn() == 0) updateButtonState();
+            if (e.getColumn() == 0)
+                updateButtonState();
         });
+
+        // highlight-start
+        // Thêm sự kiện chọn hàng để cập nhật thông tin chi tiết lên Panel Header
+        view.getTable().getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                updateBookingInfoPanel();
+            }
+        });
+        // highlight-end
+    }
+
+    private void updateBookingInfoPanel() {
+        int selectedRow = view.getTable().getSelectedRow();
+        if (selectedRow >= 0) {
+            String maPhieu = safeGetValueAt(selectedRow, 1); // Cột 1: Mã ĐP
+            String maPhong = safeGetValueAt(selectedRow, 3); // Cột 3: Phòng
+            String tenKhach = safeGetValueAt(selectedRow, 2); // Cột 2: Tên Khách
+
+            view.setBookingInfo(maPhieu, maPhong, tenKhach);
+        } else {
+            view.setBookingInfo("-", "-", "-");
+        }
     }
 
     // (Trong file EventCheckInCheckOut.java)
@@ -111,7 +137,6 @@ public class EventCheckInCheckOut {
         loadData();
     }
 
-
     /**
      * Tải dữ liệu từ DAO dựa trên chế độ (CheckIn/CheckOut) và bộ lọc
      * (ĐÃ SỬA: Thêm maKH vào cột ẩn 10)
@@ -122,7 +147,8 @@ public class EventCheckInCheckOut {
      * - Check-out: Chỉ hiện "Đã nhận phòng"
      */
     public void loadData() {
-        if (phieuDatPhongDAO == null || phongDAO == null) return;
+        if (phieuDatPhongDAO == null || phongDAO == null)
+            return;
 
         // 1. Xác định trạng thái cần lọc dựa trên Tab đang chọn
         String filterStatus;
@@ -149,8 +175,6 @@ public class EventCheckInCheckOut {
             dateStringFilter = selectedDate.format(DATE_FORMAT);
         }
 
-
-
         try {
             // 4. Gọi DAO lấy dữ liệu (DAO cần hỗ trợ lọc theo trạng thái)
             List<Object[]> dataList = phieuDatPhongDAO.getFilteredBookingData(searchText, filterStatus);
@@ -172,7 +196,8 @@ public class EventCheckInCheckOut {
                         dateMatch = ngayTra.equals(dateStringFilter);
                     }
 
-                    if (!dateMatch) continue; // Bỏ qua nếu không khớp ngày
+                    if (!dateMatch)
+                        continue; // Bỏ qua nếu không khớp ngày
                 }
 
                 // 6. Xử lý hiển thị
@@ -181,22 +206,30 @@ public class EventCheckInCheckOut {
                 String maKH = row[8].toString();
 
                 Phong phong = null;
-                try { phong = phongDAO.getPhongById(maPhong); } catch(Exception e) {}
+                try {
+                    phong = phongDAO.getPhongById(maPhong);
+                } catch (Exception e) {
+                }
 
                 // Tính tiền tạm tính
                 double tongTien = 0;
-                if(phong != null) {
+                if (phong != null) {
                     try {
                         LocalDate checkin = LocalDate.parse(ngayDen, DATE_FORMAT);
                         LocalDate checkout = LocalDate.parse(ngayTra, DATE_FORMAT);
                         long soDem = ChronoUnit.DAYS.between(checkin, checkout);
-                        if(soDem == 0) soDem = 1;
+                        if (soDem == 0)
+                            soDem = 1;
                         tongTien = phong.getGiaTienMotDem() * soDem;
-                    } catch(Exception e) { tongTien = phong.getGiaTienMotDem(); }
+                    } catch (Exception e) {
+                        tongTien = phong.getGiaTienMotDem();
+                    }
                 }
 
                 String dateToShow = isCheckInMode ? ngayDen : ngayTra;
-                String loaiPhongText = (phong != null && phong.getLoaiPhong() != null) ? phong.getLoaiPhong().getTenLoaiPhong() : "N/A";
+                String loaiPhongText = (phong != null && phong.getLoaiPhong() != null)
+                        ? phong.getLoaiPhong().getTenLoaiPhong()
+                        : "N/A";
                 int soKhach = (phong != null) ? phong.getSoChua() : 2;
 
                 // 1. Liên hệ (Gộp SĐT và Email thành 1 chuỗi có xuống dòng)
@@ -208,19 +241,19 @@ public class EventCheckInCheckOut {
                 String tongTienStr = String.format("%,.0f đ", tongTien);
 
                 // Thêm dòng vào bảng
-                view.getTableModel().addRow(new Object[]{
-                        Boolean.FALSE,      // 0. Checkbox
-                        maPhieu,            // 1. Mã ĐP
-                        row[0].toString(),  // 2. Khách hàng (Tên) -> Renderer sẽ thêm Icon
-                        maPhong,            // 3. Phòng -> Renderer sẽ thêm Icon
-                        loaiPhongText,      // 4. Loại phòng
-                        dateToShow,         // 5. Ngày -> Renderer sẽ thêm Icon
-                        soKhach,            // 6. Số khách -> Renderer sẽ thêm Icon
-                        lienHeDisplay,      // 7. Liên hệ (Chuỗi gộp SĐT + Email)
-                        tongTienStr,        // 8. Tổng tiền
+                view.getTableModel().addRow(new Object[] {
+                        Boolean.FALSE, // 0. Checkbox
+                        maPhieu, // 1. Mã ĐP
+                        row[0].toString(), // 2. Khách hàng (Tên) -> Renderer sẽ thêm Icon
+                        maPhong, // 3. Phòng -> Renderer sẽ thêm Icon
+                        loaiPhongText, // 4. Loại phòng
+                        dateToShow, // 5. Ngày -> Renderer sẽ thêm Icon
+                        soKhach, // 6. Số khách -> Renderer sẽ thêm Icon
+                        lienHeDisplay, // 7. Liên hệ (Chuỗi gộp SĐT + Email)
+                        tongTienStr, // 8. Tổng tiền
 
-                        ngayTra,            // 9. Ẩn
-                        maKH                // 10. Ẩn
+                        ngayTra, // 9. Ẩn
+                        maKH // 10. Ẩn
                 });
             }
 
@@ -280,7 +313,8 @@ public class EventCheckInCheckOut {
             }
         }
         if (totalToProcess == 0) {
-            JOptionPane.showMessageDialog(view, "Vui lòng chọn ít nhất một phiếu.", "Chưa chọn", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(view, "Vui lòng chọn ít nhất một phiếu.", "Chưa chọn",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -317,35 +351,75 @@ public class EventCheckInCheckOut {
                         String phongInfo = maPhong + " - " + loaiPhong;
 
                         // 3. TẠO DIALOG VỚI 11 THAM SỐ
-                        GUI_NhanVienLeTan.PanelCheckInCheckOut.CheckInCustomerDialog dialog =
-                                new GUI_NhanVienLeTan.PanelCheckInCheckOut.CheckInCustomerDialog(
-                                        ownerFrame, currentIndex, totalToProcess,
-                                        maPhieu, phongInfo, thoiGian,
-                                        soKhach, tenKH, sdt,
-                                        email, cccd, diaChi // <-- Truyền dữ liệu thật
-                                );
+                        GUI_NhanVienLeTan.PanelCheckInCheckOut.CheckInCustomerDialog dialog = new GUI_NhanVienLeTan.PanelCheckInCheckOut.CheckInCustomerDialog(
+                                ownerFrame, currentIndex, totalToProcess,
+                                maPhieu, phongInfo, thoiGian,
+                                soKhach, tenKH, sdt,
+                                email, cccd, diaChi // <-- Truyền dữ liệu thật
+                        );
 
                         dialog.setVisible(true);
 
                         // 4. Xử lý kết quả
                         if (dialog.isConfirmed()) {
-                            // (Bạn có thể thêm logic cập nhật lại KhachHang nếu form có chỉnh sửa)
-                            eventController.handleCheckIn(maPhieu, tenKH, maPhong);
+                            // --- LẤY DỮ LIỆU ĐÃ CHỈNH SỬA TỪ FORM ---
+                            String newName = dialog.getCustomerName().trim();
+                            String newCCCD = dialog.getCCCD().trim();
+                            String newPhone = dialog.getPhone().trim();
+                            String newEmail = dialog.getEmail().trim();
+                            String newAddress = dialog.getAddress().trim();
+
+                            // --- CẬP NHẬT LẠI OBJECT KHACHHANG VÀ LƯU DB ---
+                            if (kh != null) {
+                                boolean isChanged = false;
+                                if (!newName.equals(tenKH)) {
+                                    kh.setTenKH(newName);
+                                    isChanged = true;
+                                }
+                                if (!newCCCD.equals(cccd)) {
+                                    kh.setCCCD(newCCCD);
+                                    isChanged = true;
+                                }
+                                if (!newPhone.equals(sdt)) {
+                                    kh.setSoDT(newPhone);
+                                    isChanged = true;
+                                }
+                                if (!newEmail.equals(email)) {
+                                    kh.setEmail(newEmail);
+                                    isChanged = true;
+                                }
+                                if (!newAddress.equals(diaChi)) {
+                                    kh.setDiaChi(newAddress);
+                                    isChanged = true;
+                                }
+
+                                if (isChanged) {
+                                    System.out.println("Updating customer info for: " + kh.getMaKH());
+                                    // Gọi DAO update
+                                    eventController.getKhachHangDAO().updateKhachHang(kh);
+                                }
+                            }
+
+                            // --- TIẾN HÀNH CHECK-IN VỚI TÊN MỚI (NẾU CÓ) ---
+                            eventController.handleCheckIn(maPhieu, newName, maPhong);
                             successCount++;
                             currentIndex++;
                         } else {
-                            JOptionPane.showMessageDialog(view, "Đã hủy thao tác check-in.", "Đã hủy", JOptionPane.INFORMATION_MESSAGE);
+                            JOptionPane.showMessageDialog(view, "Đã hủy thao tác check-in.", "Đã hủy",
+                                    JOptionPane.INFORMATION_MESSAGE);
                             break;
                         }
                     } catch (Exception ex) {
                         ex.printStackTrace();
-                        JOptionPane.showMessageDialog(view, "Lỗi dữ liệu ở hàng " + (i+1) + ": " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(view, "Lỗi dữ liệu ở hàng " + (i + 1) + ": " + ex.getMessage(),
+                                "Lỗi", JOptionPane.ERROR_MESSAGE);
                         break;
                     }
                 }
             }
             if (successCount > 0) {
-                JOptionPane.showMessageDialog(view, "Đã check-in thành công " + successCount + " phiếu.", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(view, "Đã check-in thành công " + successCount + " phiếu.", "Thành công",
+                        JOptionPane.INFORMATION_MESSAGE);
             }
 
         } else {
@@ -362,14 +436,16 @@ public class EventCheckInCheckOut {
                 }
             }
             int confirm = JOptionPane.showConfirmDialog(view,
-                    String.format("Bạn có chắc muốn check-out %d phiếu đã chọn?\nHóa đơn sẽ được hiển thị.", selectedMaPhieu.size()),
+                    String.format("Bạn có chắc muốn check-out %d phiếu đã chọn?\nHóa đơn sẽ được hiển thị.",
+                            selectedMaPhieu.size()),
                     "Xác nhận Check-out",
                     JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
                 for (int i = 0; i < selectedMaPhieu.size(); i++) {
-                    eventController.handleCheckOut(selectedMaPhieu.get(i), selectedTenKH.get(i), selectedMaPhong.get(i));
+                    eventController.handleCheckOut(selectedMaPhieu.get(i), selectedTenKH.get(i),
+                            selectedMaPhong.get(i));
                 }
-                if(!selectedMaPhieu.isEmpty()) {
+                if (!selectedMaPhieu.isEmpty()) {
                     eventController.handleShowBill(selectedMaPhieu.get(0));
                 }
             }
@@ -377,20 +453,24 @@ public class EventCheckInCheckOut {
         loadData();
         updateButtonState();
     }
+
     /**
      * Mở Dialog lịch sử check-out
      */
     private void showHistoryDialog() {
         if (eventController == null || phieuDatPhongDAO == null || phongDAO == null) {
-            JOptionPane.showMessageDialog(view, "Lỗi: Controller hoặc DAO chưa được khởi tạo.", "Lỗi nghiêm trọng", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(view, "Lỗi: Controller hoặc DAO chưa được khởi tạo.", "Lỗi nghiêm trọng",
+                    JOptionPane.ERROR_MESSAGE);
             return;
         }
-        HistoryCheckOutDialog dialog = new HistoryCheckOutDialog(ownerFrame, eventController, phieuDatPhongDAO, phongDAO);
+        HistoryCheckOutDialog dialog = new HistoryCheckOutDialog(ownerFrame, eventController, phieuDatPhongDAO,
+                phongDAO);
         dialog.setVisible(true);
     }
 
     /**
-     * Hàm helper để lấy giá trị từ bảng một cách an toàn, tránh lỗi NullPointerException.
+     * Hàm helper để lấy giá trị từ bảng một cách an toàn, tránh lỗi
+     * NullPointerException.
      */
     private String safeGetValueAt(int row, int col) {
         Object value = view.getTableModel().getValueAt(row, col);

@@ -20,10 +20,11 @@ public class PhieuDatPhong_DAO {
      * Thêm một phiếu đặt phòng mới (DÙNG CHO TRANSACTION)
      * (SỬA: Đã xóa cột 'maNV' để khớp CSDL)
      */
-    public boolean addPhieuDatPhong(PhieuDatPhong pdp, Connection con) throws SQLException {
-        // SỬA: Xóa maNV, chỉ còn 6 tham số
-        String sql = "INSERT INTO PhieuDatPhong (maPhieu, ngayDatPhong, ngayNhanPhong, ngayTraPhong, maKH, maPhong) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+    public boolean addPhieuDatPhong(PhieuDatPhong pdp, String trangThai, Connection con) throws SQLException {
+        // SỬA: Thêm cột trangThai được truyền vào tham số
+        String sql = "INSERT INTO PhieuDatPhong (maPhieu, ngayDatPhong, ngayNhanPhong, ngayTraPhong, maKH, maPhong, trangThai) "
+                +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
             pstmt.setString(1, pdp.getMaPhieu());
@@ -33,6 +34,7 @@ public class PhieuDatPhong_DAO {
             // Dòng maNV (số 5 cũ) ĐÃ BỊ XÓA
             pstmt.setString(5, pdp.getKhachHang().getMaKH());
             pstmt.setString(6, pdp.getPhong().getMaPhong());
+            pstmt.setString(7, trangThai);
 
             int n = pstmt.executeUpdate();
             return n > 0;
@@ -43,23 +45,19 @@ public class PhieuDatPhong_DAO {
         }
     }
 
-    /**
-     * Thêm một phiếu đặt phòng mới (KHÔNG DÙNG TRANSACTION)
-     * (SỬA: Đã xóa cột 'maNV' để khớp CSDL)
-     */
-    public boolean addPhieuDatPhong(PhieuDatPhong pdp) throws SQLException {
+    public boolean addPhieuDatPhong(PhieuDatPhong pdp, String trangThai) throws SQLException {
         Connection con = ConnectDB.getConnection();
-        // SỬA: Xóa maNV, chỉ còn 6 tham số
-        String sql = "INSERT INTO PhieuDatPhong (maPhieu, ngayDatPhong, ngayNhanPhong, ngayTraPhong, maKH, maPhong) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO PhieuDatPhong (maPhieu, ngayDatPhong, ngayNhanPhong, ngayTraPhong, maKH, maPhong, trangThai) "
+                +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
             pstmt.setString(1, pdp.getMaPhieu());
             pstmt.setTimestamp(2, Timestamp.valueOf(pdp.getNgayDatPhong()));
             pstmt.setTimestamp(3, Timestamp.valueOf(pdp.getNgayNhanPhong()));
             pstmt.setTimestamp(4, Timestamp.valueOf(pdp.getNgayTraPhong()));
-            // Dòng maNV (số 5 cũ) ĐÃ BỊ XÓA
             pstmt.setString(5, pdp.getKhachHang().getMaKH());
             pstmt.setString(6, pdp.getPhong().getMaPhong());
+            pstmt.setString(7, trangThai);
 
             int n = pstmt.executeUpdate();
             return n > 0;
@@ -69,7 +67,6 @@ public class PhieuDatPhong_DAO {
             throw e;
         }
     }
-
 
     /**
      * Xóa phiếu đặt phòng theo mã phiếu.
@@ -92,7 +89,8 @@ public class PhieuDatPhong_DAO {
     public boolean checkIn(String maPhieu, int maTrangThaiDaThue) throws SQLException {
         Connection con = ConnectDB.getConnection();
         String maPhong = findMaPhongByMaPhieu(con, maPhieu);
-        if (maPhong == null) return false;
+        if (maPhong == null)
+            return false;
 
         String sqlUpdatePhieu = "UPDATE PhieuDatPhong SET trangThai = N'Đã nhận phòng' WHERE maPhieu = ?";
 
@@ -116,7 +114,8 @@ public class PhieuDatPhong_DAO {
     public boolean checkOut(String maPhieu, int maTrangThaiDangDon) throws SQLException {
         Connection con = ConnectDB.getConnection();
         String maPhong = findMaPhongByMaPhieu(con, maPhieu);
-        if (maPhong == null) return false;
+        if (maPhong == null)
+            return false;
 
         // Cập nhật trạng thái phiếu và NGÀY TRẢ THỰC TẾ (nếu cần tính giờ)
         String sqlUpdatePhieu = "UPDATE PhieuDatPhong SET trangThai = N'Đã trả phòng' WHERE maPhieu = ?";
@@ -158,7 +157,6 @@ public class PhieuDatPhong_DAO {
         return maPhong;
     }
 
-
     public List<Object[]> getFilteredBookingData(String searchText, String selectedFilterUI) throws SQLException {
         List<Object[]> dataList = new ArrayList<>();
         Connection con = ConnectDB.getConnection();
@@ -166,21 +164,22 @@ public class PhieuDatPhong_DAO {
 
         // SỬA 1: Thêm pdp.trangThai vào câu SELECT
         String sql = "SELECT kh.hoTen, kh.sdt, p.maPhong, pdp.ngayNhanPhong, pdp.ngayTraPhong, " +
-                "pdp.maPhieu, pdp.trangThai, kh.maKH " +  // <-- Lấy pdp.trangThai thay vì ttp.tenTrangThai
+                "pdp.maPhieu, pdp.trangThai, kh.maKH " + // <-- Lấy pdp.trangThai thay vì ttp.tenTrangThai
                 "FROM PhieuDatPhong pdp " +
                 "JOIN KhachHang kh ON pdp.maKH = kh.maKH " +
                 "JOIN Phong p ON pdp.maPhong = p.maPhong " +
                 "WHERE 1=1";
 
-        // SỬA 2: Lọc theo trạng thái của PHIẾU ĐẶT PHÒNG (không phải trạng thái phòng)
-        if (selectedFilterUI != null && !selectedFilterUI.equals("Tất cả")) {
-            // Database lưu: "Đã xác nhận", "Đã nhận phòng", "Đã trả phòng", "Đã hủy"
-            // UI gửi xuống: "Đã xác nhận", "Đã nhận phòng"... -> Khớp nhau, dùng trực tiếp
-            sql += " AND pdp.trangThai = N'" + selectedFilterUI + "'";
+        // SỬA 2: Lọc theo trạng thái của PHIẾU ĐẶT PHÒNG (dùng Params để tránh lỗi
+        // Unicode)
+        boolean hasStatusFilter = (selectedFilterUI != null && !selectedFilterUI.equals("Tất cả"));
+        if (hasStatusFilter) {
+            sql += " AND pdp.trangThai = ?";
         }
 
         // Lọc theo từ khóa tìm kiếm
-        if (searchText != null && !searchText.isEmpty()) {
+        boolean hasSearch = (searchText != null && !searchText.isEmpty());
+        if (hasSearch) {
             sql += " AND (kh.hoTen LIKE ? OR kh.sdt LIKE ? OR p.maPhong LIKE ? OR pdp.maPhieu LIKE ?)";
         }
 
@@ -189,9 +188,12 @@ public class PhieuDatPhong_DAO {
 
         try (PreparedStatement stmt = con.prepareStatement(sql)) {
             int paramIndex = 1;
-            // (Bỏ đoạn set param cho status vì đã nối chuỗi ở trên cho đơn giản logic N'...')
 
-            if (searchText != null && !searchText.isEmpty()) {
+            if (hasStatusFilter) {
+                stmt.setString(paramIndex++, selectedFilterUI); // Driver thường tự xử lý Unicode với setString
+            }
+
+            if (hasSearch) {
                 String searchPattern = "%" + searchText + "%";
                 stmt.setString(paramIndex++, searchPattern);
                 stmt.setString(paramIndex++, searchPattern);
@@ -219,9 +221,12 @@ public class PhieuDatPhong_DAO {
                     // Mapping trạng thái sang ID để UI xử lý màu sắc (nếu cần)
                     int statusUI = 0;
                     if (trangThaiPhieu != null) {
-                        if (trangThaiPhieu.equalsIgnoreCase("Đã xác nhận")) statusUI = 1;
-                        else if (trangThaiPhieu.equalsIgnoreCase("Đã nhận phòng")) statusUI = 2;
-                        else if (trangThaiPhieu.equalsIgnoreCase("Đã trả phòng")) statusUI = 3;
+                        if (trangThaiPhieu.equalsIgnoreCase("Đã xác nhận"))
+                            statusUI = 1;
+                        else if (trangThaiPhieu.equalsIgnoreCase("Đã nhận phòng"))
+                            statusUI = 2;
+                        else if (trangThaiPhieu.equalsIgnoreCase("Đã trả phòng"))
+                            statusUI = 3;
                     }
 
                     Object[] row = {
@@ -240,18 +245,17 @@ public class PhieuDatPhong_DAO {
         return dataList;
     }
 
-
     public int demCheckInHomNay() {
         String sql = """
-            SELECT COUNT(*) 
-            FROM PhieuDatPhong
-            WHERE CAST(ngayNhanPhong AS DATE) = CAST(GETDATE() AS DATE)
-              AND trangThai = N'Đã xác nhận'
-        """;
+                    SELECT COUNT(*)
+                    FROM PhieuDatPhong
+                    WHERE CAST(ngayNhanPhong AS DATE) = CAST(GETDATE() AS DATE)
+                      AND trangThai = N'Đã xác nhận'
+                """;
 
         try (var con = ConnectDB.getConnection();
-             var ps = con.prepareStatement(sql);
-             var rs = ps.executeQuery()) {
+                var ps = con.prepareStatement(sql);
+                var rs = ps.executeQuery()) {
 
             if (rs.next()) {
                 return rs.getInt(1);
@@ -266,15 +270,15 @@ public class PhieuDatPhong_DAO {
 
     public int demCheckOutHomNay() {
         String sql = """
-        SELECT COUNT(*)
-        FROM PhieuDatPhong
-        WHERE CAST(ngayTraPhong AS DATE) = CAST(GETDATE() AS DATE)
-          AND trangThai = N'Đã nhận phòng'
-    """;
+                    SELECT COUNT(*)
+                    FROM PhieuDatPhong
+                    WHERE CAST(ngayTraPhong AS DATE) = CAST(GETDATE() AS DATE)
+                      AND trangThai = N'Đã nhận phòng'
+                """;
 
         try (var con = ConnectDB.getConnection();
-             var ps = con.prepareStatement(sql);
-             var rs = ps.executeQuery()) {
+                var ps = con.prepareStatement(sql);
+                var rs = ps.executeQuery()) {
 
             if (rs.next()) {
                 return rs.getInt(1);

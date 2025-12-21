@@ -70,9 +70,8 @@ public class HoaDon_DAO {
         return hd;
     }
 
-
     public boolean addHoaDon(HoaDon hd) throws SQLException {
-        try(Connection con = ConnectDB.getConnection()) {
+        try (Connection con = ConnectDB.getConnection()) {
             // Cần đảm bảo hàm này hỗ trợ transaction nếu được gọi từ ngoài
             con.setAutoCommit(false);
             try {
@@ -119,10 +118,10 @@ public class HoaDon_DAO {
         // Bước 1: Tìm maPhong từ maPhieu
         String maPhong = null;
         String sqlFindPhong = "SELECT maPhong FROM dbo.PhieuDatPhong WHERE maPhieu = ?";
-        try(PreparedStatement stmtFind = con.prepareStatement(sqlFindPhong)) {
+        try (PreparedStatement stmtFind = con.prepareStatement(sqlFindPhong)) {
             stmtFind.setString(1, maPhieu);
-            try(ResultSet rsFind = stmtFind.executeQuery()) {
-                if(rsFind.next()) {
+            try (ResultSet rsFind = stmtFind.executeQuery()) {
+                if (rsFind.next()) {
                     maPhong = rsFind.getString("maPhong");
                 }
             }
@@ -146,5 +145,23 @@ public class HoaDon_DAO {
             }
         }
         return maHD;
+    }
+
+    /**
+     * Cập nhật thông tin Hóa đơn (Tổng tiền, Mã khuyến mãi)
+     */
+    public boolean updateHoaDon(HoaDon hd) throws SQLException {
+        Connection con = ConnectDB.getConnection();
+        String sql = "UPDATE HoaDon SET tongTien = ?, maKhuyenMai = ? WHERE maHoaDon = ?";
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+            stmt.setDouble(1, hd.getTongTien());
+            stmt.setString(2, (hd.getKhuyenMai() != null) ? hd.getKhuyenMai().getMaKhuyenMai() : null);
+            stmt.setString(3, hd.getMaHoaDon());
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi cập nhật hóa đơn: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 }

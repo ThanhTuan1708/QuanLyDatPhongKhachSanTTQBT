@@ -288,21 +288,35 @@ public class Phong_DAO {
      */
     public boolean updatePhong(Phong p) throws SQLException {
         Connection con = ConnectDB.getConnection();
-        String sql = "UPDATE Phong SET giaTienMotDem = ?, moTa = ?, soChua = ?, maLoaiPhong = ? " +
-                "WHERE maPhong = ?";
-        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
-            pstmt.setDouble(1, p.getGiaTienMotDem());
-            pstmt.setString(2, p.getMoTa());
-            pstmt.setInt(3, p.getSoChua());
-            pstmt.setInt(4, p.getLoaiPhong().getMaLoaiPhong()); //
-            pstmt.setString(5, p.getMaPhong());
 
-            int n = pstmt.executeUpdate();
-            return n > 0;
+        // Câu lệnh SQL update
+        String sql = "UPDATE Phong SET maLoaiPhong = ?, moTa = ?, soChua = ?, giaTienMotDem = ?, maTrangThai = ? WHERE maPhong = ?";
+
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+            // --- SỬA DÒNG NÀY: Đổi setString thành setInt ---
+            // Vì maLoaiPhong là kiểu int
+            stmt.setInt(1, p.getLoaiPhong().getMaLoaiPhong());
+            // ------------------------------------------------
+
+            // 2. Mô tả (String)
+            stmt.setString(2, p.getMoTa());
+
+            // 3. Số người (int)
+            stmt.setInt(3, p.getSoChua());
+
+            // 4. Giá tiền (double)
+            stmt.setDouble(4, p.getGiaTienMotDem());
+
+            // 5. Mã trạng thái (int)
+            stmt.setInt(5, p.getTrangThaiPhong().getMaTrangThai());
+
+            // 6. Mã phòng (String) - Điều kiện WHERE
+            stmt.setString(6, p.getMaPhong());
+
+            return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("Lỗi khi cập nhật phòng: " + e.getMessage());
             e.printStackTrace();
-            throw e;
+            return false;
         }
     }
 

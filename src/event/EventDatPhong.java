@@ -548,37 +548,61 @@ public class EventDatPhong {
             hd.setDsChiTietPhong(dsCTPhong);
             hd.setDsChiTietDichVu(dsCTDichVu);
 
-            // BƯỚC 5: ÁP DỤNG KHUYẾN MÃI (Giữ nguyên)
+            // BƯỚC 5: ÁP DỤNG KHUYẾN MÃI
             KhuyenMai appliedKm = null;
             try {
                 Object maKmObj = bookingInfo.get("maKhuyenMai");
+                System.out.println("DEBUG KM Step 1 - maKmObj từ bookingInfo: "
+                        + (maKmObj != null ? "'" + maKmObj + "'" : "NULL"));
+
                 if (maKmObj != null) {
                     String maKm = maKmObj.toString().trim();
+                    System.out.println("DEBUG KM Step 2 - maKm string: '" + maKm + "' | isEmpty: " + maKm.isEmpty()
+                            + " | khuyenMaiDAO: " + (khuyenMaiDAO != null ? "OK" : "NULL"));
+
                     if (!maKm.isEmpty() && khuyenMaiDAO != null) {
                         KhuyenMai km = khuyenMaiDAO.getKhuyenMaiById(maKm);
+                        System.out.println("DEBUG KM Step 3 - KhuyenMai từ DB: "
+                                + (km != null ? km.getMaKhuyenMai() + " - " + km.getTenKhuyenMai() : "NULL/NOT FOUND"));
+
                         if (km != null) {
-                            boolean kmValid = true;
                             java.sql.Date nb = km.getNgayBatDau();
                             java.sql.Date nk = km.getNgayKetThuc();
                             java.time.LocalDate today = java.time.LocalDate.now();
-                            if (nb != null && today.isBefore(nb.toLocalDate()))
-                                kmValid = false;
-                            if (nk != null && today.isAfter(nk.toLocalDate()))
-                                kmValid = false;
-                            if (km.getLuotSuDung() <= 0)
-                                kmValid = false;
+
+                            boolean validStart = (nb == null || !today.isBefore(nb.toLocalDate()));
+                            boolean validEnd = (nk == null || !today.isAfter(nk.toLocalDate()));
+                            boolean validUsage = km.getLuotSuDung() > 0;
+                            boolean kmValid = validStart && validEnd && validUsage;
+
+                            System.out.println("DEBUG KM Step 4 - Validation:");
+                            System.out.println("  - ngayBatDau: " + nb + " | today >= ngayBatDau: " + validStart);
+                            System.out.println("  - ngayKetThuc: " + nk + " | today <= ngayKetThuc: " + validEnd);
+                            System.out.println("  - luotSuDung: " + km.getLuotSuDung() + " | > 0: " + validUsage);
+                            System.out.println("  - chietKhau: " + km.getChietKhau() + "%");
+                            System.out.println("  - kmValid (tổng hợp): " + kmValid);
+
                             if (kmValid) {
                                 double chietKhau = km.getChietKhau();
                                 if (chietKhau > 0) {
+                                    double truocGiam = tongTienHang;
                                     tongTienHang = tongTienHang * (1 - (chietKhau / 100.0));
+                                    System.out.println(
+                                            "DEBUG KM Step 5 - Áp dụng giảm: " + truocGiam + " -> " + tongTienHang);
                                 }
                                 appliedKm = km;
                                 hd.setKhuyenMai(km);
+                                System.out.println("DEBUG KM Step 6 - ĐÃ ÁP DỤNG thành công!");
+                            } else {
+                                System.out.println("DEBUG KM Step 5 - KHÔNG ÁP DỤNG do validation thất bại");
                             }
                         }
                     }
+                } else {
+                    System.out.println("DEBUG KM - Không có mã khuyến mãi được truyền từ form");
                 }
             } catch (Exception exKm) {
+                System.out.println("DEBUG KM - EXCEPTION: " + exKm.getMessage());
                 exKm.printStackTrace();
             }
 
@@ -586,6 +610,13 @@ public class EventDatPhong {
             hd.setTongTien(tongTienSauVAT);
 
             // BƯỚC 6: THỰC HIỆN LƯU VÀO CSDL (TRONG CÙNG 1 GIAO DỊCH)
+
+            // DEBUG: Log thông tin khuyến mãi trước khi lưu hóa đơn
+            System.out.println("DEBUG EventDatPhong - Lưu Hóa đơn: " + hd.getMaHoaDon());
+            System.out.println("DEBUG EventDatPhong - Khuyến mãi áp dụng: " + (hd.getKhuyenMai() != null
+                    ? hd.getKhuyenMai().getMaKhuyenMai() + " - " + hd.getKhuyenMai().getChietKhau() + "%"
+                    : "NULL"));
+            System.out.println("DEBUG EventDatPhong - Tổng tiền sau KM và VAT: " + hd.getTongTien());
 
             // 1. Lưu Hóa đơn (CHA)
             hoaDonDAO.addHoaDon(con, hd);
@@ -664,8 +695,6 @@ public class EventDatPhong {
                     successMessage.toString(),
                     "Đặt phòng thành công",
                     JOptionPane.INFORMATION_MESSAGE);
-
-            
 
             // 2. Cập nhật UI
             view.getSelectedRoomIds().clear();

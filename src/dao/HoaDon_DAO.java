@@ -55,8 +55,14 @@ public class HoaDon_DAO {
                     // (ĐÃ XÓA LẤY NHÂN VIÊN VÌ CSDL KHÔNG CÓ)
 
                     String maKM = rs.getString("maKhuyenMai");
-                    if (maKM != null) {
-                        hd.setKhuyenMai(khuyenMaiDAO.getKhuyenMaiById(maKM));
+                    System.out.println("DEBUG HoaDon_DAO - Mã hóa đơn: " + maHD + " | Mã khuyến mãi trong DB: " + maKM);
+                    if (maKM != null && !maKM.isEmpty()) {
+                        KhuyenMai km = khuyenMaiDAO.getKhuyenMaiById(maKM);
+                        hd.setKhuyenMai(km);
+                        System.out.println("DEBUG HoaDon_DAO - Đã load KhuyenMai: "
+                                + (km != null ? km.getTenKhuyenMai() + " - " + km.getChietKhau() + "%" : "NULL"));
+                    } else {
+                        System.out.println("DEBUG HoaDon_DAO - Không có mã khuyến mãi cho hóa đơn này");
                     }
 
                     hd.setDsChiTietPhong(chiTietDAO.getChiTietPhongByMaHD(maHD));
@@ -111,7 +117,8 @@ public class HoaDon_DAO {
         String maHD = null;
         Connection con = ConnectDB.getConnection();
 
-        // Query kết hợp: Tìm hóa đơn có chứa phòng đó VÀ phải cùng Khách Hàng với phiếu đặt phòng
+        // Query kết hợp: Tìm hóa đơn có chứa phòng đó VÀ phải cùng Khách Hàng với phiếu
+        // đặt phòng
         // Điều này đảm bảo không lấy nhầm hóa đơn cũ của khách khác ở cùng phòng đó.
         String sql = "SELECT TOP 1 hd.maHoaDon " +
                 "FROM HoaDon hd " +

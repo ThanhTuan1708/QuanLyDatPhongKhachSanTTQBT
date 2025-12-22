@@ -292,8 +292,11 @@ public class BillDialog extends JDialog {
     private JPanel createBillingDetailsPanel() {
         // Khởi tạo DAO Khuyến mãi
         try {
-            if (khuyenMaiDAO == null) khuyenMaiDAO = new KhuyenMai_DAO();
-        } catch (Exception e) { e.printStackTrace(); }
+            if (khuyenMaiDAO == null)
+                khuyenMaiDAO = new KhuyenMai_DAO();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         JPanel detailsPanel = new JPanel(new BorderLayout(0, 10));
         detailsPanel.setOpaque(false);
@@ -304,7 +307,9 @@ public class BillDialog extends JDialog {
 
         DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
 
         double subTotalCalculated = 0; // Tính tổng lại để hiển thị
@@ -322,14 +327,15 @@ public class BillDialog extends JDialog {
 
                     // LẤY TIỀN THẬT TỪ DB
                     double thanhTienPhong = ctPhong.getThanhTien(); // Số tiền đã lưu trong DB
-                    double donGia = ctPhong.getDonGiaLucDat();      // Giá lúc đặt
+                    double donGia = ctPhong.getDonGiaLucDat(); // Giá lúc đặt
 
                     // LOGIC NGƯỢC: Tính số đêm từ tiền (để đảm bảo khớp 100%)
                     long soDem = 1;
                     if (donGia > 0) {
                         soDem = Math.round(thanhTienPhong / donGia);
                     }
-                    if (soDem <= 0) soDem = 1;
+                    if (soDem <= 0)
+                        soDem = 1;
 
                     // Format ngày tháng hiển thị
                     LocalDateTime den = pdp.getNgayNhanPhong();
@@ -344,7 +350,8 @@ public class BillDialog extends JDialog {
                     // Thêm dòng
                     tableModel.addRow(new Object[] {
                             stt++,
-                            "<html><b>" + tenPhong + "</b> - " + loaiPhong + "<br><i style='color:gray;font-size:10px'>" + timeRange + "</i></html>",
+                            "<html><b>" + tenPhong + "</b> - " + loaiPhong + "<br><i style='color:gray;font-size:10px'>"
+                                    + timeRange + "</i></html>",
                             "Đêm",
                             soDem, // Hiển thị đúng số đêm tính từ tiền
                             MONEY_FORMAT.format(donGia),
@@ -387,7 +394,7 @@ public class BillDialog extends JDialog {
         JTable table = new JTable(tableModel);
         table.setRowHeight(35); // Dòng cao hơn
         table.setShowVerticalLines(false);
-        table.setIntercellSpacing(new Dimension(0,0));
+        table.setIntercellSpacing(new Dimension(0, 0));
 
         // Header
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -412,7 +419,7 @@ public class BillDialog extends JDialog {
 
         javax.swing.table.DefaultTableCellRenderer rightRenderer = new javax.swing.table.DefaultTableCellRenderer();
         rightRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
-        rightRenderer.setBorder(new EmptyBorder(0,0,0,10)); // Padding phải
+        rightRenderer.setBorder(new EmptyBorder(0, 0, 0, 10)); // Padding phải
         tcm.getColumn(4).setCellRenderer(rightRenderer);
         tcm.getColumn(5).setCellRenderer(rightRenderer);
 
@@ -432,13 +439,17 @@ public class BillDialog extends JDialog {
         // Tính toán lại các khoản
         double discountAmount = 0;
         KhuyenMai km = (hoaDon != null) ? hoaDon.getKhuyenMai() : null;
+
+        // DEBUG: Log thông tin khuyến mãi
+        System.out.println("DEBUG BillDialog - Hóa đơn: " + maHoaDon);
+        System.out.println("DEBUG BillDialog - KhuyenMai object: "
+                + (km != null ? km.getMaKhuyenMai() + " - " + km.getTenKhuyenMai() + " - " + km.getChietKhau() + "%"
+                        : "NULL"));
+
         if (km != null) {
             double chietKhau = km.getChietKhau() / 100.0;
             discountAmount = subTotalCalculated * chietKhau;
-            if (discountAmount > 0) {
-                bottomPanel.add(createTotalRow("Giảm giá (" + km.getTenKhuyenMai() + "):",
-                        "- " + MONEY_FORMAT.format(discountAmount) + " đ", false));
-            }
+            System.out.println("DEBUG BillDialog - Chiết khấu: " + km.getChietKhau() + "% => Giảm: " + discountAmount);
         }
 
         double vatRate = (hoaDon != null) ? hoaDon.getVat() / 100.0 : 0.1;
@@ -451,8 +462,17 @@ public class BillDialog extends JDialog {
             finalTotal = hoaDon.getTongTien();
         }
 
+        // HIỂN THỊ THEO THỨ TỰ ĐÚNG: Cộng tiền hàng -> Giảm giá -> VAT -> Tổng cộng
         bottomPanel.add(createTotalRow("Cộng tiền hàng:", MONEY_FORMAT.format(subTotalCalculated) + " đ", false));
-        bottomPanel.add(createTotalRow("Thuế VAT (" + (int)(vatRate*100) + "%):", MONEY_FORMAT.format(vatAmount) + " đ", false));
+
+        // Hiển thị dòng giảm giá SAU dòng cộng tiền hàng
+        if (km != null && discountAmount > 0) {
+            bottomPanel.add(createTotalRow("Giảm giá (" + km.getTenKhuyenMai() + "):",
+                    "- " + MONEY_FORMAT.format(discountAmount) + " đ", false));
+        }
+
+        bottomPanel.add(createTotalRow("Thuế VAT (" + (int) (vatRate * 100) + "%):",
+                MONEY_FORMAT.format(vatAmount) + " đ", false));
 
         // Dòng kẻ ngang
         JSeparator sep = new JSeparator();
@@ -469,8 +489,10 @@ public class BillDialog extends JDialog {
         signaturePanel.setOpaque(false);
         signaturePanel.setBorder(new EmptyBorder(30, 20, 20, 20));
 
-        JLabel lblThuNgan = new JLabel("<html><center><b>Thu ngân</b><br><i>(Ký, họ tên)</i></center></html>", SwingConstants.CENTER);
-        JLabel lblKhach = new JLabel("<html><center><b>Khách hàng</b><br><i>(Ký, họ tên)</i></center></html>", SwingConstants.CENTER);
+        JLabel lblThuNgan = new JLabel("<html><center><b>Thu ngân</b><br><i>(Ký, họ tên)</i></center></html>",
+                SwingConstants.CENTER);
+        JLabel lblKhach = new JLabel("<html><center><b>Khách hàng</b><br><i>(Ký, họ tên)</i></center></html>",
+                SwingConstants.CENTER);
 
         signaturePanel.add(lblThuNgan);
         signaturePanel.add(lblKhach);

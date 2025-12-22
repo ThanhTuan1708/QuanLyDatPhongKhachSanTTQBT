@@ -286,9 +286,25 @@ public class BookingFormDialog extends JDialog {
             List<KhuyenMai> allPromos = kmDao.getAllKhuyenMai();
             String currentInput = txtMaKhuyenMai.getText().trim().toLowerCase();
 
+            // Lọc chỉ hiển thị các mã còn hiệu lực:
+            // 1. Đã bắt đầu (today >= ngayBatDau)
+            // 2. Chưa hết hạn (today <= ngayKetThuc)
+            // 3. Còn lượt sử dụng
+            java.time.LocalDate today = java.time.LocalDate.now();
+
             List<KhuyenMai> availablePromos = allPromos.stream()
-                    .filter(km -> km.getLuotSuDung() > 0
-                            && (km.getNgayKetThuc() == null || km.getNgayKetThuc().after(new Date())))
+                    .filter(km -> {
+                        // Kiểm tra đã bắt đầu chưa
+                        boolean hasStarted = (km.getNgayBatDau() == null ||
+                                !today.isBefore(km.getNgayBatDau().toLocalDate()));
+                        // Kiểm tra còn hiệu lực không
+                        boolean notExpired = (km.getNgayKetThuc() == null ||
+                                !today.isAfter(km.getNgayKetThuc().toLocalDate()));
+                        // Kiểm tra còn lượt sử dụng
+                        boolean hasUsages = km.getLuotSuDung() > 0;
+
+                        return hasStarted && notExpired && hasUsages;
+                    })
                     .filter(km -> km.getMaKhuyenMai().toLowerCase().contains(currentInput)
                             || km.getTenKhuyenMai().toLowerCase().contains(currentInput))
                     .collect(Collectors.toList());
@@ -361,20 +377,54 @@ public class BookingFormDialog extends JDialog {
             KhuyenMai_DAO kmDao = new KhuyenMai_DAO();
             KhuyenMai km = kmDao.getKhuyenMaiById(code);
 
-            if (km == null || km.getLuotSuDung() <= 0
-                    || (km.getNgayKetThuc() != null && km.getNgayKetThuc().before(new Date()))) {
-                lblKmInfo.setText("Mã không hợp lệ hoặc đã hết hạn.");
+            if (km == null) {
+                lblKmInfo.setText("Mã không tồn tại.");
+                lblKmInfo.setForeground(Color.RED);
+                return;
+            }
+
+            // Kiểm tra tất cả điều kiện
+            java.time.LocalDate today = java.time.LocalDate.now();
+
+            // Kiểm tra ngày bắt đầu
+            boolean hasNotStarted = false;
+            if (km.getNgayBatDau() != null) {
+                hasNotStarted = today.isBefore(km.getNgayBatDau().toLocalDate());
+            }
+
+            // Kiểm tra ngày kết thúc
+            boolean isExpired = false;
+            if (km.getNgayKetThuc() != null) {
+                isExpired = today.isAfter(km.getNgayKetThuc().toLocalDate());
+            }
+
+            // Kiểm tra lượt sử dụng
+            boolean noUsagesLeft = km.getLuotSuDung() <= 0;
+
+            // Xử lý các trường hợp lỗi với thông báo cụ thể
+            if (hasNotStarted) {
+                lblKmInfo.setText("Mã chưa bắt đầu (từ " + km.getNgayBatDau() + ")");
+                lblKmInfo.setForeground(Color.RED);
+            } else if (isExpired) {
+                lblKmInfo.setText("Mã đã hết hạn.");
+                lblKmInfo.setForeground(Color.RED);
+            } else if (noUsagesLeft) {
+                lblKmInfo.setText("Mã đã hết lượt sử dụng.");
                 lblKmInfo.setForeground(Color.RED);
             } else {
+                // Tất cả điều kiện đều OK - áp dụng thành công
                 String info = String.format("Áp dụng: %s (-%.0f%%)", km.getTenKhuyenMai(), km.getChietKhau());
                 lblKmInfo.setText(info);
                 lblKmInfo.setForeground(new Color(0, 120, 0));
                 txtMaKhuyenMai.setEnabled(false);
                 btnApplyKm.setText("Xóa");
+                System.out.println("DEBUG applyPromoCode - Áp dụng thành công: " + km.getMaKhuyenMai() + " - "
+                        + km.getChietKhau() + "%");
             }
         } catch (SQLException ex) {
             lblKmInfo.setText("Lỗi khi kiểm tra mã.");
             lblKmInfo.setForeground(Color.RED);
+            ex.printStackTrace();
         }
     }
 
@@ -438,6 +488,12 @@ public class BookingFormDialog extends JDialog {
         if (btnApplyKm.getText().equals("Xóa") && !txtMaKhuyenMai.getText().trim().isEmpty()) {
             maKM = txtMaKhuyenMai.getText().trim();
         }
+
+        // DEBUG: Log mã khuyến mãi được truyền
+        System.out.println("DEBUG BookingFormDialog - Nút áp dụng text: " + btnApplyKm.getText());
+        System.out.println("DEBUG BookingFormDialog - Mã KM textfield: '" + txtMaKhuyenMai.getText().trim() + "'");
+        System.out.println("DEBUG BookingFormDialog - Mã KM sẽ truyền: " + (maKM != null ? maKM : "NULL"));
+
         bookingInfo.put("maKhuyenMai", maKM);
         bookingInfo.put("isCheckinNow", this.isCheckinNow);
 

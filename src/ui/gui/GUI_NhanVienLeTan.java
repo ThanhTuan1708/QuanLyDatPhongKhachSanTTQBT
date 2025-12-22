@@ -271,7 +271,61 @@ public class GUI_NhanVienLeTan extends JFrame {
             if (confirm == JOptionPane.YES_OPTION) {
                 dispose(); // Đóng cửa sổ hiện tại
                 SwingUtilities.invokeLater(() -> {
-                    new ui.gui.FormDialog.FormDangNhap().setVisible(true);
+                    ui.gui.FormDialog.FormDangNhap login = new ui.gui.FormDialog.FormDangNhap();
+                    login.setLocationRelativeTo(null);
+                    login.setVisible(true);
+
+                    // Thread theo dõi form đăng nhập
+                    new Thread(() -> {
+                        try {
+                            // Đợi cho đến khi form đóng
+                            while (login.isVisible()) {
+                                Thread.sleep(100);
+                            }
+
+                            // Lấy thông tin nhân viên đăng nhập
+                            NhanVien loggedIn = login.getLoggedInNhanVien();
+
+                            if (loggedIn != null) {
+                                LoaiNhanVien userRole = loggedIn.getChucVu();
+                                if (userRole != null) {
+                                    SwingUtilities.invokeLater(() -> {
+                                        try {
+                                            switch (userRole) {
+                                                case QUAN_LY:
+                                                    new GUI_NhanVienQuanLy(loggedIn).setVisible(true);
+                                                    break;
+                                                case LE_TAN:
+                                                    new GUI_NhanVienLeTan(loggedIn).setVisible(true);
+                                                    break;
+                                                default:
+                                                    JOptionPane.showMessageDialog(null,
+                                                            "Chức vụ không được hỗ trợ: " + userRole.getLabel(),
+                                                            "Lỗi", JOptionPane.ERROR_MESSAGE);
+                                                    System.exit(1);
+                                            }
+                                        } catch (Exception ex) {
+                                            ex.printStackTrace();
+                                            JOptionPane.showMessageDialog(null,
+                                                    "Lỗi khi mở giao diện: " + ex.getMessage(),
+                                                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+                                            System.exit(1);
+                                        }
+                                    });
+                                } else {
+                                    JOptionPane.showMessageDialog(null,
+                                            "Không thể xác định chức vụ nhân viên",
+                                            "Lỗi", JOptionPane.ERROR_MESSAGE);
+                                    System.exit(1);
+                                }
+                            } else {
+                                // Người dùng đóng form đăng nhập mà không đăng nhập
+                                System.exit(0);
+                            }
+                        } catch (InterruptedException ex) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }).start();
                 });
             }
         });

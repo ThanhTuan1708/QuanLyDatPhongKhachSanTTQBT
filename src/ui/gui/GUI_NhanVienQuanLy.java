@@ -34,6 +34,7 @@ import entity.LoaiNhanVien;
 import entity.NhanVien;
 import event.EventKhuyenMai;
 import event.EventNhanVien;
+import ui.gui.FormDialog.FormHuongDanSuDung;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -217,6 +218,22 @@ public class GUI_NhanVienQuanLy extends JFrame {
         menu.add(btnThongKe);
         menu.add(Box.createVerticalStrut(8));
         menu.add(btnKhuyenMai);
+        menu.add(Box.createVerticalStrut(8));
+
+        // Nút Hướng dẫn sử dụng
+        JButton btnHuongDan = new JButton("❓ Hướng dẫn");
+        btnHuongDan.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
+        btnHuongDan.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnHuongDan.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        btnHuongDan.setFocusPainted(false);
+        btnHuongDan.setContentAreaFilled(false);
+        btnHuongDan.setOpaque(false);
+        btnHuongDan.setBorder(new CompoundBorder(
+                new LineBorder(new Color(230, 230, 230)),
+                new EmptyBorder(6, 12, 6, 12)));
+        btnHuongDan.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnHuongDan.addActionListener(e -> FormHuongDanSuDung.showDialog(GUI_NhanVienQuanLy.this));
+        menu.add(btnHuongDan);
         menu.add(Box.createVerticalStrut(8));
 
         JPanel menuWrap = new JPanel(new BorderLayout());

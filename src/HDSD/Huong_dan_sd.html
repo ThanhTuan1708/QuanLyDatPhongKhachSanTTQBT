@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hướng Dẫn Sử Dụng - TBQTT Hotel Management</title>
+    <style>
+        /* --- CSS VARIABLES & RESET --- */
+
+        :root {
+            --primary: #0056b3;
+            /* Màu xanh chủ đạo của app */
+            --sidebar-bg: #1e293b;
+            --sidebar-text: #e2e8f0;
+            --text-main: #334155;
+            --bg-body: #f8fafc;
+            --border: #cbd5e1;
+            /* Màu trạng thái phòng giống trong Java Code */
+            --room-empty: #2ecc71;
+            /* Xanh lá */
+            --room-occupied: #e74c3c;
+            /* Đỏ */
+            --room-cleaning: #f1c40f;
+            /* Vàng */
+            --room-fixing: #e67e22;
+            /* Cam */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR --- */
+
+        .sidebar {
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #334155;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-bottom: 1px solid #334155;
+            background: rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .menu {
+            padding: 20px 0;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .menu-category {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            padding: 15px 20px 5px;
+            font-weight: bold;
+        }
+
+        .menu a {
+            display: block;
+            padding: 10px 20px;
+            color: var(--sidebar-text);
+            text-decoration: none;
+            transition: 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .menu a:hover,
+        .menu a.active {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-left-color: var(--primary);
+            color: white;
+        }
+
+        /* --- MAIN CONTENT --- */
+
+        .content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: var(--primary);
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: #1e293b;
+            border-left: 5px solid var(--primary);
+            padding-left: 15px;
+        }
+
+        h3 {
+            margin-top: 25px;
+            margin-bottom: 10px;
+            color: #475569;
+        }
+
+        p,
+        li {
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        ul,
+        ol {
+            padding-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* --- UI ELEMENTS SIMULATION --- */
+
+        .ui-btn {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #e2e8f0;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-family: monospace;
+            color: #334155;
+            font-weight: bold;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-right: 5px;
+        }
+
+        .bg-green {
+            background-color: var(--room-empty);
+        }
+
+        .bg-red {
+            background-color: var(--room-occupied);
+        }
+
+        .bg-yellow {
+            background-color: var(--room-cleaning);
+            color: #333;
+        }
+
+        .bg-orange {
+            background-color: var(--room-fixing);
+        }
+
+        .note-box {
+            background-color: #fff7ed;
+            border-left: 4px solid #f97316;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .role-badge {
+            font-size: 0.7em;
+            vertical-align: middle;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .role-staff {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        .role-manager {
+            background: #fce7f3;
+            color: #9d174d;
+            border: 1px solid #fbcfe8;
+        }
+
+        /* --- RESPONSIVE --- */
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                height: auto;
+                overflow: auto;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                border-right: none;
+            }
+
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="sidebar">
+        <div class="brand">TBQTT HOTEL<br><small>User Guide v1.0</small></div>
+        <div class="menu">
+            <div class="menu-category">Chung</div>
+            <a href="#tong-quan" class="active">1. Đăng nhập & Tổng quan</a>
+
+            <div class="menu-category">Dành cho Lễ tân</div>
+            <a href="#so-do-phong">2. Sơ đồ phòng & Trạng thái</a>
+            <a href="#check-in">3. Quy trình Check-in</a>
+            <a href="#check-out">4. Quy trình Check-out</a>
+            <a href="#dich-vu">5. Dịch vụ & Tiện ích</a>
+
+            <div class="menu-category">Dành cho Quản lý</div>
+            <a href="#quan-ly-nhan-vien">6. Quản lý Nhân sự</a>
+            <a href="#quan-ly-khuyen-mai">7. Quản lý Khuyến mãi</a>
+            <a href="#bao-cao">8. Báo cáo & Thống kê</a>
+        </div>
+    </nav>
+
+    <main class="content">
+        <div class="container">
+            <h1>Hướng dẫn sử dụng hệ thống</h1>
+            <p>Tài liệu này hướng dẫn chi tiết các tính năng của phần mềm Quản lý Khách sạn TBQTT, được chia theo phân
+                quyền: <strong>Lễ tân</strong> và <strong>Quản lý</strong>.</p>
+
+            <section id="tong-quan">
+                <h2>1. Đăng nhập & Tổng quan</h2>
+                <p>Mọi nhân viên đều bắt đầu từ màn hình đăng nhập.</p>
+                <ol>
+                    <li>Nhập <strong>Mã nhân viên</strong> (Ví dụ: NV001) vào ô tài khoản.</li>
+                    <li>Nhập <strong>Mật khẩu</strong> được cấp.</li>
+                    <li>Nhấn nút <span class="ui-btn">Đăng nhập</span>.</li>
+                </ol>
+                <div class="note-box">
+                    <strong>Cơ chế tự động:</strong> Hệ thống sẽ tự nhận diện chức vụ của bạn.
+                    <ul>
+                        <li>Nếu là <strong>Lễ tân</strong>: Chuyển ngay vào màn hình Sơ đồ phòng để bán hàng.</li>
+                        <li>Nếu là <strong>Quản lý</strong>: Chuyển vào màn hình Quản trị (Thống kê).</li>
+                    </ul>
+                </div>
+            </section>
+
+            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 40px 0;">
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <span class="role-badge role-staff">Phân hệ Lễ tân</span>
+            </div>
+
+            <section id="so-do-phong">
+                <h2>2. Sơ đồ phòng & Trạng thái</h2>
+                <p>Giao diện chính hiển thị trực quan trạng thái các phòng. Bạn cần ghi nhớ quy ước màu sắc sau:</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><span class="status-badge bg-green">MÀU XANH</span> <strong>Phòng Trống</strong><br><small>Sẵn
+                            sàng đón khách.</small></div>
+                    <div><span class="status-badge bg-red">MÀU ĐỎ</span> <strong>Đang có khách</strong><br><small>Phòng
+                            đang được thuê.</small></div>
+                    <div><span class="status-badge bg-yellow">MÀU VÀNG</span> <strong>Đang dọn</strong><br><small>Khách
+                            vừa trả, chờ dọn dẹp.</small></div>
+                    <div><span class="status-badge bg-orange">MÀU CAM</span> <strong>Bảo trì</strong><br><small>Hỏng
+                            hóc, tạm khóa.</small></div>
+                </div>
+            </section>
+
+            <section id="check-in">
+                <h2>3. Quy trình Check-in (Nhận phòng)</h2>
+                <h3>Bước 1: Chọn phòng</h3>
+                <p>Nhấp chuột trái vào bất kỳ phòng nào có màu <strong>Xanh</strong>.</p>
+
+                <h3>Bước 2: Nhập thông tin</h3>
+                <ul>
+                    <li><strong>Tìm khách cũ:</strong> Nhập SĐT hoặc CCCD vào ô tìm kiếm -> Nhấn Enter.</li>
+                    <li><strong>Khách mới:</strong> Nhập đầy đủ Họ tên, CCCD, Số điện thoại.</li>
+                </ul>
+
+                <h3>Bước 3: Xác nhận</h3>
+                <p>Chọn loại thuê (Theo giờ / Theo ngày) và nhập số lượng khách. Nhấn nút <span class="ui-btn">Nhận
+                        phòng</span>.</p>
+                <p>➔ Phòng sẽ chuyển sang màu <strong>Đỏ</strong> ngay lập tức.</p>
+            </section>
+
+            <section id="check-out">
+                <h2>4. Quy trình Check-out (Trả phòng)</h2>
+                <h3>Bước 1: Chuyển chế độ</h3>
+                <p>Trên thanh công cụ, nhấn nút <span class="ui-btn">Check Out</span>. Danh sách sẽ lọc ra các phòng
+                    đang có khách.</p>
+
+                <h3>Bước 2: Xem hóa đơn & Thanh toán</h3>
+                <ol>
+                    <li>Tích chọn vào phòng cần trả.</li>
+                    <li>Màn hình hiển thị chi tiết: <em>Tiền phòng + Dịch vụ + 10% VAT</em>.</li>
+                    <li>Nhấn <span class="ui-btn">In hóa đơn</span> để xuất phiếu cho khách.</li>
+                    <li>Nhận tiền và nhấn <span class="ui-btn">Hoàn tất</span>.</li>
+                </ol>
+                <div class="note-box">
+                    <strong>Lưu ý:</strong> Hệ thống tự động tính tiền dựa trên giờ vào/ra thực tế. Lễ tân không thể sửa
+                    giá thủ công để đảm bảo minh bạch.
+                </div>
+            </section>
+
+            <section id="dich-vu">
+                <h2>5. Dịch vụ & Tiện ích</h2>
+                <p>Khi khách gọi thêm nước uống, đồ ăn, giặt ủi:</p>
+                <ol>
+                    <li>Tại sơ đồ phòng, <strong>Click chuột phải</strong> vào phòng đang ở.</li>
+                    <li>Chọn menu <span class="ui-btn">Thêm dịch vụ</span>.</li>
+                    <li>Tìm món và nhập số lượng -> Nhấn <strong>Lưu</strong>.</li>
+                </ol>
+                <p>Khoản tiền này sẽ tự động cộng vào hóa đơn khi Check-out.</p>
+            </section>
+
+            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 40px 0;">
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <span class="role-badge role-manager">Phân hệ Quản lý</span>
+            </div>
+
+            <section id="quan-ly-nhan-vien">
+                <h2>6. Quản lý Nhân sự</h2>
+                <p>Dành cho Quản lý để cấp tài khoản cho nhân viên mới.</p>
+                <ul>
+                    <li><strong>Thêm nhân viên:</strong> Nhập Họ tên, SĐT, Chức vụ. Hệ thống sẽ tự sinh Mã NV và Mật
+                        khẩu mặc định.</li>
+                    <li><strong>Cập nhật:</strong> Sửa thông tin liên hệ hoặc đặt lại mật khẩu nếu nhân viên quên.</li>
+                    <li><strong>Khóa tài khoản:</strong> Chọn trạng thái "Ngưng hoạt động" đối với nhân viên đã nghỉ
+                        việc.</li>
+                </ul>
+            </section>
+
+            <section id="quan-ly-khuyen-mai">
+                <h2>7. Quản lý Khuyến mãi (Promotions)</h2>
+                <p>Thiết lập các mã giảm giá cho ngày lễ tết.</p>
+                <ul>
+                    <li><strong>Dashboard Khuyến mãi:</strong> Xem nhanh tổng số chương trình đang chạy, đã hết hạn.
+                    </li>
+                    <li><strong>Tạo mới:</strong> Nhập Tên chương trình, % giảm giá, Ngày bắt đầu và Ngày kết thúc.</li>
+                </ul>
+                <p><em>Mã khuyến mãi sẽ tự động áp dụng khi Lễ tân thanh toán nếu đủ điều kiện.</em></p>
+            </section>
+
+            <section id="bao-cao">
+                <h2>8. Báo cáo & Thống kê</h2>
+                <p>Hệ thống cung cấp cái nhìn toàn cảnh về tình hình kinh doanh:</p>
+                <ul>
+                    <li><strong>Biểu đồ doanh thu:</strong> Theo dõi dòng tiền theo Ngày/Tháng/Năm.</li>
+                    <li><strong>Tần suất phòng:</strong> Biết được loại phòng nào (VIP/Thường) được khách ưa chuộng
+                        nhất.</li>
+                    <li><strong>Dịch vụ:</strong> Thống kê món ăn/đồ uống bán chạy để nhập hàng hợp lý.</li>
+                </ul>
+            </section>
+
+            <div style="margin-top: 50px; text-align: center; color: #64748b; font-size: 0.9em;">
+                &copy; 2025 TBQTT Hotel Management System.<br>Tài liệu lưu hành nội bộ.
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const sections = document.querySelectorAll("section");
+        const navLinks = document.querySelectorAll(".menu a");
+
+        window.addEventListener("scroll", () => {
+            let current = "";
+            sections.forEach((section) => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 150) {
+                    current = section.getAttribute("id");
+                }
+            });
+
+            navLinks.forEach((link) => {
+                link.classList.remove("active");
+                if (link.getAttribute("href").includes(current)) {
+                    link.classList.add("active");
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

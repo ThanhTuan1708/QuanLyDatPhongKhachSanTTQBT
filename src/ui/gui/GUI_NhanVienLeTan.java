@@ -19,6 +19,7 @@ import dao.*;
 import entity.*;
 import event.*;
 import entity.Phong;
+import ui.gui.FormDialog.FormHuongDanSuDung;
 
 // SWING, AWT
 import javax.swing.*;
@@ -214,6 +215,22 @@ public class GUI_NhanVienLeTan extends JFrame {
         menu.add(btnPhong);
         menu.add(Box.createVerticalStrut(8));
         menu.add(btnDichVu);
+        menu.add(Box.createVerticalStrut(8));
+
+        // Nút Hướng dẫn sử dụng
+        JButton btnHuongDan = new JButton("❓ Hướng dẫn");
+        btnHuongDan.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
+        btnHuongDan.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnHuongDan.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        btnHuongDan.setFocusPainted(false);
+        btnHuongDan.setContentAreaFilled(false);
+        btnHuongDan.setOpaque(false);
+        btnHuongDan.setBorder(new CompoundBorder(
+                new LineBorder(new Color(230, 230, 230)),
+                new EmptyBorder(6, 12, 6, 12)));
+        btnHuongDan.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnHuongDan.addActionListener(e -> FormHuongDanSuDung.showDialog(GUI_NhanVienLeTan.this));
+        menu.add(btnHuongDan);
         menu.add(Box.createVerticalStrut(8));
 
         sidebar.add(menu, BorderLayout.CENTER);
@@ -3188,7 +3205,6 @@ public class GUI_NhanVienLeTan extends JFrame {
             header.add(createToggleAndHistoryPanel(), BorderLayout.CENTER);
             return header;
         }
-
 
         /**
          * Helper: Tạo Panel Tiêu đề

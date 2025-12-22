@@ -104,7 +104,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
             background: white;
             padding: 40px;
@@ -214,6 +214,460 @@
             border: 1px solid #fbcfe8;
         }
 
+        /* ============================================ */
+        /* === MOCKUP STYLES - MÔ PHỎNG GIAO DIỆN === */
+        /* ============================================ */
+
+        .mockup-container {
+            margin: 25px 0;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            background: #f5f7fa;
+        }
+
+        .mockup-title {
+            background: linear-gradient(135deg, #1e293b, #334155);
+            color: white;
+            padding: 10px 16px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mockup-title::before {
+            content: "📺";
+        }
+
+        .mockup-body {
+            padding: 0;
+            background: #f2f5fa;
+        }
+
+        /* --- LOGIN MOCKUP --- */
+        .login-mockup {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 350px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 16px;
+            padding: 35px;
+            width: 320px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .login-logo .icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #185adb, #0056b3);
+            border-radius: 14px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .login-logo h3 {
+            color: #1e293b;
+            font-size: 1.3em;
+            margin: 0;
+        }
+
+        .login-logo small {
+            color: #64748b;
+            font-size: 0.8em;
+        }
+
+        .mock-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 14px;
+            font-size: 0.9em;
+            background: #f8fafc;
+            color: #94a3b8;
+        }
+
+        .mock-input.filled {
+            color: #1e293b;
+            background: white;
+        }
+
+        .mock-btn-green {
+            width: 100%;
+            padding: 12px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1em;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .mock-btn-green:hover {
+            background: #219a52;
+        }
+
+        /* --- SIDEBAR MOCKUP --- */
+        .app-mockup {
+            display: flex;
+            min-height: 400px;
+            background: #f2f5fa;
+        }
+
+        .mock-sidebar {
+            width: 200px;
+            background: #f0f8ff;
+            border-right: 1px solid #dde6ee;
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mock-sidebar-logo {
+            margin-bottom: 20px;
+        }
+
+        .mock-sidebar-logo h4 {
+            font-size: 1.1em;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .mock-sidebar-logo span {
+            font-size: 0.75em;
+            color: #64748b;
+        }
+
+        .mock-nav-btn {
+            padding: 10px 14px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            background: transparent;
+            color: #475569;
+            border: 1px solid transparent;
+            cursor: pointer;
+            text-align: left;
+            transition: 0.2s;
+        }
+
+        .mock-nav-btn:hover {
+            background: #e8f4fd;
+        }
+
+        .mock-nav-btn.active {
+            background: #185adb;
+            color: white;
+            border-color: #185adb;
+        }
+
+        .mock-nav-btn.help {
+            border: 1px solid #e2e8f0;
+            margin-top: auto;
+        }
+
+        .mock-main {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .mock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mock-header h3 {
+            margin: 0;
+            color: #1e293b;
+            font-size: 1.1em;
+        }
+
+        .mock-header small {
+            color: #64748b;
+            font-size: 0.8em;
+        }
+
+        /* --- PROFILE CARD --- */
+        .mock-profile-card {
+            background: white;
+            border-radius: 10px;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .mock-profile-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .mock-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #7898ff, #5a7ae0);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .mock-profile-info h4 {
+            margin: 0 0 3px 0;
+            font-size: 0.95em;
+            color: #1e293b;
+        }
+
+        .mock-profile-info small {
+            color: #64748b;
+            font-size: 0.75em;
+        }
+
+        .mock-stats-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .mock-stat-box {
+            padding: 10px 18px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .mock-stat-box.blue {
+            background: #daf0ff;
+        }
+
+        .mock-stat-box.purple {
+            background: #e6ebff;
+        }
+
+        .mock-stat-box.pink {
+            background: #ffebf0;
+        }
+
+        .mock-stat-box .num {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #1e293b;
+        }
+
+        .mock-stat-box small {
+            font-size: 0.7em;
+            color: #475569;
+        }
+
+        /* --- ROOM MAP MOCKUP --- */
+        .mock-room-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .mock-room {
+            aspect-ratio: 1;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: white;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .mock-room:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .mock-room.empty {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        .mock-room.occupied {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .mock-room.cleaning {
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+            color: #333;
+        }
+
+        .mock-room.fixing {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+        }
+
+        .mock-room small {
+            font-size: 0.7em;
+            opacity: 0.9;
+            margin-top: 3px;
+        }
+
+        /* --- BOOKING FORM MOCKUP --- */
+        .mock-booking-form {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .mock-form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .mock-form-header h4 {
+            margin: 0;
+            color: #185adb;
+        }
+
+        .mock-room-tag {
+            background: #daf0ff;
+            color: #185adb;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+
+        .mock-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .mock-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .mock-form-group label {
+            font-size: 0.8em;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .mock-form-group .input {
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.9em;
+            color: #1e293b;
+        }
+
+        .mock-form-group .input.placeholder {
+            color: #94a3b8;
+        }
+
+        .mock-form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .mock-btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9em;
+            border: none;
+        }
+
+        .mock-btn.primary {
+            background: #27ae60;
+            color: white;
+        }
+
+        .mock-btn.secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* --- CHECKOUT MOCKUP --- */
+        .mock-checkout {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .mock-invoice {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .mock-invoice-header {
+            background: #f8fafc;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .mock-invoice-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .mock-invoice-row.total {
+            background: #f0fdf4;
+            font-weight: bold;
+            color: #166534;
+            font-size: 1.1em;
+        }
+
         /* --- RESPONSIVE --- */
 
         @media (max-width: 768px) {
@@ -232,6 +686,23 @@
             .content {
                 padding: 20px;
             }
+
+            .mock-room-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .mock-form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .app-mockup {
+                flex-direction: column;
+            }
+
+            .mock-sidebar {
+                width: 100%;
+                padding: 12px;
+            }
         }
     </style>
 </head>
@@ -239,7 +710,7 @@
 <body>
 
     <nav class="sidebar">
-        <div class="brand">TBQTT HOTEL<br><small>User Guide v1.0</small></div>
+        <div class="brand">TBQTT HOTEL<br><small>User Guide v2.0</small></div>
         <div class="menu">
             <div class="menu-category">Chung</div>
             <a href="#tong-quan" class="active">1. Đăng nhập & Tổng quan</a>
@@ -266,6 +737,26 @@
             <section id="tong-quan">
                 <h2>1. Đăng nhập & Tổng quan</h2>
                 <p>Mọi nhân viên đều bắt đầu từ màn hình đăng nhập.</p>
+
+                <!-- MOCKUP: Màn hình đăng nhập -->
+                <div class="mockup-container">
+                    <div class="mockup-title">Màn hình Đăng nhập</div>
+                    <div class="mockup-body">
+                        <div class="login-mockup">
+                            <div class="login-card">
+                                <div class="login-logo">
+                                    <div class="icon">🏨</div>
+                                    <h3>TBQTT Hotel</h3>
+                                    <small>Hệ thống quản lý khách sạn</small>
+                                </div>
+                                <div class="mock-input filled">NV001</div>
+                                <div class="mock-input">••••••••</div>
+                                <button class="mock-btn-green">Đăng nhập</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <ol>
                     <li>Nhập <strong>Mã nhân viên</strong> (Ví dụ: NV001) vào ô tài khoản.</li>
                     <li>Nhập <strong>Mật khẩu</strong> được cấp.</li>
@@ -289,7 +780,8 @@
             <section id="so-do-phong">
                 <h2>2. Sơ đồ phòng & Trạng thái</h2>
                 <p>Giao diện chính hiển thị trực quan trạng thái các phòng. Bạn cần ghi nhớ quy ước màu sắc sau:</p>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
                     <div><span class="status-badge bg-green">MÀU XANH</span> <strong>Phòng Trống</strong><br><small>Sẵn
                             sàng đón khách.</small></div>
                     <div><span class="status-badge bg-red">MÀU ĐỎ</span> <strong>Đang có khách</strong><br><small>Phòng
@@ -298,6 +790,69 @@
                             vừa trả, chờ dọn dẹp.</small></div>
                     <div><span class="status-badge bg-orange">MÀU CAM</span> <strong>Bảo trì</strong><br><small>Hỏng
                             hóc, tạm khóa.</small></div>
+                </div>
+
+                <!-- MOCKUP: Dashboard Lễ tân + Sơ đồ phòng -->
+                <div class="mockup-container">
+                    <div class="mockup-title">Dashboard Lễ tân & Sơ đồ phòng</div>
+                    <div class="mockup-body">
+                        <div class="app-mockup">
+                            <div class="mock-sidebar">
+                                <div class="mock-sidebar-logo">
+                                    <h4>TBQTT</h4>
+                                    <span>HOTEL - Hệ thống quản lý</span>
+                                </div>
+                                <button class="mock-nav-btn active">📊 Dashboard</button>
+                                <button class="mock-nav-btn">🛏️ Đặt phòng</button>
+                                <button class="mock-nav-btn">✅ Check In/Out</button>
+                                <button class="mock-nav-btn">👥 Khách hàng</button>
+                                <button class="mock-nav-btn">🚪 Phòng</button>
+                                <button class="mock-nav-btn">🍽️ Dịch vụ</button>
+                                <button class="mock-nav-btn help">❓ Hướng dẫn</button>
+                            </div>
+                            <div class="mock-main">
+                                <div class="mock-header">
+                                    <h3>Dashboard Nhân viên Lễ tân</h3>
+                                    <small>Chủ Nhật, 22 Tháng 12, 2024</small>
+                                </div>
+                                <div class="mock-profile-card">
+                                    <div class="mock-profile-left">
+                                        <div class="mock-avatar">T</div>
+                                        <div class="mock-profile-info">
+                                            <h4>Nguyễn Văn Lễ Tân</h4>
+                                            <small>nv001@tbqtt.com • 0901234567 • Mã NV: NV001</small>
+                                        </div>
+                                    </div>
+                                    <div class="mock-stats-row">
+                                        <div class="mock-stat-box blue">
+                                            <div class="num">40</div>
+                                            <small>Giờ tuần này</small>
+                                        </div>
+                                        <div class="mock-stat-box purple">
+                                            <div class="num">5</div>
+                                            <small>Check-in</small>
+                                        </div>
+                                        <div class="mock-stat-box pink">
+                                            <div class="num">3</div>
+                                            <small>Check-out</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mock-room-grid">
+                                    <div class="mock-room empty">P101<small>Đơn</small></div>
+                                    <div class="mock-room occupied">P102<small>Đôi</small></div>
+                                    <div class="mock-room empty">P103<small>VIP</small></div>
+                                    <div class="mock-room cleaning">P104<small>Đơn</small></div>
+                                    <div class="mock-room empty">P105<small>Đôi</small></div>
+                                    <div class="mock-room occupied">P201<small>VIP</small></div>
+                                    <div class="mock-room occupied">P202<small>Đôi</small></div>
+                                    <div class="mock-room fixing">P203<small>Đơn</small></div>
+                                    <div class="mock-room empty">P204<small>VIP</small></div>
+                                    <div class="mock-room empty">P205<small>Đôi</small></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -311,6 +866,49 @@
                     <li><strong>Tìm khách cũ:</strong> Nhập SĐT hoặc CCCD vào ô tìm kiếm -> Nhấn Enter.</li>
                     <li><strong>Khách mới:</strong> Nhập đầy đủ Họ tên, CCCD, Số điện thoại.</li>
                 </ul>
+
+                <!-- MOCKUP: Form đặt phòng -->
+                <div class="mockup-container">
+                    <div class="mockup-title">Form Đặt phòng / Check-in</div>
+                    <div class="mockup-body" style="padding: 20px; background: #f2f5fa;">
+                        <div class="mock-booking-form">
+                            <div class="mock-form-header">
+                                <h4>📝 Thông tin đặt phòng</h4>
+                                <span class="mock-room-tag">Phòng 101 - VIP</span>
+                            </div>
+                            <div class="mock-form-grid">
+                                <div class="mock-form-group">
+                                    <label>Họ và tên khách hàng</label>
+                                    <div class="input">Nguyễn Văn An</div>
+                                </div>
+                                <div class="mock-form-group">
+                                    <label>Số CCCD/CMND</label>
+                                    <div class="input">079123456789</div>
+                                </div>
+                                <div class="mock-form-group">
+                                    <label>Số điện thoại</label>
+                                    <div class="input">0912 345 678</div>
+                                </div>
+                                <div class="mock-form-group">
+                                    <label>Email</label>
+                                    <div class="input placeholder">Nhập email (không bắt buộc)</div>
+                                </div>
+                                <div class="mock-form-group">
+                                    <label>Loại thuê</label>
+                                    <div class="input">Theo ngày</div>
+                                </div>
+                                <div class="mock-form-group">
+                                    <label>Số lượng khách</label>
+                                    <div class="input">2 người</div>
+                                </div>
+                            </div>
+                            <div class="mock-form-actions">
+                                <button class="mock-btn secondary">Hủy</button>
+                                <button class="mock-btn primary">✓ Nhận phòng</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <h3>Bước 3: Xác nhận</h3>
                 <p>Chọn loại thuê (Theo giờ / Theo ngày) và nhập số lượng khách. Nhấn nút <span class="ui-btn">Nhận
@@ -331,6 +929,54 @@
                     <li>Nhấn <span class="ui-btn">In hóa đơn</span> để xuất phiếu cho khách.</li>
                     <li>Nhận tiền và nhấn <span class="ui-btn">Hoàn tất</span>.</li>
                 </ol>
+
+                <!-- MOCKUP: Hóa đơn Check-out -->
+                <div class="mockup-container">
+                    <div class="mockup-title">Hóa đơn Thanh toán</div>
+                    <div class="mockup-body" style="padding: 20px; background: #f2f5fa;">
+                        <div class="mock-checkout">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                                <div>
+                                    <h4 style="margin: 0; color: #1e293b;">🧾 Hóa đơn #HD001234</h4>
+                                    <small style="color: #64748b;">Phòng 102 - VIP | 22/12/2024 14:00</small>
+                                </div>
+                                <span class="mock-room-tag" style="background: #fee2e2; color: #dc2626;">Đang thanh
+                                    toán</span>
+                            </div>
+                            <div class="mock-invoice">
+                                <div class="mock-invoice-header">
+                                    <span><strong>Mô tả</strong></span>
+                                    <span><strong>Thành tiền</strong></span>
+                                </div>
+                                <div class="mock-invoice-row">
+                                    <span>Tiền phòng VIP (2 ngày x 800,000đ)</span>
+                                    <span>1,600,000đ</span>
+                                </div>
+                                <div class="mock-invoice-row">
+                                    <span>Dịch vụ: Nước uống (x3)</span>
+                                    <span>90,000đ</span>
+                                </div>
+                                <div class="mock-invoice-row">
+                                    <span>Dịch vụ: Giặt ủi</span>
+                                    <span>150,000đ</span>
+                                </div>
+                                <div class="mock-invoice-row">
+                                    <span>VAT (10%)</span>
+                                    <span>184,000đ</span>
+                                </div>
+                                <div class="mock-invoice-row total">
+                                    <span>TỔNG CỘNG</span>
+                                    <span>2,024,000đ</span>
+                                </div>
+                            </div>
+                            <div class="mock-form-actions">
+                                <button class="mock-btn secondary">🖨️ In hóa đơn</button>
+                                <button class="mock-btn primary">✓ Hoàn tất thanh toán</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="note-box">
                     <strong>Lưu ý:</strong> Hệ thống tự động tính tiền dựa trên giờ vào/ra thực tế. Lễ tân không thể sửa
                     giá thủ công để đảm bảo minh bạch.
@@ -345,6 +991,72 @@
                     <li>Chọn menu <span class="ui-btn">Thêm dịch vụ</span>.</li>
                     <li>Tìm món và nhập số lượng -> Nhấn <strong>Lưu</strong>.</li>
                 </ol>
+
+                <!-- MOCKUP: Form thêm dịch vụ -->
+                <div class="mockup-container">
+                    <div class="mockup-title">Form Thêm Dịch vụ cho Phòng</div>
+                    <div class="mockup-body" style="padding: 20px; background: #f2f5fa;">
+                        <div class="mock-booking-form">
+                            <div class="mock-form-header">
+                                <h4>🍽️ Thêm dịch vụ cho Phòng 102</h4>
+                                <span class="mock-room-tag" style="background: #fee2e2; color: #dc2626;">Đang có
+                                    khách</span>
+                            </div>
+                            <div
+                                style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; font-size: 0.85em; padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #64748b;">
+                                <span>Dịch vụ</span>
+                                <span style="text-align: center;">Đơn giá</span>
+                                <span style="text-align: center;">Số lượng</span>
+                            </div>
+                            <div
+                                style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; padding: 12px 0; border-bottom: 1px solid #f1f5f9; align-items: center;">
+                                <span>🥤 Nước ngọt Coca</span>
+                                <span style="text-align: center; color: #64748b;">25,000đ</span>
+                                <div style="display: flex; justify-content: center; align-items: center; gap: 8px;">
+                                    <button
+                                        style="width: 28px; height: 28px; border: 1px solid #e2e8f0; background: white; border-radius: 4px; cursor: pointer;">-</button>
+                                    <span style="font-weight: bold;">2</span>
+                                    <button
+                                        style="width: 28px; height: 28px; border: 1px solid #e2e8f0; background: white; border-radius: 4px; cursor: pointer;">+</button>
+                                </div>
+                            </div>
+                            <div
+                                style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; padding: 12px 0; border-bottom: 1px solid #f1f5f9; align-items: center;">
+                                <span>🍜 Mì gói</span>
+                                <span style="text-align: center; color: #64748b;">35,000đ</span>
+                                <div style="display: flex; justify-content: center; align-items: center; gap: 8px;">
+                                    <button
+                                        style="width: 28px; height: 28px; border: 1px solid #e2e8f0; background: white; border-radius: 4px; cursor: pointer;">-</button>
+                                    <span style="font-weight: bold;">1</span>
+                                    <button
+                                        style="width: 28px; height: 28px; border: 1px solid #e2e8f0; background: white; border-radius: 4px; cursor: pointer;">+</button>
+                                </div>
+                            </div>
+                            <div
+                                style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; padding: 12px 0; border-bottom: 1px solid #f1f5f9; align-items: center;">
+                                <span>👕 Giặt ủi (bộ)</span>
+                                <span style="text-align: center; color: #64748b;">50,000đ</span>
+                                <div style="display: flex; justify-content: center; align-items: center; gap: 8px;">
+                                    <button
+                                        style="width: 28px; height: 28px; border: 1px solid #e2e8f0; background: white; border-radius: 4px; cursor: pointer;">-</button>
+                                    <span style="font-weight: bold;">0</span>
+                                    <button
+                                        style="width: 28px; height: 28px; border: 1px solid #e2e8f0; background: white; border-radius: 4px; cursor: pointer;">+</button>
+                                </div>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 2px solid #e2e8f0;">
+                                <span style="font-size: 1.1em;"><strong>Tổng cộng:</strong> <span
+                                        style="color: #27ae60; font-weight: bold;">85,000đ</span></span>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="mock-btn secondary">Hủy</button>
+                                    <button class="mock-btn primary">💾 Lưu dịch vụ</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <p>Khoản tiền này sẽ tự động cộng vào hóa đơn khi Check-out.</p>
             </section>
 
@@ -364,6 +1076,99 @@
                     <li><strong>Khóa tài khoản:</strong> Chọn trạng thái "Ngưng hoạt động" đối với nhân viên đã nghỉ
                         việc.</li>
                 </ul>
+
+                <!-- MOCKUP: Bảng quản lý nhân viên -->
+                <div class="mockup-container">
+                    <div class="mockup-title">Quản lý Nhân viên</div>
+                    <div class="mockup-body" style="padding: 20px; background: #f2f5fa;">
+                        <div class="mock-booking-form">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <input type="text" placeholder="🔍 Tìm kiếm nhân viên..."
+                                        style="padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; width: 280px; font-size: 0.9em;">
+                                    <select
+                                        style="padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9em;">
+                                        <option>Tất cả chức vụ</option>
+                                        <option>Lễ tân</option>
+                                        <option>Quản lý</option>
+                                    </select>
+                                </div>
+                                <button class="mock-btn primary">➕ Thêm nhân viên</button>
+                            </div>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                                <thead>
+                                    <tr style="background: #f8fafc; text-align: left;">
+                                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Mã NV</th>
+                                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Họ và Tên</th>
+                                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">SĐT</th>
+                                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Chức vụ</th>
+                                        <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Trạng thái</th>
+                                        <th
+                                            style="padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: center;">
+                                            Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;">NV001</td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;">Nguyễn Văn An</td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;">0901234567</td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;"><span
+                                                style="background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.85em;">Lễ
+                                                tân</span></td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;"><span
+                                                style="background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 12px; font-size: 0.85em;">Hoạt
+                                                động</span></td>
+                                        <td
+                                            style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">
+                                            <button
+                                                style="padding: 6px 12px; background: #f1f5f9; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;">✏️</button>
+                                            <button
+                                                style="padding: 6px 12px; background: #fee2e2; border: none; border-radius: 4px; cursor: pointer;">🔒</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;">NV002</td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;">Trần Thị Bình</td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;">0912345678</td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;"><span
+                                                style="background: #fce7f3; color: #9d174d; padding: 4px 10px; border-radius: 12px; font-size: 0.85em;">Quản
+                                                lý</span></td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;"><span
+                                                style="background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 12px; font-size: 0.85em;">Hoạt
+                                                động</span></td>
+                                        <td
+                                            style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">
+                                            <button
+                                                style="padding: 6px 12px; background: #f1f5f9; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;">✏️</button>
+                                            <button
+                                                style="padding: 6px 12px; background: #fee2e2; border: none; border-radius: 4px; cursor: pointer;">🔒</button>
+                                        </td>
+                                    </tr>
+                                    <tr style="opacity: 0.6;">
+                                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;">NV003</td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;">Lê Văn Cường</td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;">0923456789</td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;"><span
+                                                style="background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.85em;">Lễ
+                                                tân</span></td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;"><span
+                                                style="background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 12px; font-size: 0.85em;">Ngưng
+                                                HĐ</span></td>
+                                        <td
+                                            style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">
+                                            <button
+                                                style="padding: 6px 12px; background: #f1f5f9; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;">✏️</button>
+                                            <button
+                                                style="padding: 6px 12px; background: #dcfce7; border: none; border-radius: 4px; cursor: pointer;">🔓</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <section id="quan-ly-khuyen-mai">
@@ -374,6 +1179,82 @@
                     </li>
                     <li><strong>Tạo mới:</strong> Nhập Tên chương trình, % giảm giá, Ngày bắt đầu và Ngày kết thúc.</li>
                 </ul>
+
+                <!-- MOCKUP: Dashboard Khuyến mãi -->
+                <div class="mockup-container">
+                    <div class="mockup-title">Dashboard Khuyến mãi</div>
+                    <div class="mockup-body" style="padding: 20px; background: #f2f5fa;">
+                        <div style="display: flex; gap: 16px; margin-bottom: 20px;">
+                            <div class="mock-stat-box"
+                                style="flex: 1; background: linear-gradient(135deg, #dcfce7, #bbf7d0); padding: 20px; border-radius: 12px;">
+                                <div class="num" style="font-size: 2em; color: #166534;">5</div>
+                                <small style="color: #166534;">Đang hoạt động</small>
+                            </div>
+                            <div class="mock-stat-box"
+                                style="flex: 1; background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 20px; border-radius: 12px;">
+                                <div class="num" style="font-size: 2em; color: #92400e;">2</div>
+                                <small style="color: #92400e;">Sắp hết hạn</small>
+                            </div>
+                            <div class="mock-stat-box"
+                                style="flex: 1; background: linear-gradient(135deg, #fee2e2, #fecaca); padding: 20px; border-radius: 12px;">
+                                <div class="num" style="font-size: 2em; color: #dc2626;">8</div>
+                                <small style="color: #dc2626;">Đã hết hạn</small>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                            <div
+                                style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; border-left: 4px solid #27ae60;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div>
+                                        <h4 style="margin: 0 0 8px 0; color: #1e293b;">🎄 Giáng Sinh 2024</h4>
+                                        <p style="margin: 0; color: #64748b; font-size: 0.85em;">Giảm 20% tất cả phòng
+                                            VIP</p>
+                                    </div>
+                                    <span
+                                        style="background: #dcfce7; color: #166534; padding: 4px 12px; border-radius: 12px; font-size: 0.8em;">Đang
+                                        chạy</span>
+                                </div>
+                                <div style="margin-top: 12px; font-size: 0.85em; color: #64748b;">📅 20/12 - 26/12/2024
+                                </div>
+                            </div>
+                            <div
+                                style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div>
+                                        <h4 style="margin: 0 0 8px 0; color: #1e293b;">🎆 Năm Mới 2025</h4>
+                                        <p style="margin: 0; color: #64748b; font-size: 0.85em;">Giảm 15% + Tặng bữa
+                                            sáng</p>
+                                    </div>
+                                    <span
+                                        style="background: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 12px; font-size: 0.8em;">Sắp
+                                        tới</span>
+                                </div>
+                                <div style="margin-top: 12px; font-size: 0.85em; color: #64748b;">📅 30/12 - 02/01/2025
+                                </div>
+                            </div>
+                            <div
+                                style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; border-left: 4px solid #27ae60;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div>
+                                        <h4 style="margin: 0 0 8px 0; color: #1e293b;">💕 Khách Quen</h4>
+                                        <p style="margin: 0; color: #64748b; font-size: 0.85em;">Giảm 10% cho khách đặt
+                                            lần 3</p>
+                                    </div>
+                                    <span
+                                        style="background: #dcfce7; color: #166534; padding: 4px 12px; border-radius: 12px; font-size: 0.8em;">Đang
+                                        chạy</span>
+                                </div>
+                                <div style="margin-top: 12px; font-size: 0.85em; color: #64748b;">📅 01/01 - 31/12/2025
+                                </div>
+                            </div>
+                            <div
+                                style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; cursor: pointer; border-style: dashed;">
+                                <span style="color: #64748b; font-size: 1.1em;">➕ Tạo khuyến mãi mới</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <p><em>Mã khuyến mãi sẽ tự động áp dụng khi Lễ tân thanh toán nếu đủ điều kiện.</em></p>
             </section>
 
@@ -386,6 +1267,119 @@
                         nhất.</li>
                     <li><strong>Dịch vụ:</strong> Thống kê món ăn/đồ uống bán chạy để nhập hàng hợp lý.</li>
                 </ul>
+
+                <!-- MOCKUP: Dashboard Thống kê -->
+                <div class="mockup-container">
+                    <div class="mockup-title">Dashboard Thống kê Doanh thu</div>
+                    <div class="mockup-body" style="padding: 20px; background: #f2f5fa;">
+                        <!-- Stats Cards -->
+                        <div
+                            style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;">
+                            <div
+                                style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border-radius: 12px; padding: 20px;">
+                                <div style="font-size: 0.85em; opacity: 0.9;">💰 Doanh thu tháng</div>
+                                <div style="font-size: 1.6em; font-weight: bold; margin: 8px 0;">125.5M</div>
+                                <div style="font-size: 0.8em; opacity: 0.8;">↑ 12% so với tháng trước</div>
+                            </div>
+                            <div
+                                style="background: linear-gradient(135deg, #10b981, #059669); color: white; border-radius: 12px; padding: 20px;">
+                                <div style="font-size: 0.85em; opacity: 0.9;">📊 Tổng đặt phòng</div>
+                                <div style="font-size: 1.6em; font-weight: bold; margin: 8px 0;">287</div>
+                                <div style="font-size: 0.8em; opacity: 0.8;">↑ 8% so với tháng trước</div>
+                            </div>
+                            <div
+                                style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border-radius: 12px; padding: 20px;">
+                                <div style="font-size: 0.85em; opacity: 0.9;">🏨 Tỷ lệ lấp đầy</div>
+                                <div style="font-size: 1.6em; font-weight: bold; margin: 8px 0;">78%</div>
+                                <div style="font-size: 0.8em; opacity: 0.8;">↑ 5% so với tháng trước</div>
+                            </div>
+                            <div
+                                style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border-radius: 12px; padding: 20px;">
+                                <div style="font-size: 0.85em; opacity: 0.9;">⭐ Giá trung bình</div>
+                                <div style="font-size: 1.6em; font-weight: bold; margin: 8px 0;">437K</div>
+                                <div style="font-size: 0.8em; opacity: 0.8;">/ đêm</div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Row -->
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
+                            <!-- Revenue Chart -->
+                            <div
+                                style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+                                <h4 style="margin: 0 0 16px 0; color: #1e293b;">📈 Biểu đồ Doanh thu (Tháng 12/2024)
+                                </h4>
+                                <div
+                                    style="display: flex; align-items: flex-end; justify-content: space-between; height: 150px; padding: 10px 0;">
+                                    <div style="width: 8%; background: linear-gradient(180deg, #3b82f6, #60a5fa); height: 45%; border-radius: 4px 4px 0 0;"
+                                        title="Tuần 1"></div>
+                                    <div style="width: 8%; background: linear-gradient(180deg, #3b82f6, #60a5fa); height: 65%; border-radius: 4px 4px 0 0;"
+                                        title="Tuần 2"></div>
+                                    <div style="width: 8%; background: linear-gradient(180deg, #3b82f6, #60a5fa); height: 55%; border-radius: 4px 4px 0 0;"
+                                        title="Tuần 3"></div>
+                                    <div style="width: 8%; background: linear-gradient(180deg, #10b981, #34d399); height: 85%; border-radius: 4px 4px 0 0;"
+                                        title="Tuần 4 (hiện tại)"></div>
+                                    <div style="width: 8%; background: linear-gradient(180deg, #e2e8f0, #f1f5f9); height: 30%; border-radius: 4px 4px 0 0; border: 1px dashed #cbd5e1;"
+                                        title="Dự báo"></div>
+                                </div>
+                                <div
+                                    style="display: flex; justify-content: space-between; font-size: 0.75em; color: #64748b; margin-top: 8px;">
+                                    <span>Tuần 1</span>
+                                    <span>Tuần 2</span>
+                                    <span>Tuần 3</span>
+                                    <span>Tuần 4</span>
+                                    <span>Dự báo</span>
+                                </div>
+                            </div>
+
+                            <!-- Room Type Chart -->
+                            <div
+                                style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+                                <h4 style="margin: 0 0 16px 0; color: #1e293b;">🏷️ Loại phòng phổ biến</h4>
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div>
+                                        <div
+                                            style="display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 4px;">
+                                            <span>VIP Suite</span>
+                                            <span style="color: #64748b;">42%</span>
+                                        </div>
+                                        <div
+                                            style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                                            <div
+                                                style="width: 42%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #a78bfa);">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div
+                                            style="display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 4px;">
+                                            <span>Phòng Đôi</span>
+                                            <span style="color: #64748b;">35%</span>
+                                        </div>
+                                        <div
+                                            style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                                            <div
+                                                style="width: 35%; height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa);">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div
+                                            style="display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 4px;">
+                                            <span>Phòng Đơn</span>
+                                            <span style="color: #64748b;">23%</span>
+                                        </div>
+                                        <div
+                                            style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                                            <div
+                                                style="width: 23%; height: 100%; background: linear-gradient(90deg, #10b981, #34d399);">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <div style="margin-top: 50px; text-align: center; color: #64748b; font-size: 0.9em;">
@@ -398,11 +1392,14 @@
         const sections = document.querySelectorAll("section");
         const navLinks = document.querySelectorAll(".menu a");
 
-        window.addEventListener("scroll", () => {
+        // Scroll spy for sidebar navigation
+        document.querySelector('.content').addEventListener("scroll", function () {
             let current = "";
+            const scrollTop = this.scrollTop;
+
             sections.forEach((section) => {
-                const sectionTop = section.offsetTop;
-                if (pageYOffset >= sectionTop - 150) {
+                const sectionTop = section.offsetTop - 200;
+                if (scrollTop >= sectionTop) {
                     current = section.getAttribute("id");
                 }
             });
@@ -411,6 +1408,26 @@
                 link.classList.remove("active");
                 if (link.getAttribute("href").includes(current)) {
                     link.classList.add("active");
+                }
+            });
+        });
+
+        // Add click animation to mockup rooms
+        document.querySelectorAll('.mock-room').forEach(room => {
+            room.addEventListener('click', function () {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1.05)';
+                }, 100);
+            });
+        });
+
+        // Add hover effects to buttons
+        document.querySelectorAll('.mock-nav-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.mock-nav-btn').forEach(b => b.classList.remove('active'));
+                if (!this.classList.contains('help')) {
+                    this.classList.add('active');
                 }
             });
         });

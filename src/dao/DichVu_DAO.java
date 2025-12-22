@@ -143,4 +143,16 @@ public class DichVu_DAO {
             throw e;
         }
     }
+
+    public boolean updateGiaDichVuByTen(String tenDV, double giaMoi) throws SQLException {
+        Connection con = ConnectDB.getConnection();
+        String sql = "UPDATE DichVu SET gia = ? WHERE tenDichVu = ?";
+        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
+            pstmt.setDouble(1, giaMoi);
+            pstmt.setString(2, tenDV);
+            return pstmt.executeUpdate() > 0;
+        }
+    }
+
+
 }

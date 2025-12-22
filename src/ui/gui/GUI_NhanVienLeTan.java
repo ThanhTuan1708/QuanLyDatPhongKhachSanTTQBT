@@ -1235,6 +1235,8 @@ public class GUI_NhanVienLeTan extends JFrame {
                     new CompoundBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER), new EmptyBorder(5, 8, 5, 8)));
             // ... (Code UI ComboBox y như cũ)
             searchPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+
+            searchPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
             return searchPanel;
         }
 
@@ -2513,6 +2515,7 @@ public class GUI_NhanVienLeTan extends JFrame {
         private JComboBox<String> typeFilter;
         private JPanel listPanel; // Panel chứa các thẻ phòng
         private JButton btnAdd;
+        private JPanel schemaContentPanel;
 
         // highlight-start
         private EventDatPhong datPhongController; // <-- Thêm biến này
@@ -2625,7 +2628,6 @@ public class GUI_NhanVienLeTan extends JFrame {
             return scrollPane;
         }
 
-        // Sửa chữ ký phương thức
         private JPanel createDetailRoomCard(Phong p) {
             String num = p.getMaPhong();
             String type = p.getLoaiPhong().getTenLoaiPhong();
@@ -2634,22 +2636,31 @@ public class GUI_NhanVienLeTan extends JFrame {
             String price = String.format("%,.0f ₫", p.getGiaTienMotDem());
             String status = p.getTrangThaiPhong().getTenTrangThai();
 
-            JPanel card = new JPanel(new GridLayout(1, 5, 10, 0));
+            // SỬA: Dùng GridBagLayout thay vì GridLayout để chia tỷ lệ cột linh hoạt
+            JPanel card = new JPanel(new GridBagLayout());
             card.setBackground(GUI_NhanVienLeTan.COLOR_WHITE);
             card.setBorder(BorderFactory.createCompoundBorder(
                     new LineBorder(GUI_NhanVienLeTan.CARD_BORDER),
-                    new EmptyBorder(12, 12, 12, 12)));
-            card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
-            card.setMinimumSize(new Dimension(0, 70));
+                    new EmptyBorder(10, 10, 10, 10))); // Giảm padding viền 1 chút
+
+            // Thiết lập kích thước: Chiều ngang tự co giãn, chiều cao cố định
+            card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+            card.setMinimumSize(new Dimension(0, 80));
+            card.setPreferredSize(new Dimension(0, 80));
             card.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-            // Column 1: Room Number
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.fill = GridBagConstraints.BOTH; // Giãn full ô
+            gbc.insets = new Insets(0, 5, 0, 5); // Khoảng cách giữa các cột
+
+            // --- Cột 1: Số phòng (Chiếm 15%) ---
             JPanel col1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+            col1.setOpaque(false);
             JLabel icon = new JLabel();
             icon.setPreferredSize(new Dimension(32, 32));
             icon.setOpaque(true);
             icon.setBackground(new Color(175, 170, 255));
-            icon.setBorder(new EmptyBorder(0, 0, 0, 0));
+
             JPanel numPanel = new JPanel();
             numPanel.setLayout(new BoxLayout(numPanel, BoxLayout.Y_AXIS));
             numPanel.setOpaque(false);
@@ -2660,24 +2671,27 @@ public class GUI_NhanVienLeTan extends JFrame {
             floorLabel.setForeground(GUI_NhanVienLeTan.COLOR_TEXT_MUTED);
             numPanel.add(numLabel);
             numPanel.add(floorLabel);
+
             col1.add(icon);
             col1.add(numPanel);
-            card.add(col1);
 
-            // Column 2: Specs (Mô tả & Số người)
+            gbc.gridx = 0;
+            gbc.weightx = 0.15; // Trọng số 15%
+            card.add(col1, gbc);
+
+            // --- Cột 2: Mô tả & Số người (Chiếm 45% - Rộng nhất) ---
             JPanel col2 = new JPanel();
             col2.setLayout(new BoxLayout(col2, BoxLayout.Y_AXIS));
             col2.setOpaque(false);
             JLabel typeLabel = new JLabel(specs);
-            typeLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-            JLabel specsLabel = new JLabel(" ");
-            specsLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            specsLabel.setForeground(GUI_NhanVienLeTan.COLOR_TEXT_MUTED);
+            typeLabel.setFont(new Font("Segoe UI", Font.BOLD, 13)); // Giảm font xíu nếu tên dài
             col2.add(typeLabel);
-            col2.add(specsLabel);
-            card.add(col2);
 
-            // Column 3: Price Info
+            gbc.gridx = 1;
+            gbc.weightx = 0.45; // Trọng số 45% (Ưu tiên giãn phần này)
+            card.add(col2, gbc);
+
+            // --- Cột 3: Giá tiền (Chiếm 15%) ---
             JPanel col3 = new JPanel();
             col3.setLayout(new BoxLayout(col3, BoxLayout.Y_AXIS));
             col3.setOpaque(false);
@@ -2688,9 +2702,12 @@ public class GUI_NhanVienLeTan extends JFrame {
             perNight.setForeground(GUI_NhanVienLeTan.COLOR_TEXT_MUTED);
             col3.add(priceLabel);
             col3.add(perNight);
-            card.add(col3);
 
-            // Column 4: Status
+            gbc.gridx = 2;
+            gbc.weightx = 0.15;
+            card.add(col3, gbc);
+
+            // --- Cột 4: Trạng thái (Chiếm 15%) ---
             JPanel col4 = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
             col4.setOpaque(false);
             JLabel statusLabel = new JLabel(status, SwingConstants.CENTER);
@@ -2698,65 +2715,42 @@ public class GUI_NhanVienLeTan extends JFrame {
             statusLabel.setOpaque(true);
             statusLabel.setBackground(colors.bg);
             statusLabel.setForeground(colors.fg);
-            statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
             statusLabel.setBorder(new EmptyBorder(4, 8, 4, 8));
-            statusLabel.setPreferredSize(new Dimension(80, 25));
-            JPanel statusWrapper = new JPanel(new GridBagLayout());
-            statusWrapper.setOpaque(false);
-            statusWrapper.add(statusLabel);
-            col4.setLayout(new BoxLayout(col4, BoxLayout.Y_AXIS));
-            col4.add(statusWrapper);
-            card.add(col4);
+            // statusLabel.setPreferredSize(new Dimension(80, 25)); // Bỏ cố định size để tự co giãn
+            col4.add(statusLabel);
 
-            // Column 5: Actions (GẮN SỰ KIỆN)
-            JPanel col5 = new JPanel(new GridBagLayout());
+            gbc.gridx = 3;
+            gbc.weightx = 0.15;
+            card.add(col4, gbc);
+
+            // --- Cột 5: Hành động (Chiếm 10% hoặc vừa đủ nội dung) ---
+            JPanel col5 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0)); // FlowLayout Right
             col5.setOpaque(false);
-            JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 10));
-            buttonsPanel.setOpaque(false);
-
-            // highlight-start
-            // === TÍNH NĂNG MỚI: THÊM NÚT SẴN SÀNG ===
-            if (status.equals("Đang dọn") || status.equals("Bảo trì")) {
-                JButton btnSetAvailable = new JButton("✓ Sẵn sàng");
-                btnSetAvailable.setFont(new Font("Segoe UI", Font.BOLD, 10));
-                btnSetAvailable.setBackground(GUI_NhanVienLeTan.COLOR_GREEN); // Màu xanh lá
-                btnSetAvailable.setForeground(Color.WHITE);
-                btnSetAvailable.setFocusPainted(false);
-                btnSetAvailable.setBorder(new EmptyBorder(5, 10, 5, 10));
-                btnSetAvailable.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                btnSetAvailable.addActionListener(e -> controller.handleMarkRoomAsAvailable(p));
-                buttonsPanel.add(btnSetAvailable);
-            }
-            // === KẾT THÚC TÍNH NĂNG MỚI ===
-            // highlight-end
 
             JButton edit = new JButton("✎");
-            JButton view = new JButton("👁");
             JButton delete = new JButton("🗑");
-            edit.setForeground(Color.blue);
-            view.setForeground(new Color(0, 180, 0));
-            delete.setForeground(Color.red);
-            for (JButton b : new JButton[] { edit, view, delete }) {
-                b.setFocusPainted(false);
-                b.setBorderPainted(false);
-                b.setContentAreaFilled(false);
-                b.setFont(new Font("Segoe UI Emoji", Font.BOLD, 10));
-                b.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            }
+            edit.setForeground(Color.BLUE);
+            delete.setForeground(Color.RED);
+
+            styleSmallButton(edit);
+            styleSmallButton(delete);
 
             edit.addActionListener(e -> controller.handleShowEditForm(p));
             delete.addActionListener(e -> controller.handleDeletePhong(p));
 
-            buttonsPanel.add(edit);
-            buttonsPanel.add(view);
-            buttonsPanel.add(delete);
-            col5.add(buttonsPanel);
-            card.add(col5);
+            col5.add(edit);
+            col5.add(delete);
+
+            gbc.gridx = 4;
+            gbc.weightx = 0.0; // Không giãn cột này, chỉ lấy kích thước vừa đủ nút
+            gbc.fill = GridBagConstraints.VERTICAL; // Chỉ giãn chiều dọc
+            card.add(col5, gbc);
 
             return card;
         }
 
-        // Lớp Helper cho màu Trạng thái
+        // --- THÊM CLASS NÀY VÀO ĐỂ FIX LỖI ---
         private static class StatusColors {
             Color bg;
             Color fg;
@@ -2781,6 +2775,21 @@ public class GUI_NhanVienLeTan extends JFrame {
                 default:
                     return new StatusColors(new Color(240, 240, 240), GUI_NhanVienLeTan.COLOR_TEXT_MUTED);
             }
+        }
+
+        // Helper làm đẹp nút nhỏ gọn
+        private void styleSmallButton(JButton b) {
+            b.setFocusPainted(false);
+            b.setBorderPainted(false);
+            if (b.getBackground() == null || b.getBackground() instanceof javax.swing.plaf.UIResource) {
+                b.setContentAreaFilled(false);
+            } else {
+                b.setContentAreaFilled(true); // Nếu có màu nền (nút Sẵn sàng) thì tô màu
+            }
+            b.setFont(new Font("Segoe UI Emoji", Font.BOLD, 14)); // Icon to hơn chút
+            b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            b.setMargin(new Insets(2, 5, 2, 5)); // Padding nhỏ gọn
+            b.setPreferredSize(new Dimension(35, 30)); // Kích thước cố định nhỏ
         }
 
         private JPanel createRoomSchemaPanelWrapper() {
@@ -2811,58 +2820,293 @@ public class GUI_NhanVienLeTan extends JFrame {
         }
 
         private JScrollPane createRoomSchemaPanel() {
-            JPanel grid = new JPanel(new GridLayout(1, 0, 15, 15));
-            grid.setOpaque(false);
-            grid.setBorder(new EmptyBorder(0, 0, 0, 0));
-            grid.add(createSchemaCard("101", "Tiêu chuẩn", "2", "1.2M", GUI_NhanVienLeTan.STATUS_GREEN_BG.darker()));
-            grid.add(createSchemaCard("201", "Suite cao cấp", "4", "2.8M", GUI_NhanVienLeTan.STATUS_RED_BG.darker()));
-            grid.add(createSchemaCard("301", "View biển", "3", "3.5M", GUI_NhanVienLeTan.STATUS_ORANGE_BG.darker()));
-            grid.add(createSchemaCard("404", "Gia đình", "6", "4.5M", GUI_NhanVienLeTan.STATUS_YELLOW_BG.darker()));
-            grid.add(createSchemaCard("501", "Suite Tổng thống", "4", "9.0M",
-                    GUI_NhanVienLeTan.STATUS_GREEN_BG.darker()));
-            grid.add(createSchemaCard("102", "Tiêu chuẩn", "2", "1.2M", GUI_NhanVienLeTan.STATUS_GREEN_BG.darker()));
+            schemaContentPanel = new JPanel();
+            // Xếp theo chiều dọc (Tầng 1 ở trên, Tầng 2 ở dưới...)
+            schemaContentPanel.setLayout(new BoxLayout(schemaContentPanel, BoxLayout.Y_AXIS));
+            schemaContentPanel.setOpaque(false);
+            schemaContentPanel.setBorder(new EmptyBorder(0, 0, 0, 0));
 
-            JScrollPane scroll = new JScrollPane(grid);
+            JScrollPane scroll = new JScrollPane(schemaContentPanel);
             scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-            scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+            scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
             scroll.getViewport().setBackground(GUI_NhanVienLeTan.MAIN_BG);
             scroll.setBorder(null);
-            scroll.setPreferredSize(new Dimension(Integer.MAX_VALUE, 120));
+
+            scroll.getVerticalScrollBar().setUnitIncrement(25);
+
+            // Tăng chiều cao để nhìn thấy nhiều tầng hơn
+            scroll.setPreferredSize(new Dimension(Integer.MAX_VALUE, 250));
             return scroll;
         }
 
-        private JPanel createSchemaCard(String num, String type, String capacity, String price, Color color) {
+        public void populateRoomSchema(List<Phong> allRooms) {
+            schemaContentPanel.removeAll();
+
+            if (allRooms != null && !allRooms.isEmpty()) {
+                Map<Integer, List<Phong>> roomsByFloor = new TreeMap<>();
+
+                for (Phong p : allRooms) {
+                    int floorNum = 1;
+                    try {
+                        String digits = p.getMaPhong().replaceAll("[^0-9]", "");
+                        if (!digits.isEmpty()) {
+                            int roomNum = Integer.parseInt(digits);
+                            floorNum = roomNum / 100;
+                            if (floorNum == 0) floorNum = 1;
+                        }
+                    } catch (Exception e) {
+                        floorNum = 999;
+                    }
+                    roomsByFloor.computeIfAbsent(floorNum, k -> new ArrayList<>()).add(p);
+                }
+
+                for (Map.Entry<Integer, List<Phong>> entry : roomsByFloor.entrySet()) {
+                    int tang = entry.getKey();
+                    List<Phong> dsPhongTang = entry.getValue();
+
+                    JPanel floorPanel = new JPanel(new BorderLayout(0, 10));
+                    floorPanel.setOpaque(false);
+                    floorPanel.setBorder(new EmptyBorder(0, 0, 15, 0));
+
+                    String tenTang = (tang == 999) ? "KHU VỰC KHÁC" : "TẦNG " + tang;
+                    JLabel lblTang = new JLabel(tenTang);
+                    lblTang.setFont(new Font("Segoe UI", Font.BOLD, 16));
+                    lblTang.setForeground(new Color(0, 102, 204));
+                    lblTang.setBorder(new EmptyBorder(0, 5, 5, 0));
+
+                    JPanel roomsGrid = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 15));
+                    roomsGrid.setOpaque(false);
+
+                    for (Phong p : dsPhongTang) {
+                        // Xác định màu sắc dựa trên trạng thái
+                        String tt = p.getTrangThaiPhong().getTenTrangThai();
+                        Color bg;
+                        if (tt.equals("Sẵn sàng")) {
+                            bg = new Color(215, 250, 220); // <--- MÀU XANH TƯƠI (Fresh Green)
+                        } else if (tt.equals("Đã thuê") || tt.equals("Đã đặt")) {
+                            bg = GUI_NhanVienLeTan.STATUS_RED_BG.darker();
+                        } else if (tt.equals("Bảo trì")) {
+                            bg = GUI_NhanVienLeTan.STATUS_ORANGE_BG.darker();
+                        } else if (tt.equals("Đang dọn")) {
+                            bg = GUI_NhanVienLeTan.STATUS_YELLOW_BG.darker();
+                        } else {
+                            bg = Color.GRAY;
+                        }
+
+                        // --- GỌI HÀM TẠO THẺ MỚI (Truyền đối tượng p) ---
+                        roomsGrid.add(createSchemaCard(p, bg));
+                    }
+
+                    floorPanel.add(lblTang, BorderLayout.NORTH);
+                    floorPanel.add(roomsGrid, BorderLayout.CENTER);
+
+                    schemaContentPanel.add(floorPanel);
+                    schemaContentPanel.add(new JSeparator());
+                }
+            } else {
+                schemaContentPanel.add(new JLabel("Chưa có dữ liệu phòng."));
+            }
+
+            schemaContentPanel.revalidate();
+            schemaContentPanel.repaint();
+        }
+
+        // Sửa tham số đầu vào: Nhận Phong p thay vì String lẻ tẻ
+        private JPanel createSchemaCard(Phong p, Color color) {
+            // Lấy thông tin từ đối tượng Phong
+            String num = p.getMaPhong();
+            String type = p.getLoaiPhong().getTenLoaiPhong();
+            String capacity = String.valueOf(p.getSoChua());
+            String price = String.format("%.1fM", p.getGiaTienMotDem() / 1000000.0);
+
             JPanel card = new JPanel(new BorderLayout());
+            card.setPreferredSize(new Dimension(150, 100));
             card.setBackground(color);
             card.setBorder(new CompoundBorder(
                     new LineBorder(GUI_NhanVienLeTan.CARD_BORDER, 1),
                     new EmptyBorder(10, 10, 10, 10)));
+
+            // --- THÊM: Biến thẻ thành nút bấm ---
+            card.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            card.setToolTipText("Nhấn để cập nhật trạng thái phòng " + num);
+
+            // GẮN SỰ KIỆN CLICK -> Gọi hàm xử lý
+            card.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    handleSchemaCardClick(p); // Gọi hàm xử lý đổi trạng thái
+                }
+
+                // Hiệu ứng hover viền cho đẹp
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    card.setBorder(new CompoundBorder(
+                            new LineBorder(Color.BLUE, 2), // Viền xanh khi di chuột vào
+                            new EmptyBorder(9, 9, 9, 9)));
+                }
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    card.setBorder(new CompoundBorder(
+                            new LineBorder(GUI_NhanVienLeTan.CARD_BORDER, 1),
+                            new EmptyBorder(10, 10, 10, 10)));
+                }
+            });
+
+            // Header: Số phòng + Chấm tròn
             JPanel header = new JPanel(new BorderLayout());
             header.setOpaque(false);
             JLabel numLabel = new JLabel(num);
             numLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
             numLabel.setForeground(Color.BLACK);
+
             JLabel dot = new JLabel("●");
-            dot.setFont(new Font("SansSerif", Font.BOLD, 16));
-            dot.setForeground(color.equals(GUI_NhanVienLeTan.STATUS_RED_BG.darker()) ? GUI_NhanVienLeTan.COLOR_RED
-                    : GUI_NhanVienLeTan.COLOR_GREEN);
+            dot.setFont(new Font("SansSerif", Font.BOLD, 18));
+            String status = p.getTrangThaiPhong().getTenTrangThai();
+            if (status.equals("Sẵn sàng")) {
+                dot.setForeground(new Color(0, 180, 60)); // Xanh lá đậm (Nổi trên nền nhạt)
+            }
+            // --------------------------
+
+            else if (status.equals("Đã thuê") || status.equals("Đã đặt")) {
+                dot.setForeground(Color.RED);
+            } else if (status.equals("Đang dọn")) {
+                dot.setForeground(new Color(220, 180, 0));
+            } else if (status.equals("Bảo trì")) {
+                dot.setForeground(new Color(200, 100, 0));
+            } else {
+                dot.setForeground(Color.GRAY);
+            }
+
             header.add(numLabel, BorderLayout.WEST);
             header.add(dot, BorderLayout.EAST);
             card.add(header, BorderLayout.NORTH);
+
+            // Body: Loại phòng
             JLabel typeLabel = new JLabel(type);
             typeLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
             typeLabel.setForeground(Color.DARK_GRAY);
             card.add(typeLabel, BorderLayout.CENTER);
+
+            // Footer: Số người + Giá
             JPanel footer = new JPanel(new BorderLayout());
             footer.setOpaque(false);
             JLabel capLabel = new JLabel("<html><span style='font-size:10px;'>👤</span> " + capacity + "</html>");
             capLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
+
             JLabel priceLabel = new JLabel(price);
             priceLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
-            priceLabel.setForeground(GUI_NhanVienLeTan.COLOR_TEXT_MUTED.darker());
+            priceLabel.setForeground(new Color(60, 60, 60));
+
             footer.add(capLabel, BorderLayout.WEST);
             footer.add(priceLabel, BorderLayout.EAST);
             card.add(footer, BorderLayout.SOUTH);
+
+            return card;
+        }
+
+        private void handleSchemaCardClick(Phong p) {
+            String currentStatus = p.getTrangThaiPhong().getTenTrangThai();
+
+            // 1. Chặn sửa nếu phòng đang có khách
+            if (currentStatus.equals("Đã thuê") || currentStatus.equals("Đã đặt")) {
+                JOptionPane.showMessageDialog(this,
+                        "Phòng " + p.getMaPhong() + " đang có khách/đặt trước.\nKhông thể đổi trạng thái thủ công.",
+                        "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // 2. Danh sách trạng thái có thể chọn
+            String[] options = {"Sẵn sàng", "Đang dọn", "Bảo trì"};
+
+            // 3. Hiển thị hộp thoại chọn
+            String newStatus = (String) JOptionPane.showInputDialog(
+                    this,
+                    "Cập nhật trạng thái cho phòng " + p.getMaPhong() + ":",
+                    "Cập nhật nhanh",
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    options,
+                    currentStatus // Chọn sẵn trạng thái hiện tại
+            );
+
+            // 4. Nếu người dùng chọn và khác trạng thái cũ -> Gọi Controller
+            if (newStatus != null && !newStatus.equals(currentStatus)) {
+                if (controller != null) {
+                    controller.handleUpdateRoomStatus(p, newStatus);
+                }
+            }
+        }
+
+        // 4. Helper: Tạo thẻ nhỏ cho sơ đồ (Dựa trên dữ liệu thật)
+        private JPanel createDynamicSchemaCard(Phong p) {
+            // Lấy màu dựa trên trạng thái
+            String status = p.getTrangThaiPhong().getTenTrangThai();
+            StatusColors colors = getStatusColors(status);
+            Color headerColor;
+
+            if(status.equals("Sẵn sàng")) {
+                headerColor = new Color(185, 245, 200); // Xanh rêu
+            } else if(status.equals("Đã thuê")) {
+                headerColor = new Color(180, 140, 140); // Đỏ nhạt
+            } else if(status.equals("Bảo trì")) {
+                headerColor = new Color(180, 170, 140); // Cam đất
+            } else if(status.equals("Đang dọn")) {
+                // SỬA: Thay màu Xám cũ (160,160,160) thành MÀU VÀNG
+                headerColor = new Color(240, 200, 80);  // Vàng Gold rõ nét
+            } else {
+                headerColor = Color.GRAY;
+            }
+
+            String priceStr = String.format("%.1fM", p.getGiaTienMotDem() / 1000000.0); // 1.2M
+
+            JPanel card = new JPanel(new BorderLayout());
+            card.setPreferredSize(new Dimension(140, 90)); // Kích thước cố định cho đẹp
+            card.setBackground(headerColor);
+            card.setBorder(new LineBorder(new Color(0,0,0,20), 1)); // Viền mờ
+
+            // Phần trên: Số phòng + Chấm tròn trạng thái
+            JPanel header = new JPanel(new BorderLayout());
+            header.setOpaque(false);
+            header.setBorder(new EmptyBorder(8, 10, 0, 10));
+
+            JLabel numLabel = new JLabel(p.getMaPhong());
+            numLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
+            numLabel.setForeground(new Color(40,40,40));
+
+            JLabel dot = new JLabel("●");
+            dot.setFont(new Font("SansSerif", Font.BOLD, 14));
+            // Chấm xanh lá nếu sẵn sàng, đỏ nếu bận
+            dot.setForeground(status.equals("Sẵn sàng") ? new Color(0, 180, 0) : new Color(200, 50, 50));
+
+            header.add(numLabel, BorderLayout.WEST);
+            header.add(dot, BorderLayout.EAST);
+
+            // Phần giữa: Loại phòng
+            JLabel typeLabel = new JLabel(p.getLoaiPhong().getTenLoaiPhong());
+            typeLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
+            typeLabel.setForeground(new Color(60,60,60));
+            typeLabel.setBorder(new EmptyBorder(2, 10, 0, 0));
+
+            // Phần dưới: Số người + Giá
+            JPanel footer = new JPanel(new BorderLayout());
+            footer.setOpaque(false);
+            footer.setBorder(new EmptyBorder(0, 10, 8, 10));
+
+            JLabel capLabel = new JLabel("<html>👤 " + p.getSoChua() + "</html>");
+            capLabel.setFont(new Font("SansSerif", Font.BOLD, 11));
+            capLabel.setForeground(new Color(40,40,40));
+
+            JLabel priceLabel = new JLabel(priceStr);
+            priceLabel.setFont(new Font("SansSerif", Font.BOLD, 11));
+            priceLabel.setForeground(new Color(40,40,40));
+
+            footer.add(capLabel, BorderLayout.WEST);
+            footer.add(priceLabel, BorderLayout.EAST);
+
+            card.add(header, BorderLayout.NORTH);
+            card.add(typeLabel, BorderLayout.CENTER);
+            card.add(footer, BorderLayout.SOUTH);
+
             return card;
         }
 
@@ -2879,6 +3123,8 @@ public class GUI_NhanVienLeTan extends JFrame {
             }
             listPanel.revalidate();
             listPanel.repaint();
+
+            populateRoomSchema(dsPhong);
         }
     }
 
@@ -2893,6 +3139,7 @@ public class GUI_NhanVienLeTan extends JFrame {
         private JButton btnAdd;
         private JTextField searchField;
         private JButton searchButton;
+        private JPanel categoryGrid;
 
         public PanelDichVuContent() {
             setLayout(new BorderLayout(15, 15));
@@ -2997,6 +3244,8 @@ public class GUI_NhanVienLeTan extends JFrame {
             searchPanel.add(searchField, BorderLayout.CENTER);
             searchPanel.add(searchButton, BorderLayout.EAST);
             searchPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+
+            searchPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
             return searchPanel;
         }
 
@@ -3045,14 +3294,6 @@ public class GUI_NhanVienLeTan extends JFrame {
             String name = dv.getTenDV();
             String price = String.format("%,.0f đ", dv.getGiaTien()); // Use getGiaTien
 
-            // highlight-start
-            // XÓA HOẶC COMMENT OUT CÁC DÒNG NÀY VÌ donViTinh KHÔNG CÒN TỒN TẠI
-            // String donVi = dv.getDonViTinh(); // <<< LỖI Ở ĐÂY
-            // if(donVi != null && !donVi.isEmpty()){
-            // price += " / " + donVi;
-            // }
-            // highlight-end
-
             // (Logic trạng thái "Còn" hay "Hết" cần thêm vào Entity/DAO nếu muốn)
             String status = "Còn";
             String desc = dv.getMoTa();
@@ -3060,6 +3301,10 @@ public class GUI_NhanVienLeTan extends JFrame {
 
             // --- BẮT ĐẦU CODE GIAO DIỆN (Giữ nguyên) ---
             JPanel card = new JPanel(new BorderLayout(10, 10));
+
+            card.setAlignmentX(Component.LEFT_ALIGNMENT);
+            card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
+
             card.setBackground(Color.WHITE);
             card.setBorder(
                     new CompoundBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER), new EmptyBorder(10, 10, 10, 10)));
@@ -3113,22 +3358,17 @@ public class GUI_NhanVienLeTan extends JFrame {
 
         // Danh mục dịch vụ theo nhóm
         private JPanel createServiceCategoryPanel() {
-            JPanel grid = new JPanel(new GridLayout(2, 3, 15, 15)); // 2 hàng, 3 cột
-            grid.setOpaque(false);
-            grid.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-            // Thẻ danh mục dịch vụ mô phỏng
-            grid.add(createCategoryCard("Spa & Massage", "300000 đ", new Color(255, 230, 230)));
-            grid.add(createCategoryCard("Nhà hàng cao cấp", "500000 đ", new Color(230, 255, 230)));
-            grid.add(createCategoryCard("Xe đưa đón sân bay", "300000 đ", new Color(230, 240, 255)));
-            grid.add(createCategoryCard("Phòng gym & fitness", "300000 đ", new Color(255, 245, 230)));
-            grid.add(createCategoryCard("Room service 24/7", "300000 đ", new Color(240, 240, 255)));
+            categoryGrid = new JPanel(new GridLayout(0, 3, 15, 15));
+            categoryGrid.setOpaque(false);
+            categoryGrid.setAlignmentX(Component.LEFT_ALIGNMENT);
 
             // Tiêu đề + nút thêm
             JPanel wrapper = new JPanel();
             wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
             wrapper.setOpaque(false);
             wrapper.setBorder(new EmptyBorder(10, 0, 0, 0));
+            wrapper.setAlignmentX(Component.LEFT_ALIGNMENT);
 
             JLabel title = new JLabel("Danh mục dịch vụ");
             title.setFont(new Font("Segoe UI", Font.BOLD, 16));
@@ -3147,17 +3387,63 @@ public class GUI_NhanVienLeTan extends JFrame {
             wrapper.add(Box.createVerticalStrut(10));
             wrapper.add(btnAdd); // Thêm nút vào wrapper
             wrapper.add(Box.createVerticalStrut(10));
-            wrapper.add(grid); // Thêm lưới vào wrapper
+            wrapper.add(categoryGrid);
 
             return wrapper;
         }
 
-        // Một thẻ danh mục dịch vụ
+        // 3. THÊM HÀM NÀY ĐỂ LOAD TOÀN BỘ DỮ LIỆU TỪ DB
+        public void populateCategoryPanel(List<DichVu> allServices) {
+            categoryGrid.removeAll(); // Xóa sạch các thẻ cũ
+
+            if (allServices != null && !allServices.isEmpty()) {
+                // Mảng màu để xoay vòng cho đẹp
+                Color[] colors = {
+                        new Color(255, 230, 230), // Hồng nhạt
+                        new Color(230, 255, 230), // Xanh lá nhạt
+                        new Color(230, 240, 255), // Xanh dương nhạt
+                        new Color(255, 245, 230), // Cam nhạt
+                        new Color(240, 240, 255), // Tím nhạt
+                        new Color(255, 255, 224)  // Vàng nhạt
+                };
+
+                int index = 0;
+                // DUYỆT QUA TẤT CẢ DỊCH VỤ TRONG DB
+                for (DichVu dv : allServices) {
+                    String name = dv.getTenDV();
+                    // Lấy giá thực tế từ DB
+                    String priceStr = String.format("%,.0f đ", dv.getGiaTien());
+
+                    // Chọn màu xoay vòng
+                    Color bg = colors[index % colors.length];
+
+                    // Tạo thẻ
+                    JPanel card = createCategoryCard(name, priceStr, bg);
+                    categoryGrid.add(card);
+
+                    index++;
+                }
+            } else {
+                // Nếu không có dịch vụ nào
+                JLabel emptyLabel = new JLabel("Chưa có dịch vụ nào trong hệ thống.");
+                emptyLabel.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+                categoryGrid.add(emptyLabel);
+            }
+
+            // Cập nhật lại giao diện ngay lập tức
+            categoryGrid.revalidate();
+            categoryGrid.repaint();
+        }
+
         private JPanel createCategoryCard(String name, String price, Color bg) {
             JPanel card = new JPanel(new BorderLayout());
             card.setBackground(bg);
-            card.setBorder(
-                    new CompoundBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER), new EmptyBorder(10, 10, 10, 10)));
+            card.setBorder(new CompoundBorder(
+                    new LineBorder(GUI_NhanVienLeTan.CARD_BORDER),
+                    new EmptyBorder(10, 10, 10, 10)));
+
+            // --- THÊM: Hiệu ứng con trỏ tay ---
+            card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
             JLabel nameLabel = new JLabel(name);
             nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -3167,6 +3453,26 @@ public class GUI_NhanVienLeTan extends JFrame {
 
             card.add(nameLabel, BorderLayout.CENTER);
             card.add(priceLabel, BorderLayout.SOUTH);
+
+            // --- THÊM: Gắn sự kiện Click gọi Controller ---
+            card.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    // Gọi hàm xử lý bên EventDichVu
+                    if (controller != null) {
+                        controller.handleQuickEditPrice(name, priceLabel);
+                    }
+                }
+
+                // (Tùy chọn) Hiệu ứng Hover
+                public void mouseEntered(MouseEvent e) {
+                    card.setBorder(new CompoundBorder(new LineBorder(Color.BLUE, 1), new EmptyBorder(10, 10, 10, 10)));
+                }
+                public void mouseExited(MouseEvent e) {
+                    card.setBorder(new CompoundBorder(new LineBorder(GUI_NhanVienLeTan.CARD_BORDER), new EmptyBorder(10, 10, 10, 10)));
+                }
+            });
+
             return card;
         }
 

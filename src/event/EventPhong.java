@@ -4,7 +4,7 @@ import dao.LoaiPhong_DAO;
 import dao.Phong_DAO;
 import dao.TrangThaiPhong_DAO;
 import entity.LoaiPhongEntity;
-import entity.Phong;
+import entity.*;
 import entity.TrangThaiPhongEntity;
 import ui.gui.FormDialog.PhongFormDialog;
 import ui.gui.GUI_NhanVienLeTan;
@@ -111,7 +111,51 @@ public class EventPhong {
         }
     }
 
+    public void handleUpdateRoomStatus(Phong p, String tenTrangThaiMoi) {
+        try {
+            // --- SỬA LỖI: Chuyển mã trạng thái sang kiểu INT ---
+            int maTrangThaiMoi = 1; // Mặc định là 1 (Sẵn sàng)
 
+            // Mapping tên trạng thái sang ID số (Cần khớp với Database của bạn)
+            switch (tenTrangThaiMoi) {
+                case "Sẵn sàng":
+                    maTrangThaiMoi = 0;
+                    break;
+                case "Đã thuê":
+                    maTrangThaiMoi = 1;
+                    break;
+                case "Bảo trì":
+                    maTrangThaiMoi = 2;
+                    break;
+                case "Đang dọn":
+                    maTrangThaiMoi = 3;
+                    break;
+                default:
+                    // Nếu không khớp, giữ nguyên trạng thái cũ hoặc mặc định
+                    maTrangThaiMoi = p.getTrangThaiPhong().getMaTrangThai();
+            }
+
+            // --- SỬA LỖI: Gọi đúng tên class TrangThaiPhongEntity và truyền đúng kiểu int ---
+            TrangThaiPhongEntity trangThaiMoi = new TrangThaiPhongEntity(maTrangThaiMoi, tenTrangThaiMoi);
+            p.setTrangThaiPhong(trangThaiMoi);
+
+            // Gọi DAO để cập nhật xuống CSDL
+            boolean success = phongDAO.updatePhong(p);
+
+            if (success) {
+                JOptionPane.showMessageDialog(view, "Đã cập nhật trạng thái phòng " + p.getMaPhong() + " thành: " + tenTrangThaiMoi);
+
+                // Tải lại dữ liệu để giao diện cập nhật màu sắc ngay lập tức
+                loadPhongData();
+            } else {
+                JOptionPane.showMessageDialog(view, "Cập nhật thất bại! Vui lòng kiểm tra lại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(view, "Lỗi hệ thống: " + e.getMessage());
+        }
+    }
     /**
      * Xử lý tìm kiếm và lọc danh sách phòng.
      */

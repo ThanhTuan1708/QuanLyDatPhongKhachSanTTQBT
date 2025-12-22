@@ -48,7 +48,6 @@ import static ui.gui.GUI_NhanVienQuanLy.PanelThongKeContent.ACCENT_BLUE;
 import static ui.gui.GUI_NhanVienQuanLy.PanelThongKeContent.CARD_BORDER;
 import static ui.gui.GUI_NhanVienQuanLy.PanelThongKeContent.MAIN_BG;
 
-
 /**
  * Giao diện Dashboard cho Nhân viên Quản lý
  */
@@ -84,23 +83,29 @@ public class GUI_NhanVienQuanLy extends JFrame {
                             int maLoai = rs.getInt("maLoaiNV");
                             String roleText = (maLoai == 1) ? "Quản lý" : (maLoai == 2) ? "Lễ tân" : "Nhân viên";
 
-                            if (sidebarUserLabel != null) sidebarUserLabel.setText(hoTen);
-                            if (sidebarRoleLabel != null) sidebarRoleLabel.setText(roleText);
+                            if (sidebarUserLabel != null)
+                                sidebarUserLabel.setText(hoTen);
+                            if (sidebarRoleLabel != null)
+                                sidebarRoleLabel.setText(roleText);
                             if (panelQuanLyContent != null)
                                 panelQuanLyContent.setProfileName(hoTen, "\u2022 " + roleText);
                             setTitle(getTitle() + " - " + hoTen);
                         } else {
                             // fallback
-                            if (sidebarUserLabel != null) sidebarUserLabel.setText(maNV);
-                            if (panelQuanLyContent != null) panelQuanLyContent.setProfileName(maNV, "\u2022 Quản lý");
+                            if (sidebarUserLabel != null)
+                                sidebarUserLabel.setText(maNV);
+                            if (panelQuanLyContent != null)
+                                panelQuanLyContent.setProfileName(maNV, "\u2022 Quản lý");
                             setTitle(getTitle() + " - " + maNV);
                         }
                     }
                 }
             } catch (SQLException ex) {
                 ex.printStackTrace();
-                if (sidebarUserLabel != null) sidebarUserLabel.setText(maNV);
-                if (panelQuanLyContent != null) panelQuanLyContent.setProfileName(maNV, "\u2022 Quản lý");
+                if (sidebarUserLabel != null)
+                    sidebarUserLabel.setText(maNV);
+                if (panelQuanLyContent != null)
+                    panelQuanLyContent.setProfileName(maNV, "\u2022 Quản lý");
                 setTitle(getTitle() + " - " + maNV);
             }
         }
@@ -143,19 +148,18 @@ public class GUI_NhanVienQuanLy extends JFrame {
         add(createSidebar(), BorderLayout.WEST);
 
         // 3. Tạo các Panel nội dung riêng biệt
-        // create panels and keep reference to dashboard panel so we can update profile name later
+        // create panels and keep reference to dashboard panel so we can update profile
+        // name later
         this.panelQuanLyContent = new PanelQuanLyContent();
         PanelNhanVienContent panelNhanVienContent = new PanelNhanVienContent();
         PanelThongKeContent panelThongKeContent = new PanelThongKeContent(); // Thêm Panel Thống kê
         PanelKhuyenMaiContent panelKhuyenMaiContent = new PanelKhuyenMaiContent();
-
 
         // 4. Thêm các Panel nội dung vào CardLayout
         contentPanelContainer.add(panelQuanLyContent, DASHBOARD_PANEL);
         contentPanelContainer.add(panelNhanVienContent, EMPLOYEE_PANEL);
         contentPanelContainer.add(panelThongKeContent, STATISTIC_PANEL); // Thêm Panel Thống kê
         contentPanelContainer.add(panelKhuyenMaiContent, PROMOTION_PANEL);
-
 
         // 5. Thêm Panel CardLayout vào CENTER của JFrame
         add(contentPanelContainer, BorderLayout.CENTER);
@@ -237,6 +241,21 @@ public class GUI_NhanVienQuanLy extends JFrame {
         logout.setContentAreaFilled(false);
         logout.setBorderPainted(false);
         logout.setForeground(new Color(200, 50, 50));
+        logout.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logout.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                    GUI_NhanVienQuanLy.this,
+                    "Bạn có chắc chắn muốn đăng xuất?",
+                    "Xác nhận đăng xuất",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE);
+            if (confirm == JOptionPane.YES_OPTION) {
+                dispose(); // Đóng cửa sổ hiện tại
+                SwingUtilities.invokeLater(() -> {
+                    new ui.gui.FormDialog.FormDangNhap().setVisible(true);
+                });
+            }
+        });
         bottom.add(logout);
         sidebar.add(bottom, BorderLayout.SOUTH);
 
@@ -258,7 +277,7 @@ public class GUI_NhanVienQuanLy extends JFrame {
      * Helper: Đặt trạng thái active cho nút được chọn và reset các nút khác
      */
     private void setActiveButton(JButton activeButton) {
-        JButton[] allButtons = {btnDashboard, btnNhanVien, btnThongKe, btnKhuyenMai /* , các nút khác */};
+        JButton[] allButtons = { btnDashboard, btnNhanVien, btnThongKe, btnKhuyenMai /* , các nút khác */ };
         for (JButton btn : allButtons) {
             if (btn == activeButton) {
                 btn.setForeground(Color.WHITE);
@@ -309,9 +328,9 @@ public class GUI_NhanVienQuanLy extends JFrame {
         });
     }
 
-
     // =================================================================================
-    // PANEL 1: DASHBOARD QUẢN LÝ (FINAL FIXED: ADR SO SÁNH NGÀY + BIỂU ĐỒ CÓ TRỤC Y)
+    // PANEL 1: DASHBOARD QUẢN LÝ (FINAL FIXED: ADR SO SÁNH NGÀY + BIỂU ĐỒ CÓ TRỤC
+    // Y)
     // =================================================================================
     public static class PanelQuanLyContent extends JPanel {
         // --- 1. KHAI BÁO CÁC HẰNG SỐ MÀU SẮC & FONT ---
@@ -358,52 +377,82 @@ public class GUI_NhanVienQuanLy extends JFrame {
             setBorder(new EmptyBorder(30, 40, 30, 40));
 
             // Khởi tạo model bảng
-            String[] cols = {"Mã NV", "Nhân viên", "Vị trí", "Ca làm việc", "Trạng thái"};
+            String[] cols = { "Mã NV", "Nhân viên", "Vị trí", "Ca làm việc", "Trạng thái" };
             staffModel = new DefaultTableModel(cols, 0) {
-                @Override public boolean isCellEditable(int row, int column) { return false; }
+                @Override
+                public boolean isCellEditable(int row, int column) {
+                    return false;
+                }
             };
 
             fetchRealDataFromSQL();
 
             // 1. Header
-            JPanel header = new JPanel(new BorderLayout()); header.setOpaque(false);
-            JLabel title = new JLabel("Dashboard Quản Lý Khách Sạn"); title.setFont(FONT_HEADER); title.setForeground(TEXT_DARK);
+            JPanel header = new JPanel(new BorderLayout());
+            header.setOpaque(false);
+            JLabel title = new JLabel("Dashboard Quản Lý Khách Sạn");
+            title.setFont(FONT_HEADER);
+            title.setForeground(TEXT_DARK);
 
             String todayStr = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy").format(LocalDate.now());
             JLabel sub = new JLabel("Tổng quan vận hành ngày hôm nay: " + todayStr);
-            sub.setFont(FONT_TEXT); sub.setForeground(TEXT_GRAY);
+            sub.setFont(FONT_TEXT);
+            sub.setForeground(TEXT_GRAY);
 
-            JPanel titleBox = new JPanel(new GridLayout(2,1)); titleBox.setOpaque(false); titleBox.add(title); titleBox.add(sub);
-            header.add(titleBox, BorderLayout.WEST); add(header, BorderLayout.NORTH);
+            JPanel titleBox = new JPanel(new GridLayout(2, 1));
+            titleBox.setOpaque(false);
+            titleBox.add(title);
+            titleBox.add(sub);
+            header.add(titleBox, BorderLayout.WEST);
+            add(header, BorderLayout.NORTH);
 
             // 2. Body
-            JPanel body = new JPanel(new GridBagLayout()); body.setOpaque(false);
-            GridBagConstraints gbc = new GridBagConstraints(); gbc.fill = GridBagConstraints.BOTH; gbc.insets = new Insets(25, 0, 0, 0);
-            gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1.0; gbc.weighty = 0.22;
+            JPanel body = new JPanel(new GridBagLayout());
+            body.setOpaque(false);
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.fill = GridBagConstraints.BOTH;
+            gbc.insets = new Insets(25, 0, 0, 0);
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            gbc.weightx = 1.0;
+            gbc.weighty = 0.22;
             body.add(createKPISection(), gbc);
-            gbc.gridy = 1; gbc.weighty = 0.78;
+            gbc.gridy = 1;
+            gbc.weighty = 0.78;
             body.add(createMainSplitSection(), gbc);
             add(body, BorderLayout.CENTER);
         }
 
-        public void setProfileName(String name, String role) {}
+        public void setProfileName(String name, String role) {
+        }
 
         // --- FETCH DATA ---
         private void fetchRealDataFromSQL() {
             try {
                 Connection con = ConnectDB.getConnection();
-                if (con == null) return;
+                if (con == null)
+                    return;
 
                 // 1. Room Status
                 String sqlRoom = "SELECT maTrangThai, COUNT(*) as sl FROM Phong GROUP BY maTrangThai";
                 try (PreparedStatement ps = con.prepareStatement(sqlRoom); ResultSet rs = ps.executeQuery()) {
-                    totalRoom = 0; bookedRoom = 0; cleanRoom = 0; dirtyRoom = 0; maintenanceRoom = 0;
-                    while(rs.next()) {
+                    totalRoom = 0;
+                    bookedRoom = 0;
+                    cleanRoom = 0;
+                    dirtyRoom = 0;
+                    maintenanceRoom = 0;
+                    while (rs.next()) {
                         int stt = rs.getInt("maTrangThai");
                         int count = rs.getInt("sl");
                         totalRoom += count;
-                        if(stt == 0) cleanRoom += count; else if(stt == 1) bookedRoom += count;
-                        else if(stt == 2) dirtyRoom += count; else if(stt == 3) maintenanceRoom += count;
+                        if (stt == 0)
+                            cleanRoom += count;
+                        else if (stt == 1)
+                            bookedRoom += count;
+                        else if (stt == 2)
+                            dirtyRoom += count;
+                        else if (stt == 3)
+                            maintenanceRoom += count;
                     }
                 }
 
@@ -419,18 +468,21 @@ public class GUI_NhanVienQuanLy extends JFrame {
                 // 3. Doanh thu HÔM QUA
                 String sqlDTLast = "SELECT SUM(tongTien) as DT FROM HoaDon WHERE CAST(ngayLap AS DATE) = CAST(DATEADD(day, -1, GETDATE()) AS DATE)";
                 try (PreparedStatement ps = con.prepareStatement(sqlDTLast); ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) doanhThuHomQua = rs.getDouble("DT");
+                    if (rs.next())
+                        doanhThuHomQua = rs.getDouble("DT");
                 }
 
                 // 4. [SỬA LOGIC] ADR HÔM QUA (Không lấy tháng trước nữa)
                 // Lấy trung bình giá hóa đơn của ngày hôm qua
                 String sqlADRLast = "SELECT AVG(tongTien) as ADR FROM HoaDon WHERE CAST(ngayLap AS DATE) = CAST(DATEADD(day, -1, GETDATE()) AS DATE)";
                 try (PreparedStatement ps = con.prepareStatement(sqlADRLast); ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) adrHomQua = rs.getDouble("ADR");
+                    if (rs.next())
+                        adrHomQua = rs.getDouble("ADR");
                 }
 
                 // 5. Peak Hour
-                String sqlChart = "SELECT DATEPART(HOUR, ngayNhanPhong) as Gio, COUNT(*) as SoLuong FROM PhieuDatPhong WHERE CAST(ngayNhanPhong AS DATE) = CAST(GETDATE() AS DATE) GROUP BY DATEPART(HOUR, ngayNhanPhong) " +
+                String sqlChart = "SELECT DATEPART(HOUR, ngayNhanPhong) as Gio, COUNT(*) as SoLuong FROM PhieuDatPhong WHERE CAST(ngayNhanPhong AS DATE) = CAST(GETDATE() AS DATE) GROUP BY DATEPART(HOUR, ngayNhanPhong) "
+                        +
                         "UNION ALL " +
                         "SELECT DATEPART(HOUR, ngayTraPhong) as Gio, COUNT(*) as SoLuong FROM PhieuDatPhong WHERE CAST(ngayTraPhong AS DATE) = CAST(GETDATE() AS DATE) GROUP BY DATEPART(HOUR, ngayTraPhong)";
                 Arrays.fill(peakHourData, 0);
@@ -438,12 +490,14 @@ public class GUI_NhanVienQuanLy extends JFrame {
                     while (rs.next()) {
                         int h = rs.getInt("Gio");
                         int count = rs.getInt("SoLuong");
-                        if (h >= 0 && h < 24) peakHourData[h] += count;
+                        if (h >= 0 && h < 24)
+                            peakHourData[h] += count;
                     }
                 }
 
                 // 6. Staff List
-                String sqlNV = "SELECT nv.maNV, nv.hoTen, nv.maLoaiNV, llv.caLam, llv.gioBatDau, llv.gioKetThuc, llv.trangThai " +
+                String sqlNV = "SELECT nv.maNV, nv.hoTen, nv.maLoaiNV, llv.caLam, llv.gioBatDau, llv.gioKetThuc, llv.trangThai "
+                        +
                         "FROM NhanVien nv LEFT JOIN LichLamViec llv ON nv.maNV = llv.maNV AND llv.ngayLam = CAST(GETDATE() AS DATE)";
                 staffModel.setRowCount(0);
                 try (PreparedStatement ps = con.prepareStatement(sqlNV); ResultSet rs = ps.executeQuery()) {
@@ -452,18 +506,28 @@ public class GUI_NhanVienQuanLy extends JFrame {
                         String ten = rs.getString("hoTen");
                         int loai = rs.getInt("maLoaiNV");
                         String chucVu = (loai == 2) ? "Quản lý" : "Lễ tân";
-                        String thoiGian = (rs.getTime("gioBatDau") != null) ? rs.getTime("gioBatDau").toString().substring(0, 5) + " - " + rs.getTime("gioKetThuc").toString().substring(0, 5) : "--:--";
+                        String thoiGian = (rs.getTime("gioBatDau") != null)
+                                ? rs.getTime("gioBatDau").toString().substring(0, 5) + " - "
+                                        + rs.getTime("gioKetThuc").toString().substring(0, 5)
+                                : "--:--";
                         String trangThai = rs.getString("trangThai");
-                        if (trangThai == null) { trangThai = "Chưa có lịch"; thoiGian = ""; }
-                        staffModel.addRow(new Object[]{maNV, ten, chucVu, thoiGian, trangThai});
+                        if (trangThai == null) {
+                            trangThai = "Chưa có lịch";
+                            thoiGian = "";
+                        }
+                        staffModel.addRow(new Object[] { maNV, ten, chucVu, thoiGian, trangThai });
                     }
                 }
-            } catch (Exception e) { e.printStackTrace(); }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         // --- UI COMPONENTS ---
         private JPanel createKPISection() {
-            JPanel p = new JPanel(new GridLayout(1, 4, 20, 0)); p.setOpaque(false); p.setPreferredSize(new Dimension(0, 160));
+            JPanel p = new JPanel(new GridLayout(1, 4, 20, 0));
+            p.setOpaque(false);
+            p.setPreferredSize(new Dimension(0, 160));
             java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
             String dtStr = df.format(doanhThuNgay) + " ₫";
 
@@ -480,33 +544,57 @@ public class GUI_NhanVienQuanLy extends JFrame {
             double revPar = totalRoom > 0 ? (doanhThuNgay / totalRoom) : 0;
 
             // 1. DOANH THU
-            String revSub = String.format("<html><font color='%s'><b>%s</b></font> so với hôm qua<br><b>%d</b> hóa đơn đã xong</html>",
+            String revSub = String.format(
+                    "<html><font color='%s'><b>%s</b></font> so với hôm qua<br><b>%d</b> hóa đơn đã xong</html>",
                     revTrendColor, revTrendStr, soHoaDonHomNay);
             JPanel cardRev = createCard("Doanh thu hôm nay", dtStr, revSub, "money", INFO_BG, INFO_TEXT);
             cardRev.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            cardRev.addMouseListener(new MouseAdapter() { @Override public void mouseClicked(MouseEvent e) { showRevenueDetailDialog(); } });
+            cardRev.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    showRevenueDetailDialog();
+                }
+            });
             p.add(cardRev);
 
             // 2. LẤP ĐẦY
             int emptyRoom = totalRoom - bookedRoom;
             JPanel cardOcc = createDetailedOccupancyCard(bookedRoom, emptyRoom, totalRoom);
             cardOcc.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            cardOcc.addMouseListener(new MouseAdapter() { @Override public void mouseClicked(MouseEvent e) { showOccupancyDetailsDialog(); } });
+            cardOcc.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    showOccupancyDetailsDialog();
+                }
+            });
             p.add(cardOcc);
 
             // 3. ADR (GIÁ TB) - [SỬA TEXT HIỂN THỊ]
-            String adrSub = String.format("<html><font color='%s'><b>%s</b></font> so với hôm qua<br><font size='2' color='gray'>(Chỉ tính phòng đã check-out)</font></html>",
+            String adrSub = String.format(
+                    "<html><font color='%s'><b>%s</b></font> so với hôm qua<br><font size='2' color='gray'>(Chỉ tính phòng đã check-out)</font></html>",
                     adrTrendColor, adrTrendStr);
-            JPanel cardADR = createCard("ADR (Giá TB/phòng)", df.format(adrToday) + " ₫", adrSub, "tag", SUCCESS_BG, SUCCESS_TEXT);
+            JPanel cardADR = createCard("ADR (Giá TB/phòng)", df.format(adrToday) + " ₫", adrSub, "tag", SUCCESS_BG,
+                    SUCCESS_TEXT);
             cardADR.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            cardADR.addMouseListener(new MouseAdapter() { @Override public void mouseClicked(MouseEvent e) { showPriceAnalysisDialog(); } });
+            cardADR.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    showPriceAnalysisDialog();
+                }
+            });
             p.add(cardADR);
 
             // 4. RevPAR
             String revParSub = "<html>DT / Tổng phòng<br>🎯 Mục tiêu: <b>500.000 ₫</b></html>";
-            JPanel cardRevPar = createCard("RevPAR", df.format(revPar) + " ₫", revParSub, "chart", WARNING_BG, WARNING_TEXT);
+            JPanel cardRevPar = createCard("RevPAR", df.format(revPar) + " ₫", revParSub, "chart", WARNING_BG,
+                    WARNING_TEXT);
             cardRevPar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            cardRevPar.addMouseListener(new MouseAdapter() { @Override public void mouseClicked(MouseEvent e) { showPriceAnalysisDialog(); } });
+            cardRevPar.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    showPriceAnalysisDialog();
+                }
+            });
             p.add(cardRevPar);
 
             return p;
@@ -516,36 +604,97 @@ public class GUI_NhanVienQuanLy extends JFrame {
         private JPanel createDetailedOccupancyCard(int booked, int empty, int total) {
             RoundedPanel card = new RoundedPanel(new BorderLayout(), 20, Color.WHITE);
             card.setBorder(new EmptyBorder(15, 20, 15, 15));
-            JPanel leftPanel = new JPanel(); leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS)); leftPanel.setOpaque(false);
-            JPanel iconBox = new JPanel(new GridBagLayout()); iconBox.setPreferredSize(new Dimension(45, 45)); iconBox.setMaximumSize(new Dimension(45, 45));
-            iconBox.setBackground(new Color(243, 232, 255)); iconBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+            JPanel leftPanel = new JPanel();
+            leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
+            leftPanel.setOpaque(false);
+            JPanel iconBox = new JPanel(new GridBagLayout());
+            iconBox.setPreferredSize(new Dimension(45, 45));
+            iconBox.setMaximumSize(new Dimension(45, 45));
+            iconBox.setBackground(new Color(243, 232, 255));
+            iconBox.setAlignmentX(Component.LEFT_ALIGNMENT);
             iconBox.add(new JLabel(new AppIcon("bed", 24, new Color(147, 51, 234))));
             int percent = total > 0 ? (booked * 100 / total) : 0;
-            JLabel lblPercent = new JLabel(percent + "%"); lblPercent.setFont(new Font("Segoe UI", Font.BOLD, 26)); lblPercent.setForeground(TEXT_DARK); lblPercent.setAlignmentX(Component.LEFT_ALIGNMENT);
-            JLabel lblTitle = new JLabel("Tỷ lệ lấp đầy"); lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 13)); lblTitle.setForeground(TEXT_GRAY); lblTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
-            leftPanel.add(iconBox); leftPanel.add(Box.createVerticalStrut(15)); leftPanel.add(lblPercent); leftPanel.add(Box.createVerticalStrut(5)); leftPanel.add(lblTitle);
-            JPanel rightPanel = new JPanel(new GridBagLayout()); rightPanel.setOpaque(false);
+            JLabel lblPercent = new JLabel(percent + "%");
+            lblPercent.setFont(new Font("Segoe UI", Font.BOLD, 26));
+            lblPercent.setForeground(TEXT_DARK);
+            lblPercent.setAlignmentX(Component.LEFT_ALIGNMENT);
+            JLabel lblTitle = new JLabel("Tỷ lệ lấp đầy");
+            lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            lblTitle.setForeground(TEXT_GRAY);
+            lblTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+            leftPanel.add(iconBox);
+            leftPanel.add(Box.createVerticalStrut(15));
+            leftPanel.add(lblPercent);
+            leftPanel.add(Box.createVerticalStrut(5));
+            leftPanel.add(lblTitle);
+            JPanel rightPanel = new JPanel(new GridBagLayout());
+            rightPanel.setOpaque(false);
             JPanel chart = new JPanel() {
-                @Override protected void paintComponent(Graphics g) { super.paintComponent(g); Graphics2D g2 = (Graphics2D) g; g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    int size = Math.min(getWidth(), getHeight()); int x = (getWidth() - size) / 2; int y = (getHeight() - size) / 2;
-                    g2.setColor(new Color(229, 231, 235)); g2.fillOval(x, y, size, size);
-                    g2.setColor(new Color(168, 85, 247)); int angle = (int) (3.6 * percent); g2.fillArc(x, y, size, size, 90, -angle);
-                    g2.setColor(Color.WHITE); int innerSize = (int) (size * 0.6); g2.fillOval(x + (size - innerSize) / 2, y + (size - innerSize) / 2, innerSize, innerSize);
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    Graphics2D g2 = (Graphics2D) g;
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    int size = Math.min(getWidth(), getHeight());
+                    int x = (getWidth() - size) / 2;
+                    int y = (getHeight() - size) / 2;
+                    g2.setColor(new Color(229, 231, 235));
+                    g2.fillOval(x, y, size, size);
+                    g2.setColor(new Color(168, 85, 247));
+                    int angle = (int) (3.6 * percent);
+                    g2.fillArc(x, y, size, size, 90, -angle);
+                    g2.setColor(Color.WHITE);
+                    int innerSize = (int) (size * 0.6);
+                    g2.fillOval(x + (size - innerSize) / 2, y + (size - innerSize) / 2, innerSize, innerSize);
                 }
             };
-            chart.setPreferredSize(new Dimension(70, 70)); chart.setOpaque(false);
-            JPanel legend = new JPanel(new GridLayout(2, 1, 0, 5)); legend.setOpaque(false); legend.setBorder(new EmptyBorder(0, 10, 0, 0));
-            legend.add(createLegendRow(booked + " đã đặt", new Color(168, 85, 247))); legend.add(createLegendRow(empty + " trống", new Color(156, 163, 175)));
-            GridBagConstraints gbc = new GridBagConstraints(); gbc.gridx = 0; gbc.gridy = 0; rightPanel.add(chart, gbc); gbc.gridx = 1; rightPanel.add(legend, gbc);
-            card.add(leftPanel, BorderLayout.WEST); card.add(rightPanel, BorderLayout.EAST); return card;
+            chart.setPreferredSize(new Dimension(70, 70));
+            chart.setOpaque(false);
+            JPanel legend = new JPanel(new GridLayout(2, 1, 0, 5));
+            legend.setOpaque(false);
+            legend.setBorder(new EmptyBorder(0, 10, 0, 0));
+            legend.add(createLegendRow(booked + " đã đặt", new Color(168, 85, 247)));
+            legend.add(createLegendRow(empty + " trống", new Color(156, 163, 175)));
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            rightPanel.add(chart, gbc);
+            gbc.gridx = 1;
+            rightPanel.add(legend, gbc);
+            card.add(leftPanel, BorderLayout.WEST);
+            card.add(rightPanel, BorderLayout.EAST);
+            return card;
         }
-        private JPanel createLegendRow(String text, Color color) { JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0)); p.setOpaque(false); JLabel colorBox = new JLabel(); colorBox.setOpaque(true); colorBox.setBackground(color); colorBox.setPreferredSize(new Dimension(10, 10)); JLabel lblText = new JLabel(text); lblText.setFont(new Font("Segoe UI", Font.BOLD, 12)); lblText.setForeground(TEXT_DARK); p.add(colorBox); p.add(lblText); return p; }
+
+        private JPanel createLegendRow(String text, Color color) {
+            JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+            p.setOpaque(false);
+            JLabel colorBox = new JLabel();
+            colorBox.setOpaque(true);
+            colorBox.setBackground(color);
+            colorBox.setPreferredSize(new Dimension(10, 10));
+            JLabel lblText = new JLabel(text);
+            lblText.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            lblText.setForeground(TEXT_DARK);
+            p.add(colorBox);
+            p.add(lblText);
+            return p;
+        }
 
         private JPanel createMainSplitSection() {
-            JPanel p = new JPanel(new GridBagLayout()); p.setOpaque(false);
-            GridBagConstraints gbc = new GridBagConstraints(); gbc.fill = GridBagConstraints.BOTH; gbc.weighty = 1.0;
-            gbc.gridx = 0; gbc.weightx = 0.65; gbc.insets = new Insets(0, 0, 0, 20); p.add(createStaffSchedulePanel(), gbc);
-            gbc.gridx = 1; gbc.weightx = 0.35; gbc.insets = new Insets(0, 0, 0, 0); p.add(createRightSideStats(), gbc);
+            JPanel p = new JPanel(new GridBagLayout());
+            p.setOpaque(false);
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.fill = GridBagConstraints.BOTH;
+            gbc.weighty = 1.0;
+            gbc.gridx = 0;
+            gbc.weightx = 0.65;
+            gbc.insets = new Insets(0, 0, 0, 20);
+            p.add(createStaffSchedulePanel(), gbc);
+            gbc.gridx = 1;
+            gbc.weightx = 0.35;
+            gbc.insets = new Insets(0, 0, 0, 0);
+            p.add(createRightSideStats(), gbc);
             return p;
         }
 
@@ -553,25 +702,62 @@ public class GUI_NhanVienQuanLy extends JFrame {
             RoundedPanel card = new RoundedPanel(new BorderLayout(), 20, Color.WHITE);
             card.setBorder(new EmptyBorder(20, 20, 20, 20));
             JLabel title = new JLabel("Lịch làm việc hôm nay (Click để xem chi tiết)");
-            title.setFont(FONT_TITLE); title.setBorder(new EmptyBorder(0, 0, 15, 0));
+            title.setFont(FONT_TITLE);
+            title.setBorder(new EmptyBorder(0, 0, 15, 0));
             card.add(title, BorderLayout.NORTH);
-            tableStaff = new JTable(staffModel); tableStaff.setRowHeight(55); tableStaff.setShowVerticalLines(false); tableStaff.setGridColor(new Color(240, 240, 240));
-            tableStaff.setFont(FONT_TEXT); tableStaff.getTableHeader().setBackground(Color.WHITE); tableStaff.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-            tableStaff.getColumnModel().getColumn(0).setMinWidth(0); tableStaff.getColumnModel().getColumn(0).setMaxWidth(0); tableStaff.getColumnModel().getColumn(0).setWidth(0);
+            tableStaff = new JTable(staffModel);
+            tableStaff.setRowHeight(55);
+            tableStaff.setShowVerticalLines(false);
+            tableStaff.setGridColor(new Color(240, 240, 240));
+            tableStaff.setFont(FONT_TEXT);
+            tableStaff.getTableHeader().setBackground(Color.WHITE);
+            tableStaff.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+            tableStaff.getColumnModel().getColumn(0).setMinWidth(0);
+            tableStaff.getColumnModel().getColumn(0).setMaxWidth(0);
+            tableStaff.getColumnModel().getColumn(0).setWidth(0);
             tableStaff.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
-                @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
-                    String name = v.toString(); String initial = name.length() > 0 ? name.substring(name.lastIndexOf(" ")+1).substring(0, 1).toUpperCase() : "?";
-                    JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0)); p.setOpaque(true); p.setBackground(s ? t.getSelectionBackground() : Color.WHITE); p.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-                    JLabel avatar = new JLabel(initial, SwingConstants.CENTER); avatar.setPreferredSize(new Dimension(32, 32)); avatar.setOpaque(true); avatar.setBackground(new Color(219, 234, 254)); avatar.setForeground(PRIMARY_COLOR); avatar.setFont(new Font("Segoe UI", Font.BOLD, 14));
-                    p.add(avatar); p.add(new JLabel(name)); return p;
+                @Override
+                public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
+                    String name = v.toString();
+                    String initial = name.length() > 0
+                            ? name.substring(name.lastIndexOf(" ") + 1).substring(0, 1).toUpperCase()
+                            : "?";
+                    JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+                    p.setOpaque(true);
+                    p.setBackground(s ? t.getSelectionBackground() : Color.WHITE);
+                    p.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+                    JLabel avatar = new JLabel(initial, SwingConstants.CENTER);
+                    avatar.setPreferredSize(new Dimension(32, 32));
+                    avatar.setOpaque(true);
+                    avatar.setBackground(new Color(219, 234, 254));
+                    avatar.setForeground(PRIMARY_COLOR);
+                    avatar.setFont(new Font("Segoe UI", Font.BOLD, 14));
+                    p.add(avatar);
+                    p.add(new JLabel(name));
+                    return p;
                 }
             });
-            tableStaff.addMouseListener(new MouseAdapter() { @Override public void mouseClicked(MouseEvent e) { int row = tableStaff.getSelectedRow(); if (row != -1) { String maNV = tableStaff.getModel().getValueAt(row, 0).toString(); String tenNV = tableStaff.getModel().getValueAt(row, 1).toString(); showStaffScheduleDialog(maNV, tenNV); } } });
-            JScrollPane sp = new JScrollPane(tableStaff); sp.setBorder(null); sp.getViewport().setBackground(Color.WHITE); card.add(sp, BorderLayout.CENTER); return card;
+            tableStaff.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    int row = tableStaff.getSelectedRow();
+                    if (row != -1) {
+                        String maNV = tableStaff.getModel().getValueAt(row, 0).toString();
+                        String tenNV = tableStaff.getModel().getValueAt(row, 1).toString();
+                        showStaffScheduleDialog(maNV, tenNV);
+                    }
+                }
+            });
+            JScrollPane sp = new JScrollPane(tableStaff);
+            sp.setBorder(null);
+            sp.getViewport().setBackground(Color.WHITE);
+            card.add(sp, BorderLayout.CENTER);
+            return card;
         }
 
         private JPanel createRightSideStats() {
-            JPanel p = new JPanel(new GridLayout(2, 1, 0, 20)); p.setOpaque(false);
+            JPanel p = new JPanel(new GridLayout(2, 1, 0, 20));
+            p.setOpaque(false);
             // Peak Hour Chart
             RoundedPanel chartCard = new RoundedPanel(new BorderLayout(), 20, Color.WHITE);
             chartCard.setBorder(new EmptyBorder(20, 20, 20, 20));
@@ -579,47 +765,268 @@ public class GUI_NhanVienQuanLy extends JFrame {
             PeakHourChart chart = new PeakHourChart(peakHourData);
             chartCard.add(chart, BorderLayout.CENTER);
             chartCard.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            chartCard.addMouseListener(new MouseAdapter() { @Override public void mouseClicked(MouseEvent e) { showPeakHourDetails(); } });
+            chartCard.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    showPeakHourDetails();
+                }
+            });
             // Room Status
             RoundedPanel status = new RoundedPanel(new BorderLayout(), 20, Color.WHITE);
             status.setBorder(new EmptyBorder(20, 20, 20, 20));
             status.add(new JLabel("Tình trạng phòng (Hiện tại)", JLabel.LEFT), BorderLayout.NORTH);
-            JPanel statList = new JPanel(new GridLayout(3, 1, 0, 10)); statList.setOpaque(false); statList.setBorder(new EmptyBorder(15, 0, 0, 0));
-            statList.add(createStatusRow("⌂ Sạch sẽ", String.valueOf(cleanRoom), SUCCESS_BG, SUCCESS_TEXT, () -> showRoomListDialog("Phòng sạch sẽ (Trống)", 0)));
-            statList.add(createStatusRow("⌂ Cần dọn", String.valueOf(dirtyRoom), WARNING_BG, WARNING_TEXT, () -> showRoomListDialog("Phòng cần dọn", 2)));
-            statList.add(createStatusRow("⌂ Bảo trì", String.valueOf(maintenanceRoom), new Color(255, 237, 213), new Color(194, 65, 12), () -> showRoomListDialog("Phòng bảo trì", 3)));
+            JPanel statList = new JPanel(new GridLayout(3, 1, 0, 10));
+            statList.setOpaque(false);
+            statList.setBorder(new EmptyBorder(15, 0, 0, 0));
+            statList.add(createStatusRow("⌂ Sạch sẽ", String.valueOf(cleanRoom), SUCCESS_BG, SUCCESS_TEXT,
+                    () -> showRoomListDialog("Phòng sạch sẽ (Trống)", 0)));
+            statList.add(createStatusRow("⌂ Cần dọn", String.valueOf(dirtyRoom), WARNING_BG, WARNING_TEXT,
+                    () -> showRoomListDialog("Phòng cần dọn", 2)));
+            statList.add(createStatusRow("⌂ Bảo trì", String.valueOf(maintenanceRoom), new Color(255, 237, 213),
+                    new Color(194, 65, 12), () -> showRoomListDialog("Phòng bảo trì", 3)));
             status.add(statList, BorderLayout.CENTER);
-            p.add(chartCard); p.add(status); return p;
+            p.add(chartCard);
+            p.add(status);
+            return p;
         }
 
         // ... [GIỮ NGUYÊN CÁC HELPER COMPONENTS: createCard, createStatusRow] ...
-        private JPanel createCard(String title, String value, String subText, String iconName, Color iconBg, Color iconFg) {
-            RoundedPanel card = new RoundedPanel(new BorderLayout(), 20, Color.WHITE); card.setBorder(new EmptyBorder(20, 20, 20, 20));
-            JPanel header = new JPanel(new BorderLayout()); header.setOpaque(false); JPanel iconBox = new JPanel(new GridBagLayout()); iconBox.setPreferredSize(new Dimension(45, 45)); iconBox.setBackground(iconBg); iconBox.add(new JLabel(new AppIcon(iconName, 24, iconFg))); header.add(iconBox, BorderLayout.WEST);
-            JPanel content = new JPanel(new GridLayout(3,1)); content.setOpaque(false); content.setBorder(new EmptyBorder(15, 0, 0, 0));
-            JLabel val = new JLabel(value); val.setFont(FONT_BIG); val.setForeground(TEXT_DARK); JLabel tit = new JLabel(title); tit.setFont(FONT_TEXT); tit.setForeground(TEXT_GRAY); JLabel sub = new JLabel(subText); sub.setFont(new Font("Segoe UI", Font.PLAIN, 12)); sub.setForeground(new Color(100, 116, 139));
-            content.add(val); content.add(tit); content.add(sub); card.add(header, BorderLayout.NORTH); card.add(content, BorderLayout.CENTER); return card;
+        private JPanel createCard(String title, String value, String subText, String iconName, Color iconBg,
+                Color iconFg) {
+            RoundedPanel card = new RoundedPanel(new BorderLayout(), 20, Color.WHITE);
+            card.setBorder(new EmptyBorder(20, 20, 20, 20));
+            JPanel header = new JPanel(new BorderLayout());
+            header.setOpaque(false);
+            JPanel iconBox = new JPanel(new GridBagLayout());
+            iconBox.setPreferredSize(new Dimension(45, 45));
+            iconBox.setBackground(iconBg);
+            iconBox.add(new JLabel(new AppIcon(iconName, 24, iconFg)));
+            header.add(iconBox, BorderLayout.WEST);
+            JPanel content = new JPanel(new GridLayout(3, 1));
+            content.setOpaque(false);
+            content.setBorder(new EmptyBorder(15, 0, 0, 0));
+            JLabel val = new JLabel(value);
+            val.setFont(FONT_BIG);
+            val.setForeground(TEXT_DARK);
+            JLabel tit = new JLabel(title);
+            tit.setFont(FONT_TEXT);
+            tit.setForeground(TEXT_GRAY);
+            JLabel sub = new JLabel(subText);
+            sub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            sub.setForeground(new Color(100, 116, 139));
+            content.add(val);
+            content.add(tit);
+            content.add(sub);
+            card.add(header, BorderLayout.NORTH);
+            card.add(content, BorderLayout.CENTER);
+            return card;
         }
-        private JPanel createStatusRow(String label, String count, Color bg, Color fg, Runnable onClick) { JPanel p = new JPanel(new BorderLayout()); p.setOpaque(false); JLabel l = new JLabel(label); l.setFont(FONT_TEXT); l.setForeground(TEXT_DARK); JLabel c = new JLabel(" " + count + " "); c.setOpaque(true); c.setBackground(bg); c.setForeground(fg); c.setFont(FONT_BOLD); p.add(l, BorderLayout.WEST); p.add(c, BorderLayout.EAST); p.setBorder(BorderFactory.createMatteBorder(0,0,1,0, new Color(240,240,240))); p.setCursor(new Cursor(Cursor.HAND_CURSOR)); p.addMouseListener(new MouseAdapter() { @Override public void mouseClicked(MouseEvent e) { if(onClick != null) onClick.run(); } }); return p; }
+
+        private JPanel createStatusRow(String label, String count, Color bg, Color fg, Runnable onClick) {
+            JPanel p = new JPanel(new BorderLayout());
+            p.setOpaque(false);
+            JLabel l = new JLabel(label);
+            l.setFont(FONT_TEXT);
+            l.setForeground(TEXT_DARK);
+            JLabel c = new JLabel(" " + count + " ");
+            c.setOpaque(true);
+            c.setBackground(bg);
+            c.setForeground(fg);
+            c.setFont(FONT_BOLD);
+            p.add(l, BorderLayout.WEST);
+            p.add(c, BorderLayout.EAST);
+            p.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(240, 240, 240)));
+            p.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            p.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (onClick != null)
+                        onClick.run();
+                }
+            });
+            return p;
+        }
 
         // ... [GIỮ NGUYÊN CÁC HÀM DRILL DOWN] ...
-        private void showDrillDownDialog(String title, JComponent content, int width, int height) { JDialog d = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), title, true); d.setSize(width, height); d.setLocationRelativeTo(this); d.setLayout(new BorderLayout()); d.add(new JScrollPane(content), BorderLayout.CENTER); d.setVisible(true); }
-        private void showRevenueDetailDialog() { String[] cols = {"Mã HD", "Ngày lập", "Khách hàng", "Tổng tiền"}; DefaultTableModel model = new DefaultTableModel(cols, 0); String sql = "SELECT maHoaDon, ngayLap, maKH, tongTien FROM HoaDon WHERE CAST(ngayLap AS DATE) = CAST(GETDATE() AS DATE)"; try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) { ResultSet rs = ps.executeQuery(); java.text.DecimalFormat df = new java.text.DecimalFormat("#,###"); while(rs.next()) { model.addRow(new Object[]{rs.getString(1), rs.getTime(2), rs.getString(3), df.format(rs.getDouble(4))}); } } catch (Exception e) { e.printStackTrace(); } JTable table = new JTable(model); showDrillDownDialog("Chi tiết doanh thu HÔM NAY", table, 600, 400); }
-        private void showRoomListDialog(String title, int status) { String[] cols = {"Mã Phòng", "Loại Phòng", "Giá tiền"}; DefaultTableModel model = new DefaultTableModel(cols, 0); try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement("SELECT p.maPhong, lp.tenLoaiPhong, p.giaTienMotDem FROM Phong p JOIN LoaiPhong lp ON p.maLoaiPhong=lp.maLoaiPhong WHERE p.maTrangThai=?")) { ps.setInt(1, status); ResultSet rs = ps.executeQuery(); java.text.DecimalFormat df = new java.text.DecimalFormat("#,###"); while(rs.next()) { model.addRow(new Object[]{rs.getString(1), rs.getString(2), df.format(rs.getDouble(3))}); } } catch (Exception e) { e.printStackTrace(); } JTable table = new JTable(model); showDrillDownDialog(title, table, 500, 400); }
-        private void showStaffScheduleDialog(String maNV, String tenNV) { String[] cols = {"Ngày", "Ca làm", "Giờ BĐ", "Giờ KT", "Trạng thái"}; DefaultTableModel model = new DefaultTableModel(cols, 0); String sql = "SELECT ngayLam, caLam, gioBatDau, gioKetThuc, trangThai FROM LichLamViec WHERE maNV=?"; try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) { ps.setString(1, maNV); ResultSet rs = ps.executeQuery(); while(rs.next()) { model.addRow(new Object[]{rs.getDate(1), rs.getString(2), rs.getTime(3), rs.getTime(4), rs.getString(5)}); } } catch (Exception e) { e.printStackTrace(); } JTable table = new JTable(model); showDrillDownDialog("Lịch làm việc: " + tenNV, table, 600, 350); }
-        private void showPeakHourDetails() { String[] cols = {"Giờ", "Loại phiếu", "Phòng", "Khách hàng"}; DefaultTableModel model = new DefaultTableModel(cols, 0); String sql = "SELECT DATEPART(HOUR, ngayNhanPhong) as Gio, N'Check-in' as Loai, maPhong, maKH FROM PhieuDatPhong WHERE CAST(ngayNhanPhong AS DATE) = CAST(GETDATE() AS DATE) UNION ALL SELECT DATEPART(HOUR, ngayTraPhong) as Gio, N'Check-out' as Loai, maPhong, maKH FROM PhieuDatPhong WHERE CAST(ngayTraPhong AS DATE) = CAST(GETDATE() AS DATE)"; try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) { ResultSet rs = ps.executeQuery(); while(rs.next()) { model.addRow(new Object[]{rs.getInt(1) + "h00", rs.getString(2), rs.getString(3), rs.getString(4)}); } } catch (Exception e) { e.printStackTrace(); } JTable table = new JTable(model); showDrillDownDialog("Chi tiết lưu lượng khách HÔM NAY", table, 500, 400); }
-        private void showPriceAnalysisDialog() { String[] cols = {"Loại phòng", "Giá niêm yết", "Số lượng phòng"}; DefaultTableModel model = new DefaultTableModel(cols, 0); String sql = "SELECT lp.tenLoaiPhong, AVG(p.giaTienMotDem), COUNT(p.maPhong) FROM Phong p JOIN LoaiPhong lp ON p.maLoaiPhong=lp.maLoaiPhong GROUP BY lp.tenLoaiPhong"; try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) { ResultSet rs = ps.executeQuery(); java.text.DecimalFormat df = new java.text.DecimalFormat("#,###"); while(rs.next()) { model.addRow(new Object[]{rs.getString(1), df.format(rs.getDouble(2)), rs.getInt(3)}); } } catch(Exception e) { e.printStackTrace(); } JTable table = new JTable(model); showDrillDownDialog("Phân tích giá phòng & Cơ cấu", table, 500, 300); }
-        private void showOccupancyDetailsDialog() { JDialog d = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Chi tiết tình trạng phòng", true); d.setSize(650, 450); d.setLocationRelativeTo(this); d.setLayout(new BorderLayout()); JTabbedPane tabbedPane = new JTabbedPane(); tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 13)); JPanel pnlBooked = createRoomTableByStatus(1); tabbedPane.addTab("Đang có khách", new AppIcon("bed", 16, new Color(147, 51, 234)), pnlBooked); JPanel pnlEmpty = createRoomTableByStatus(0); tabbedPane.addTab("Phòng trống (Sạch)", new AppIcon("bed", 16, new Color(22, 163, 74)), pnlEmpty); d.add(tabbedPane, BorderLayout.CENTER); JButton btnClose = new JButton("Đóng"); btnClose.addActionListener(e -> d.dispose()); JPanel pnlBtn = new JPanel(new FlowLayout(FlowLayout.RIGHT)); pnlBtn.add(btnClose); d.add(pnlBtn, BorderLayout.SOUTH); d.setVisible(true); }
-        private JPanel createRoomTableByStatus(int status) { JPanel p = new JPanel(new BorderLayout()); p.setBorder(new EmptyBorder(10, 10, 10, 10)); p.setBackground(Color.WHITE); String[] cols = {"Mã Phòng", "Loại Phòng", "Đơn giá", "Tầng"}; DefaultTableModel model = new DefaultTableModel(cols, 0) { @Override public boolean isCellEditable(int row, int column) { return false; } }; String sql = "SELECT p.maPhong, lp.tenLoaiPhong, p.giaTienMotDem FROM Phong p JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong WHERE p.maTrangThai = ?"; try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) { ps.setInt(1, status); ResultSet rs = ps.executeQuery(); java.text.DecimalFormat df = new java.text.DecimalFormat("#,###"); while(rs.next()) { String maPhong = rs.getString(1); String loaiPhong = rs.getString(2); String gia = df.format(rs.getDouble(3)); String tang = maPhong.length() > 1 ? maPhong.substring(1, 2) : "1"; model.addRow(new Object[]{maPhong, loaiPhong, gia, "Tầng " + tang}); } } catch (Exception e) { e.printStackTrace(); } JTable table = new JTable(model); table.setRowHeight(30); table.setFont(new Font("Segoe UI", Font.PLAIN, 13)); table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13)); table.setShowVerticalLines(false); DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer(); centerRenderer.setHorizontalAlignment(JLabel.CENTER); table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer); table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer); JScrollPane sp = new JScrollPane(table); sp.getViewport().setBackground(Color.WHITE); p.add(sp, BorderLayout.CENTER); JLabel lblCount = new JLabel("Tổng số lượng: " + model.getRowCount() + " phòng"); lblCount.setFont(new Font("Segoe UI", Font.ITALIC, 12)); lblCount.setBorder(new EmptyBorder(5, 5, 0, 0)); p.add(lblCount, BorderLayout.SOUTH); return p; }
+        private void showDrillDownDialog(String title, JComponent content, int width, int height) {
+            JDialog d = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), title, true);
+            d.setSize(width, height);
+            d.setLocationRelativeTo(this);
+            d.setLayout(new BorderLayout());
+            d.add(new JScrollPane(content), BorderLayout.CENTER);
+            d.setVisible(true);
+        }
+
+        private void showRevenueDetailDialog() {
+            String[] cols = { "Mã HD", "Ngày lập", "Khách hàng", "Tổng tiền" };
+            DefaultTableModel model = new DefaultTableModel(cols, 0);
+            String sql = "SELECT maHoaDon, ngayLap, maKH, tongTien FROM HoaDon WHERE CAST(ngayLap AS DATE) = CAST(GETDATE() AS DATE)";
+            try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+                ResultSet rs = ps.executeQuery();
+                java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
+                while (rs.next()) {
+                    model.addRow(new Object[] { rs.getString(1), rs.getTime(2), rs.getString(3),
+                            df.format(rs.getDouble(4)) });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            JTable table = new JTable(model);
+            showDrillDownDialog("Chi tiết doanh thu HÔM NAY", table, 600, 400);
+        }
+
+        private void showRoomListDialog(String title, int status) {
+            String[] cols = { "Mã Phòng", "Loại Phòng", "Giá tiền" };
+            DefaultTableModel model = new DefaultTableModel(cols, 0);
+            try (Connection con = ConnectDB.getConnection();
+                    PreparedStatement ps = con.prepareStatement(
+                            "SELECT p.maPhong, lp.tenLoaiPhong, p.giaTienMotDem FROM Phong p JOIN LoaiPhong lp ON p.maLoaiPhong=lp.maLoaiPhong WHERE p.maTrangThai=?")) {
+                ps.setInt(1, status);
+                ResultSet rs = ps.executeQuery();
+                java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
+                while (rs.next()) {
+                    model.addRow(new Object[] { rs.getString(1), rs.getString(2), df.format(rs.getDouble(3)) });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            JTable table = new JTable(model);
+            showDrillDownDialog(title, table, 500, 400);
+        }
+
+        private void showStaffScheduleDialog(String maNV, String tenNV) {
+            String[] cols = { "Ngày", "Ca làm", "Giờ BĐ", "Giờ KT", "Trạng thái" };
+            DefaultTableModel model = new DefaultTableModel(cols, 0);
+            String sql = "SELECT ngayLam, caLam, gioBatDau, gioKetThuc, trangThai FROM LichLamViec WHERE maNV=?";
+            try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setString(1, maNV);
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    model.addRow(new Object[] { rs.getDate(1), rs.getString(2), rs.getTime(3), rs.getTime(4),
+                            rs.getString(5) });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            JTable table = new JTable(model);
+            showDrillDownDialog("Lịch làm việc: " + tenNV, table, 600, 350);
+        }
+
+        private void showPeakHourDetails() {
+            String[] cols = { "Giờ", "Loại phiếu", "Phòng", "Khách hàng" };
+            DefaultTableModel model = new DefaultTableModel(cols, 0);
+            String sql = "SELECT DATEPART(HOUR, ngayNhanPhong) as Gio, N'Check-in' as Loai, maPhong, maKH FROM PhieuDatPhong WHERE CAST(ngayNhanPhong AS DATE) = CAST(GETDATE() AS DATE) UNION ALL SELECT DATEPART(HOUR, ngayTraPhong) as Gio, N'Check-out' as Loai, maPhong, maKH FROM PhieuDatPhong WHERE CAST(ngayTraPhong AS DATE) = CAST(GETDATE() AS DATE)";
+            try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    model.addRow(
+                            new Object[] { rs.getInt(1) + "h00", rs.getString(2), rs.getString(3), rs.getString(4) });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            JTable table = new JTable(model);
+            showDrillDownDialog("Chi tiết lưu lượng khách HÔM NAY", table, 500, 400);
+        }
+
+        private void showPriceAnalysisDialog() {
+            String[] cols = { "Loại phòng", "Giá niêm yết", "Số lượng phòng" };
+            DefaultTableModel model = new DefaultTableModel(cols, 0);
+            String sql = "SELECT lp.tenLoaiPhong, AVG(p.giaTienMotDem), COUNT(p.maPhong) FROM Phong p JOIN LoaiPhong lp ON p.maLoaiPhong=lp.maLoaiPhong GROUP BY lp.tenLoaiPhong";
+            try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+                ResultSet rs = ps.executeQuery();
+                java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
+                while (rs.next()) {
+                    model.addRow(new Object[] { rs.getString(1), df.format(rs.getDouble(2)), rs.getInt(3) });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            JTable table = new JTable(model);
+            showDrillDownDialog("Phân tích giá phòng & Cơ cấu", table, 500, 300);
+        }
+
+        private void showOccupancyDetailsDialog() {
+            JDialog d = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Chi tiết tình trạng phòng", true);
+            d.setSize(650, 450);
+            d.setLocationRelativeTo(this);
+            d.setLayout(new BorderLayout());
+            JTabbedPane tabbedPane = new JTabbedPane();
+            tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            JPanel pnlBooked = createRoomTableByStatus(1);
+            tabbedPane.addTab("Đang có khách", new AppIcon("bed", 16, new Color(147, 51, 234)), pnlBooked);
+            JPanel pnlEmpty = createRoomTableByStatus(0);
+            tabbedPane.addTab("Phòng trống (Sạch)", new AppIcon("bed", 16, new Color(22, 163, 74)), pnlEmpty);
+            d.add(tabbedPane, BorderLayout.CENTER);
+            JButton btnClose = new JButton("Đóng");
+            btnClose.addActionListener(e -> d.dispose());
+            JPanel pnlBtn = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            pnlBtn.add(btnClose);
+            d.add(pnlBtn, BorderLayout.SOUTH);
+            d.setVisible(true);
+        }
+
+        private JPanel createRoomTableByStatus(int status) {
+            JPanel p = new JPanel(new BorderLayout());
+            p.setBorder(new EmptyBorder(10, 10, 10, 10));
+            p.setBackground(Color.WHITE);
+            String[] cols = { "Mã Phòng", "Loại Phòng", "Đơn giá", "Tầng" };
+            DefaultTableModel model = new DefaultTableModel(cols, 0) {
+                @Override
+                public boolean isCellEditable(int row, int column) {
+                    return false;
+                }
+            };
+            String sql = "SELECT p.maPhong, lp.tenLoaiPhong, p.giaTienMotDem FROM Phong p JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong WHERE p.maTrangThai = ?";
+            try (Connection con = ConnectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setInt(1, status);
+                ResultSet rs = ps.executeQuery();
+                java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
+                while (rs.next()) {
+                    String maPhong = rs.getString(1);
+                    String loaiPhong = rs.getString(2);
+                    String gia = df.format(rs.getDouble(3));
+                    String tang = maPhong.length() > 1 ? maPhong.substring(1, 2) : "1";
+                    model.addRow(new Object[] { maPhong, loaiPhong, gia, "Tầng " + tang });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            JTable table = new JTable(model);
+            table.setRowHeight(30);
+            table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+            table.setShowVerticalLines(false);
+            DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+            centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+            table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+            table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
+            JScrollPane sp = new JScrollPane(table);
+            sp.getViewport().setBackground(Color.WHITE);
+            p.add(sp, BorderLayout.CENTER);
+            JLabel lblCount = new JLabel("Tổng số lượng: " + model.getRowCount() + " phòng");
+            lblCount.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+            lblCount.setBorder(new EmptyBorder(5, 5, 0, 0));
+            p.add(lblCount, BorderLayout.SOUTH);
+            return p;
+        }
 
         // --- SUB CLASSES ---
 
         // [SỬA 2] CẬP NHẬT CLASS PeakHourChart ĐỂ VẼ TRỤC Y (SỐ LƯỢNG)
         private static class PeakHourChart extends JPanel {
             private final int[] data;
-            public PeakHourChart(int[] data) { this.data = data; setOpaque(false); }
-            @Override protected void paintComponent(Graphics g) {
-                super.paintComponent(g); Graphics2D g2 = (Graphics2D) g; g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            public PeakHourChart(int[] data) {
+                this.data = data;
+                setOpaque(false);
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 int w = getWidth(), h = getHeight();
                 int padLeft = 40; // Tăng lề trái để hiện số trục Y
                 int padBot = 25;
@@ -627,13 +1034,16 @@ public class GUI_NhanVienQuanLy extends JFrame {
                 int chartW = w - padLeft - 10;
 
                 // Tìm max
-                int maxVal = 1; for(int v : data) if(v > maxVal) maxVal = v;
+                int maxVal = 1;
+                for (int v : data)
+                    if (v > maxVal)
+                        maxVal = v;
 
                 // Vẽ lưới ngang và số trục Y (5 mốc)
                 g2.setFont(new Font("Segoe UI", Font.PLAIN, 10));
                 for (int i = 0; i <= 4; i++) {
-                    int val = (int)Math.round(maxVal * i / 4.0); // 0, 25%, 50%...
-                    int yPos = 15 + chartH - (int)((double)val/maxVal * chartH);
+                    int val = (int) Math.round(maxVal * i / 4.0); // 0, 25%, 50%...
+                    int yPos = 15 + chartH - (int) ((double) val / maxVal * chartH);
 
                     // Vẽ số trục Y (bên trái)
                     g2.setColor(TEXT_GRAY);
@@ -641,28 +1051,28 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
                     // Vẽ dòng kẻ mờ
                     g2.setColor(new Color(230, 230, 230));
-                    g2.drawLine(padLeft, yPos, w-10, yPos);
+                    g2.drawLine(padLeft, yPos, w - 10, yPos);
                 }
 
                 // Vẽ trục X và Y chính
                 g2.setColor(new Color(200, 200, 200));
-                g2.drawLine(padLeft, 15, padLeft, h-padBot); // Trục Y
-                g2.drawLine(padLeft, h-padBot, w-10, h-padBot); // Trục X
+                g2.drawLine(padLeft, 15, padLeft, h - padBot); // Trục Y
+                g2.drawLine(padLeft, h - padBot, w - 10, h - padBot); // Trục X
 
                 java.awt.geom.GeneralPath polyline = new java.awt.geom.GeneralPath();
-                double xStep = (double)chartW / 23;
+                double xStep = (double) chartW / 23;
 
                 // Điểm bắt đầu
-                polyline.moveTo(padLeft, 15 + chartH - (int)((double)data[0]/maxVal * chartH));
+                polyline.moveTo(padLeft, 15 + chartH - (int) ((double) data[0] / maxVal * chartH));
 
                 // Vẽ đường biểu đồ
                 for (int i = 0; i < 24; i++) {
-                    float x = padLeft + (float)(i * xStep);
-                    float y = 15 + chartH - (int)((double)data[i]/maxVal * chartH);
+                    float x = padLeft + (float) (i * xStep);
+                    float y = 15 + chartH - (int) ((double) data[i] / maxVal * chartH);
                     polyline.lineTo(x, y);
 
                     // Vẽ số giờ trục X
-                    if(i % 4 == 0) {
+                    if (i % 4 == 0) {
                         g2.setColor(TEXT_GRAY);
                         g2.drawString(i + "h", x - 5, h - 5);
                     }
@@ -670,8 +1080,10 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
                 // Tô màu vùng dưới
                 java.awt.geom.GeneralPath area = (java.awt.geom.GeneralPath) polyline.clone();
-                area.lineTo(padLeft + chartW, 15 + chartH); area.lineTo(padLeft, 15 + chartH); area.closePath();
-                g2.setPaint(new GradientPaint(0, 15, CHART_FILL_COLOR, 0, h, new Color(255,255,255,0)));
+                area.lineTo(padLeft + chartW, 15 + chartH);
+                area.lineTo(padLeft, 15 + chartH);
+                area.closePath();
+                g2.setPaint(new GradientPaint(0, 15, CHART_FILL_COLOR, 0, h, new Color(255, 255, 255, 0)));
                 g2.fill(area);
 
                 // Vẽ đường line chính
@@ -683,20 +1095,70 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
         // ... [GIỮ NGUYÊN RoundedPanel và AppIcon] ...
         private static class RoundedPanel extends JPanel {
-            private int radius; private Color bgColor;
-            public RoundedPanel(LayoutManager layout, int radius, Color bgColor) { super(layout); this.radius = radius; this.bgColor = bgColor; setOpaque(false); }
-            @Override protected void paintComponent(Graphics g) { super.paintComponent(g); Graphics2D g2 = (Graphics2D) g; g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); g2.setColor(bgColor); g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius); g2.setColor(new Color(230,230,230)); g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, radius, radius); }
+            private int radius;
+            private Color bgColor;
+
+            public RoundedPanel(LayoutManager layout, int radius, Color bgColor) {
+                super(layout);
+                this.radius = radius;
+                this.bgColor = bgColor;
+                setOpaque(false);
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(bgColor);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+                g2.setColor(new Color(230, 230, 230));
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
+            }
         }
+
         private static class AppIcon implements Icon {
-            private String type; private int size; private Color color;
-            public AppIcon(String type, int size, Color color) { this.type = type; this.size = size; this.color = color; }
-            public int getIconWidth() { return size; } public int getIconHeight() { return size; }
-            public void paintIcon(Component c, Graphics g, int x, int y) { Graphics2D g2 = (Graphics2D) g; g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); g2.setColor(color); g2.setFont(new Font("Segoe UI Emoji", Font.BOLD, size - 4)); String symbol = "●"; if(type.equals("money")) symbol = "$"; else if(type.equals("tag")) symbol = "🏷"; else if(type.equals("chart")) symbol = "📈"; else if(type.equals("bed")) symbol = "🛏"; FontMetrics fm = g2.getFontMetrics(); g2.drawString(symbol, x + (size - fm.stringWidth(symbol)) / 2, y + (size - fm.getHeight()) / 2 + fm.getAscent()); }
+            private String type;
+            private int size;
+            private Color color;
+
+            public AppIcon(String type, int size, Color color) {
+                this.type = type;
+                this.size = size;
+                this.color = color;
+            }
+
+            public int getIconWidth() {
+                return size;
+            }
+
+            public int getIconHeight() {
+                return size;
+            }
+
+            public void paintIcon(Component c, Graphics g, int x, int y) {
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(color);
+                g2.setFont(new Font("Segoe UI Emoji", Font.BOLD, size - 4));
+                String symbol = "●";
+                if (type.equals("money"))
+                    symbol = "$";
+                else if (type.equals("tag"))
+                    symbol = "🏷";
+                else if (type.equals("chart"))
+                    symbol = "📈";
+                else if (type.equals("bed"))
+                    symbol = "🛏";
+                FontMetrics fm = g2.getFontMetrics();
+                g2.drawString(symbol, x + (size - fm.stringWidth(symbol)) / 2,
+                        y + (size - fm.getHeight()) / 2 + fm.getAscent());
+            }
         }
     }
-// =================================================================================
-// PANEL NỘI DUNG 3: QUẢN LÝ NHÂN VIÊN
-// =================================================================================
+    // =================================================================================
+    // PANEL NỘI DUNG 3: QUẢN LÝ NHÂN VIÊN
+    // =================================================================================
 
     public static class PanelNhanVienContent extends JPanel {
 
@@ -807,7 +1269,6 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
             top.add(statsRow);
 
-
             return top;
         }
 
@@ -819,14 +1280,13 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
         }
 
-
         private JPanel createSearchFilterPanel() {
             // Note: Thanh tìm kiếm và ComboBox Lọc
             JPanel searchPanel = new JPanel(new BorderLayout(10, 0));
             searchPanel.setOpaque(false);
 
-            //  Không khai báo lại biến cục bộ
-            searchField = new JTextField("");  // <-- dùng biến instance
+            // Không khai báo lại biến cục bộ
+            searchField = new JTextField(""); // <-- dùng biến instance
 
             String placeholder = " Tìm kiếm theo mã NV, họ tên, số điện thoại, email, CCCD...";
             Color placeholderColor = Color.GRAY;
@@ -853,7 +1313,7 @@ public class GUI_NhanVienQuanLy extends JFrame {
                 }
             });
 
-            //  Sự kiện gõ chữ để lọc tự động
+            // Sự kiện gõ chữ để lọc tự động
             searchField.addKeyListener(new KeyAdapter() {
                 @Override
                 public void keyReleased(KeyEvent e) {
@@ -867,7 +1327,7 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
             searchPanel.add(searchField, BorderLayout.CENTER);
 
-            cbType = new JComboBox<>(new String[]{"Tất cả loại", "Lễ tân", "Quản lý"});
+            cbType = new JComboBox<>(new String[] { "Tất cả loại", "Lễ tân", "Quản lý" });
             cbType.setPreferredSize(new Dimension(160, 30));
 
             // === Sự kiện lọc loại ===
@@ -882,7 +1342,8 @@ public class GUI_NhanVienQuanLy extends JFrame {
             JPanel card = new JPanel();
             card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
             card.setBackground(Color.WHITE);
-            card.setBorder(new CompoundBorder(new LineBorder(new Color(230, 230, 230)), new EmptyBorder(12, 18, 12, 18)));
+            card.setBorder(
+                    new CompoundBorder(new LineBorder(new Color(230, 230, 230)), new EmptyBorder(12, 18, 12, 18)));
             card.setPreferredSize(new Dimension(200, 60));
 
             valueLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -1081,7 +1542,7 @@ public class GUI_NhanVienQuanLy extends JFrame {
             actions.setOpaque(false);
             JButton btnEdit = new JButton("✎"); // Thay thế
             JButton btnDelete = new JButton("🗑"); // Thay thế
-            for (JButton b : new JButton[]{btnEdit, btnDelete}) {
+            for (JButton b : new JButton[] { btnEdit, btnDelete }) {
                 b.setFocusPainted(false);
                 b.setBorderPainted(false);
                 b.setContentAreaFilled(false);
@@ -1096,7 +1557,6 @@ public class GUI_NhanVienQuanLy extends JFrame {
                     refreshStats(lblTongNV, lblLeTan, lblQuanLy);
                 });
             });
-
 
             // === Sự kiện xoá ===
             btnDelete.addActionListener(ae -> {
@@ -1119,9 +1579,12 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
         private Color getRoleColor(LoaiNhanVien loai) {
             switch (loai) {
-                case LE_TAN: return new Color(99, 132, 244);
-                case QUAN_LY: return new Color(186, 85, 211);
-                default: return new Color(180, 180, 180);
+                case LE_TAN:
+                    return new Color(99, 132, 244);
+                case QUAN_LY:
+                    return new Color(186, 85, 211);
+                default:
+                    return new Color(180, 180, 180);
             }
         }
 
@@ -1134,7 +1597,8 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
             JTextField code = new JTextField(editEmp == null ? "" : editEmp.getMaNV());
             JTextField name = new JTextField(editEmp == null ? "" : editEmp.getTenNV());
-            JTextField dob = new JTextField(editEmp == null ? "" : editEmp.getNgaySinh() != null ? editEmp.getNgaySinh().format(formatter) : "");
+            JTextField dob = new JTextField(editEmp == null ? ""
+                    : editEmp.getNgaySinh() != null ? editEmp.getNgaySinh().format(formatter) : "");
             JTextField phone = new JTextField(editEmp == null ? "" : editEmp.getSoDT());
             JTextField email = new JTextField(editEmp == null ? "" : editEmp.getEmail());
             JTextField cccd = new JTextField(editEmp == null ? "" : editEmp.getCCCD());
@@ -1151,8 +1615,9 @@ public class GUI_NhanVienQuanLy extends JFrame {
                 radNam.setSelected(true);
             }
 
-            JComboBox<String> role = new JComboBox<>(new String[]{"Lễ tân", "Quản lý"});
-            if (editEmp != null) role.setSelectedItem(editEmp.getChucVu());
+            JComboBox<String> role = new JComboBox<>(new String[] { "Lễ tân", "Quản lý" });
+            if (editEmp != null)
+                role.setSelectedItem(editEmp.getChucVu());
 
             JPanel panel = new JPanel(new GridLayout(0, 2, 8, 8));
 
@@ -1175,7 +1640,7 @@ public class GUI_NhanVienQuanLy extends JFrame {
             panel.add(cccd);
             panel.add(new JLabel("Loại NV:"));
             panel.add(role);
-            //Font chữ
+            // Font chữ
             Font labelFont = new Font("Segoe UI", Font.BOLD, 14);
             for (Component comp : panel.getComponents()) {
                 if (comp instanceof JLabel) {
@@ -1241,7 +1706,8 @@ public class GUI_NhanVienQuanLy extends JFrame {
                 NhanVien_DAO dao = new NhanVien_DAO();
 
                 if (editEmp == null) {
-                    NhanVien nv = new NhanVien(maNV, hoTen, sdtStr, emailStr, "", cccdStr, ngaySinh, gioiTinh, loaiNV, "123456");
+                    NhanVien nv = new NhanVien(maNV, hoTen, sdtStr, emailStr, "", cccdStr, ngaySinh, gioiTinh, loaiNV,
+                            "123456");
                     if (dao.addNhanVien(nv)) {
                         JOptionPane.showMessageDialog(dialog, "Thêm thành công!");
                         employees = dao.getAllNhanVien();
@@ -1273,7 +1739,6 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
             dialog.setVisible(true);
         }
-
 
         // ======== FOOTER: tổng kết ========
         private JPanel createFooterSummary() {
@@ -1328,10 +1793,9 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
             filteredEmployees = employees.stream()
                     .filter(e -> {
-                        boolean matchType =
-                                type.equals("Tất cả loại")
-                                        || (type.equals("Lễ tân") && e.getChucVu() == LoaiNhanVien.LE_TAN)
-                                        || (type.equals("Quản lý") && e.getChucVu() == LoaiNhanVien.QUAN_LY);
+                        boolean matchType = type.equals("Tất cả loại")
+                                || (type.equals("Lễ tân") && e.getChucVu() == LoaiNhanVien.LE_TAN)
+                                || (type.equals("Quản lý") && e.getChucVu() == LoaiNhanVien.QUAN_LY);
                         boolean matchKeyword = keyword.isEmpty()
                                 || e.getMaNV().toLowerCase().contains(keyword)
                                 || e.getTenNV().toLowerCase().contains(keyword)
@@ -1346,7 +1810,8 @@ public class GUI_NhanVienQuanLy extends JFrame {
         }
 
         private void updateFooter() {
-            if (totalLabel == null || breakdownLabel == null) return;
+            if (totalLabel == null || breakdownLabel == null)
+                return;
 
             totalLabel.setText("Tổng số nhân viên: " + filteredEmployees.size());
 
@@ -1362,12 +1827,11 @@ public class GUI_NhanVienQuanLy extends JFrame {
         }
     }
 
-// =================================================================================
-// PANEL NỘI DUNG 4: QUẢN LÝ KHUYẾN MÃI
-// =================================================================================
+    // =================================================================================
+    // PANEL NỘI DUNG 4: QUẢN LÝ KHUYẾN MÃI
+    // =================================================================================
 
-// Lớp giao diện quản lý khuyến mãi, kế thừa từ JPanel
-
+    // Lớp giao diện quản lý khuyến mãi, kế thừa từ JPanel
 
     // =================================================================================
     // PANEL NỘI DUNG 5: THỐNG KÊ & BÁO CÁO (FINAL POLISHED VERSION)
@@ -1380,7 +1844,7 @@ public class GUI_NhanVienQuanLy extends JFrame {
         public static final Color ACCENT_BLUE = new Color(24, 90, 219);
         public static final Color COLOR_WHITE = Color.WHITE;
         public static final Color COLOR_GREEN = new Color(22, 163, 74); // Xanh lá
-        public static final Color COLOR_RED = new Color(220, 38, 38);    // Đỏ
+        public static final Color COLOR_RED = new Color(220, 38, 38); // Đỏ
         public static final Color COLOR_NEUTRAL = new Color(107, 114, 128); // Xám
         public static final Color COLOR_PURPLE = new Color(147, 51, 234);
         public static final Color COLOR_ORANGE = new Color(245, 158, 11);
@@ -1400,7 +1864,8 @@ public class GUI_NhanVienQuanLy extends JFrame {
             }
 
             public double getGrowthRate() {
-                if (lastMonthVal == 0) return currentMonthVal > 0 ? 100.0 : 0.0;
+                if (lastMonthVal == 0)
+                    return currentMonthVal > 0 ? 100.0 : 0.0;
                 return ((currentMonthVal - lastMonthVal) / lastMonthVal) * 100;
             }
         }
@@ -1436,7 +1901,8 @@ public class GUI_NhanVienQuanLy extends JFrame {
         private KPIModel[] fetchKPIData() {
             KPIModel[] data = new KPIModel[4];
             // Init mặc định để tránh null
-            for(int i=0; i<4; i++) data[i] = new KPIModel(0, 0, "", "");
+            for (int i = 0; i < 4; i++)
+                data[i] = new KPIModel(0, 0, "", "");
 
             LocalDate now = LocalDate.now();
             int curMonth = now.getMonthValue();
@@ -1446,7 +1912,8 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
             try {
                 Connection con = ConnectDB.getConnection();
-                if (con == null) return data;
+                if (con == null)
+                    return data;
 
                 // 1. DOANH THU (Revenue)
                 String sqlRev = "SELECT " +
@@ -1454,8 +1921,10 @@ public class GUI_NhanVienQuanLy extends JFrame {
                         "SUM(CASE WHEN MONTH(ngayLap)=? AND YEAR(ngayLap)=? THEN tongTien ELSE 0 END) as Last " +
                         "FROM HoaDon";
                 try (PreparedStatement ps = con.prepareStatement(sqlRev)) {
-                    ps.setInt(1, curMonth); ps.setInt(2, curYear);
-                    ps.setInt(3, lastMonth); ps.setInt(4, lastYear);
+                    ps.setInt(1, curMonth);
+                    ps.setInt(2, curYear);
+                    ps.setInt(3, lastMonth);
+                    ps.setInt(4, lastYear);
                     ResultSet rs = ps.executeQuery();
                     if (rs.next()) {
                         data[0] = new KPIModel(rs.getDouble("Cur"), rs.getDouble("Last"), "Tổng doanh thu", "₫");
@@ -1468,8 +1937,10 @@ public class GUI_NhanVienQuanLy extends JFrame {
                         "COUNT(CASE WHEN MONTH(ngayDatPhong)=? AND YEAR(ngayDatPhong)=? THEN 1 END) as Last " +
                         "FROM PhieuDatPhong";
                 try (PreparedStatement ps = con.prepareStatement(sqlBook)) {
-                    ps.setInt(1, curMonth); ps.setInt(2, curYear);
-                    ps.setInt(3, lastMonth); ps.setInt(4, lastYear);
+                    ps.setInt(1, curMonth);
+                    ps.setInt(2, curYear);
+                    ps.setInt(3, lastMonth);
+                    ps.setInt(4, lastYear);
                     ResultSet rs = ps.executeQuery();
                     if (rs.next()) {
                         data[1] = new KPIModel(rs.getInt("Cur"), rs.getInt("Last"), "Tổng booking", "");
@@ -1478,18 +1949,23 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
                 // 3. TỶ LỆ LẤP ĐẦY
                 int totalRooms = 1;
-                try (Statement st = con.createStatement(); ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM Phong")) {
-                    if (rs.next()) totalRooms = rs.getInt(1);
+                try (Statement st = con.createStatement();
+                        ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM Phong")) {
+                    if (rs.next())
+                        totalRooms = rs.getInt(1);
                 }
-                if (totalRooms == 0) totalRooms = 1;
+                if (totalRooms == 0)
+                    totalRooms = 1;
 
                 double occCur = (double) data[1].currentMonthVal / (totalRooms * 30) * 100;
                 double occLast = (double) data[1].lastMonthVal / (totalRooms * 30) * 100;
 
                 // Fix logic hiển thị khi booking ít: Lấy trạng thái thực
                 if (occCur < 1) {
-                    try (Statement st = con.createStatement(); ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM Phong WHERE maTrangThai = 1")) {
-                        if(rs.next()) occCur = (rs.getDouble(1) / totalRooms) * 100;
+                    try (Statement st = con.createStatement();
+                            ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM Phong WHERE maTrangThai = 1")) {
+                        if (rs.next())
+                            occCur = (rs.getDouble(1) / totalRooms) * 100;
                     }
                 }
                 data[2] = new KPIModel(occCur, occLast, "Tỷ lệ lấp đầy", "%");
@@ -1509,7 +1985,8 @@ public class GUI_NhanVienQuanLy extends JFrame {
             double[] data = new double[12];
             try {
                 Connection con = ConnectDB.getConnection();
-                if (con == null) return data;
+                if (con == null)
+                    return data;
 
                 String sql = "SELECT MONTH(ngayLap) as M, SUM(tongTien) as T FROM HoaDon WHERE YEAR(ngayLap) = ? GROUP BY MONTH(ngayLap)";
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -1517,10 +1994,13 @@ public class GUI_NhanVienQuanLy extends JFrame {
                     ResultSet rs = ps.executeQuery();
                     while (rs.next()) {
                         int m = rs.getInt("M");
-                        if (m >= 1 && m <= 12) data[m - 1] = rs.getDouble("T");
+                        if (m >= 1 && m <= 12)
+                            data[m - 1] = rs.getDouble("T");
                     }
                 }
-            } catch (Exception e) { e.printStackTrace(); }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return data;
         }
 
@@ -1528,7 +2008,8 @@ public class GUI_NhanVienQuanLy extends JFrame {
             int[] data = new int[12];
             try {
                 Connection con = ConnectDB.getConnection();
-                if (con == null) return data;
+                if (con == null)
+                    return data;
 
                 String sql = "SELECT MONTH(ngayDatPhong) as M, COUNT(*) as C FROM PhieuDatPhong WHERE YEAR(ngayDatPhong) = ? GROUP BY MONTH(ngayDatPhong)";
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -1536,10 +2017,13 @@ public class GUI_NhanVienQuanLy extends JFrame {
                     ResultSet rs = ps.executeQuery();
                     while (rs.next()) {
                         int m = rs.getInt("M");
-                        if (m >= 1 && m <= 12) data[m - 1] = rs.getInt("C");
+                        if (m >= 1 && m <= 12)
+                            data[m - 1] = rs.getInt("C");
                     }
                 }
-            } catch (Exception e) { e.printStackTrace(); }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return data;
         }
 
@@ -1547,7 +2031,8 @@ public class GUI_NhanVienQuanLy extends JFrame {
             Map<String, Integer> data = new LinkedHashMap<>();
             try {
                 Connection con = ConnectDB.getConnection();
-                if (con == null) return data;
+                if (con == null)
+                    return data;
 
                 String sql = "SELECT lp.tenLoaiPhong, COUNT(p.maPhong) as SL " +
                         "FROM Phong p JOIN LoaiPhong lp ON p.maLoaiPhong = lp.maLoaiPhong " +
@@ -1558,7 +2043,9 @@ public class GUI_NhanVienQuanLy extends JFrame {
                         data.put(rs.getString(1), rs.getInt(2));
                     }
                 }
-            } catch (Exception e) { e.printStackTrace(); }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return data;
         }
 
@@ -1585,13 +2072,14 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
             JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT));
             right.setOpaque(false);
-            JComboBox<String> cboTime = new JComboBox<>(new String[]{"Tháng này", "Quý này", "Năm nay"});
+            JComboBox<String> cboTime = new JComboBox<>(new String[] { "Tháng này", "Quý này", "Năm nay" });
             cboTime.setFocusable(false);
             JButton btnExport = new JButton("Xuất Excel");
             btnExport.setBackground(new Color(16, 124, 65));
             btnExport.setForeground(Color.WHITE);
             btnExport.setFocusPainted(false);
-            btnExport.addActionListener(e -> JOptionPane.showMessageDialog(this, "Tính năng đang phát triển...", "Thông báo", JOptionPane.INFORMATION_MESSAGE));
+            btnExport.addActionListener(e -> JOptionPane.showMessageDialog(this, "Tính năng đang phát triển...",
+                    "Thông báo", JOptionPane.INFORMATION_MESSAGE));
 
             right.add(new JLabel("Thời gian: "));
             right.add(cboTime);
@@ -1602,7 +2090,8 @@ public class GUI_NhanVienQuanLy extends JFrame {
             return header;
         }
 
-        private JPanel createContentPanel(KPIModel[] kpis, double[] revenueData, int[] bookingData, Map<String, Integer> roomTypeData) {
+        private JPanel createContentPanel(KPIModel[] kpis, double[] revenueData, int[] bookingData,
+                Map<String, Integer> roomTypeData) {
             JPanel content = new JPanel(new BorderLayout(15, 15));
             content.setOpaque(false);
 
@@ -1614,16 +2103,29 @@ public class GUI_NhanVienQuanLy extends JFrame {
             gbc.fill = GridBagConstraints.BOTH;
             gbc.insets = new Insets(0, 0, 15, 15);
 
-            gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.7; gbc.weighty = 0.5;
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            gbc.weightx = 0.7;
+            gbc.weighty = 0.5;
             grid.add(createChartCard("Biểu đồ doanh thu (Năm nay)", new LineChartPanel(revenueData)), gbc);
 
-            gbc.gridx = 1; gbc.gridy = 0; gbc.weightx = 0.3; gbc.insets = new Insets(0, 0, 15, 0);
+            gbc.gridx = 1;
+            gbc.gridy = 0;
+            gbc.weightx = 0.3;
+            gbc.insets = new Insets(0, 0, 15, 0);
             grid.add(createChartCard("Cơ cấu phòng", new PieChartPanel(roomTypeData)), gbc);
 
-            gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0.7; gbc.weighty = 0.5; gbc.insets = new Insets(0, 0, 0, 15);
+            gbc.gridx = 0;
+            gbc.gridy = 1;
+            gbc.weightx = 0.7;
+            gbc.weighty = 0.5;
+            gbc.insets = new Insets(0, 0, 0, 15);
             grid.add(createChartCard("Số lượng Booking theo tháng", new BarChartPanel(bookingData, ACCENT_BLUE)), gbc);
 
-            gbc.gridx = 1; gbc.gridy = 1; gbc.weightx = 0.3; gbc.insets = new Insets(0, 0, 0, 0);
+            gbc.gridx = 1;
+            gbc.gridy = 1;
+            gbc.weightx = 0.3;
+            gbc.insets = new Insets(0, 0, 0, 0);
             grid.add(createChartCard("Thông tin hệ thống", createSystemInfoPanel()), gbc);
 
             content.add(grid, BorderLayout.CENTER);
@@ -1645,7 +2147,8 @@ public class GUI_NhanVienQuanLy extends JFrame {
             card.setBackground(Color.WHITE);
             card.setBorder(new CompoundBorder(new LineBorder(CARD_BORDER, 1, true), new EmptyBorder(15, 15, 15, 15)));
 
-            JPanel top = new JPanel(new BorderLayout()); top.setOpaque(false);
+            JPanel top = new JPanel(new BorderLayout());
+            top.setOpaque(false);
             JLabel lblTitle = new JLabel(model.label);
             lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
             lblTitle.setForeground(COLOR_NEUTRAL);
@@ -1695,7 +2198,7 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
             JLabel lblTitle = new JLabel(title);
             lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
-            lblTitle.setBorder(new EmptyBorder(0,0,10,0));
+            lblTitle.setBorder(new EmptyBorder(0, 0, 10, 0));
 
             card.add(lblTitle, BorderLayout.NORTH);
             card.add(chart, BorderLayout.CENTER);
@@ -1715,23 +2218,30 @@ public class GUI_NhanVienQuanLy extends JFrame {
         private JPanel createSummaryFooter(KPIModel[] kpis) {
             JPanel f = new JPanel(new FlowLayout(FlowLayout.CENTER, 40, 15));
             f.setBackground(Color.WHITE);
-            f.setBorder(new MatteBorder(1,0,0,0, CARD_BORDER));
+            f.setBorder(new MatteBorder(1, 0, 0, 0, CARD_BORDER));
 
             f.add(createFooterItem("Tăng trưởng doanh thu", String.format("%+.1f%%", kpis[0].getGrowthRate()),
                     kpis[0].getGrowthRate() >= 0 ? COLOR_GREEN : COLOR_RED));
 
             // UPDATED: Đổi tên thành "Tỷ lệ lấp đầy trung bình" theo yêu cầu
-            f.add(createFooterItem("Tỷ lệ lấp đầy trung bình", String.format("%.1f%%", kpis[2].currentMonthVal), ACCENT_BLUE));
+            f.add(createFooterItem("Tỷ lệ lấp đầy trung bình", String.format("%.1f%%", kpis[2].currentMonthVal),
+                    ACCENT_BLUE));
 
             f.add(createFooterItem("Đánh giá trung bình", "4.8/5.0", COLOR_PURPLE));
             return f;
         }
 
         private JPanel createFooterItem(String label, String val, Color c) {
-            JPanel p = new JPanel(new GridLayout(2,1)); p.setOpaque(false);
-            JLabel v = new JLabel(val, SwingConstants.CENTER); v.setFont(new Font("Segoe UI", Font.BOLD, 16)); v.setForeground(c);
-            JLabel l = new JLabel(label, SwingConstants.CENTER); l.setFont(new Font("Segoe UI", Font.PLAIN, 12)); l.setForeground(COLOR_NEUTRAL);
-            p.add(v); p.add(l);
+            JPanel p = new JPanel(new GridLayout(2, 1));
+            p.setOpaque(false);
+            JLabel v = new JLabel(val, SwingConstants.CENTER);
+            v.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            v.setForeground(c);
+            JLabel l = new JLabel(label, SwingConstants.CENTER);
+            l.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            l.setForeground(COLOR_NEUTRAL);
+            p.add(v);
+            p.add(l);
             return p;
         }
 
@@ -1741,35 +2251,47 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
         private static class LineChartPanel extends JPanel {
             private double[] data;
-            public LineChartPanel(double[] data) { this.data = data; setBackground(Color.WHITE); }
-            @Override protected void paintComponent(Graphics g) {
-                super.paintComponent(g); Graphics2D g2 = (Graphics2D) g;
+
+            public LineChartPanel(double[] data) {
+                this.data = data;
+                setBackground(Color.WHITE);
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 int w = getWidth(), h = getHeight(), pad = 30;
 
                 g2.setColor(Color.LIGHT_GRAY);
-                g2.drawLine(pad, h-pad, w-pad, h-pad);
-                g2.drawLine(pad, pad, pad, h-pad);
+                g2.drawLine(pad, h - pad, w - pad, h - pad);
+                g2.drawLine(pad, pad, pad, h - pad);
 
-                if (data == null || data.length == 0) return;
-                double max = 0; for(double d: data) max = Math.max(max, d);
-                if (max == 0) max = 1;
+                if (data == null || data.length == 0)
+                    return;
+                double max = 0;
+                for (double d : data)
+                    max = Math.max(max, d);
+                if (max == 0)
+                    max = 1;
 
                 g2.setStroke(new BasicStroke(2f));
                 g2.setColor(ACCENT_BLUE);
 
-                int xStep = (w - 2*pad) / (data.length);
+                int xStep = (w - 2 * pad) / (data.length);
                 int[] xPoints = new int[data.length];
                 int[] yPoints = new int[data.length];
 
-                for(int i=0; i<data.length; i++) {
-                    xPoints[i] = pad + i*xStep + 10;
-                    yPoints[i] = h - pad - (int)((data[i]/max) * (h - 2*pad));
-                    g2.fillOval(xPoints[i]-3, yPoints[i]-3, 6, 6);
+                for (int i = 0; i < data.length; i++) {
+                    xPoints[i] = pad + i * xStep + 10;
+                    yPoints[i] = h - pad - (int) ((data[i] / max) * (h - 2 * pad));
+                    g2.fillOval(xPoints[i] - 3, yPoints[i] - 3, 6, 6);
 
                     g2.setColor(Color.GRAY);
                     g2.setFont(new Font("SansSerif", Font.PLAIN, 10));
-                    if (i % 2 == 0) g2.drawString("T"+(i+1), xPoints[i]-5, h-15);
+                    if (i % 2 == 0)
+                        g2.drawString("T" + (i + 1), xPoints[i] - 5, h - 15);
                     g2.setColor(ACCENT_BLUE);
                 }
                 g2.drawPolyline(xPoints, yPoints, data.length);
@@ -1777,22 +2299,37 @@ public class GUI_NhanVienQuanLy extends JFrame {
         }
 
         private static class BarChartPanel extends JPanel {
-            private int[] data; private Color c;
-            public BarChartPanel(int[] data, Color c) { this.data = data; this.c = c; setBackground(Color.WHITE); }
-            @Override protected void paintComponent(Graphics g) {
-                super.paintComponent(g); Graphics2D g2 = (Graphics2D) g;
+            private int[] data;
+            private Color c;
+
+            public BarChartPanel(int[] data, Color c) {
+                this.data = data;
+                this.c = c;
+                setBackground(Color.WHITE);
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 int w = getWidth(), h = getHeight(), pad = 30;
-                g2.setColor(Color.LIGHT_GRAY); g2.drawLine(pad, h-pad, w-pad, h-pad);
+                g2.setColor(Color.LIGHT_GRAY);
+                g2.drawLine(pad, h - pad, w - pad, h - pad);
 
-                if (data == null || data.length == 0) return;
-                int max = 0; for(int d: data) max = Math.max(max, d); if(max==0) max=1;
+                if (data == null || data.length == 0)
+                    return;
+                int max = 0;
+                for (int d : data)
+                    max = Math.max(max, d);
+                if (max == 0)
+                    max = 1;
 
-                int barW = (w - 2*pad) / data.length - 10;
+                int barW = (w - 2 * pad) / data.length - 10;
 
-                for(int i=0; i<data.length; i++) {
-                    int barH = (int)((double)data[i]/max * (h - 2*pad));
-                    int x = pad + 5 + i * ((w - 2*pad) / data.length);
+                for (int i = 0; i < data.length; i++) {
+                    int barH = (int) ((double) data[i] / max * (h - 2 * pad));
+                    int x = pad + 5 + i * ((w - 2 * pad) / data.length);
                     int y = h - pad - barH;
 
                     g2.setColor(c);
@@ -1801,7 +2338,7 @@ public class GUI_NhanVienQuanLy extends JFrame {
                     if (data[i] > 0) {
                         g2.setColor(Color.DARK_GRAY);
                         g2.setFont(new Font("SansSerif", Font.PLAIN, 9));
-                        g2.drawString(String.valueOf(data[i]), x + barW/2 - 5, y - 5);
+                        g2.drawString(String.valueOf(data[i]), x + barW / 2 - 5, y - 5);
                     }
                 }
             }
@@ -1809,29 +2346,41 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
         private static class PieChartPanel extends JPanel {
             private Map<String, Integer> data;
-            private Color[] colors = {new Color(59, 130, 246), new Color(16, 185, 129), new Color(245, 158, 11), new Color(239, 68, 68), new Color(139, 92, 246)};
-            public PieChartPanel(Map<String, Integer> data) { this.data = data; setBackground(Color.WHITE); }
-            @Override protected void paintComponent(Graphics g) {
-                super.paintComponent(g); Graphics2D g2 = (Graphics2D) g;
+            private Color[] colors = { new Color(59, 130, 246), new Color(16, 185, 129), new Color(245, 158, 11),
+                    new Color(239, 68, 68), new Color(139, 92, 246) };
+
+            public PieChartPanel(Map<String, Integer> data) {
+                this.data = data;
+                setBackground(Color.WHITE);
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                if(data == null || data.isEmpty()) {
+                if (data == null || data.isEmpty()) {
                     g2.setColor(Color.GRAY);
-                    g2.drawString("Chưa có dữ liệu", getWidth()/2 - 40, getHeight()/2); return;
+                    g2.drawString("Chưa có dữ liệu", getWidth() / 2 - 40, getHeight() / 2);
+                    return;
                 }
 
-                int total = 0; for(int v : data.values()) total += v;
-                if(total == 0) return;
+                int total = 0;
+                for (int v : data.values())
+                    total += v;
+                if (total == 0)
+                    return;
 
                 int d = Math.min(getWidth(), getHeight()) - 40;
-                int x = 10, y = (getHeight()-d)/2;
+                int x = 10, y = (getHeight() - d) / 2;
 
                 int startAngle = 90;
                 int i = 0;
                 int legendY = 20;
 
-                for(Map.Entry<String, Integer> entry : data.entrySet()) {
-                    int angle = (int)(entry.getValue() * 360.0 / total);
+                for (Map.Entry<String, Integer> entry : data.entrySet()) {
+                    int angle = (int) (entry.getValue() * 360.0 / total);
                     g2.setColor(colors[i % colors.length]);
                     g2.fillArc(x, y, d, d, startAngle, angle);
 
@@ -1849,35 +2398,10 @@ public class GUI_NhanVienQuanLy extends JFrame {
                 }
                 // Donut hole
                 g2.setColor(Color.WHITE);
-                g2.fillOval(x + d/4, y + d/4, d/2, d/2);
+                g2.fillOval(x + d / 4, y + d / 4, d / 2, d / 2);
             }
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     // =================================================================================
     // PANEL NỘI DUNG 6: KHUYẾN MÃI
@@ -1906,7 +2430,6 @@ public class GUI_NhanVienQuanLy extends JFrame {
             add(createHeader(), BorderLayout.NORTH);
             add(createMainContent(), BorderLayout.CENTER);
             add(createSummaryPanel(), BorderLayout.SOUTH);
-
 
             refreshPromotionList();
         }
@@ -1983,7 +2506,7 @@ public class GUI_NhanVienQuanLy extends JFrame {
 
             searchPanel.add(searchField, BorderLayout.CENTER);
 
-            cbStatus = new JComboBox<>(new String[]{"Tất cả", "Đang hoạt động", "Hết hạn"});
+            cbStatus = new JComboBox<>(new String[] { "Tất cả", "Đang hoạt động", "Hết hạn" });
             cbStatus.setPreferredSize(new Dimension(160, 30));
             cbStatus.addActionListener(e -> applyFilters());
             searchPanel.add(cbStatus, BorderLayout.EAST);
@@ -2008,7 +2531,8 @@ public class GUI_NhanVienQuanLy extends JFrame {
         private void applyFilters() {
             String keyword = searchField.getText().trim().toLowerCase();
             String placeholder = "tìm kiếm theo mã hoặc tên khuyến mãi...";
-            if (keyword.equals(placeholder)) keyword = "";
+            if (keyword.equals(placeholder))
+                keyword = "";
 
             String status = cbStatus.getSelectedItem().toString();
 
@@ -2077,15 +2601,13 @@ public class GUI_NhanVienQuanLy extends JFrame {
             card.add(createVerticalInfoPanel(
                     "Bắt đầu: " + km.getNgayBatDau(),
                     "Kết thúc: " + km.getNgayKetThuc(),
-                    160
-            ));
+                    160));
 
             // === Chiết khấu / lượt sử dụng ===
             card.add(createVerticalInfoPanel(
                     "Chiết khấu: " + km.getChietKhau() + "%",
                     "Lượt sử dụng: " + km.getLuotSuDung(),
-                    160
-            ));
+                    160));
 
             // === Trạng thái ===
             String status = xacDinhTrangThai(km);
@@ -2093,7 +2615,8 @@ public class GUI_NhanVienQuanLy extends JFrame {
             statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
             statusLabel.setOpaque(true);
             statusLabel.setForeground(Color.WHITE);
-            statusLabel.setBackground(status.equals("Đang hoạt động") ? new Color(46, 204, 113) : new Color(192, 57, 43));
+            statusLabel
+                    .setBackground(status.equals("Đang hoạt động") ? new Color(46, 204, 113) : new Color(192, 57, 43));
             statusLabel.setBorder(new EmptyBorder(4, 10, 4, 10));
             JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 10));
             statusPanel.setOpaque(false);
@@ -2107,7 +2630,7 @@ public class GUI_NhanVienQuanLy extends JFrame {
             JButton delete = new JButton("🗑");
             edit.setForeground(Color.blue);
             delete.setForeground(Color.red);
-            for (JButton b : new JButton[]{edit, delete}) {
+            for (JButton b : new JButton[] { edit, delete }) {
                 b.setFocusPainted(false);
                 b.setBorderPainted(false);
                 b.setContentAreaFilled(false);
@@ -2195,7 +2718,9 @@ public class GUI_NhanVienQuanLy extends JFrame {
             lblHoatDong = new JLabel(String.valueOf(0), SwingConstants.CENTER);
             lblHetHan = new JLabel(String.valueOf(0), SwingConstants.CENTER);
             // (Hàm getLuotSuDung() có thể cũng lỗi, thay bằng 0)
-            // lblHetHan = new JLabel(promotions.stream().mapToInt(KhuyenMai::getLuotSuDung).sum(), SwingConstants.CENTER);
+            // lblHetHan = new
+            // JLabel(promotions.stream().mapToInt(KhuyenMai::getLuotSuDung).sum(),
+            // SwingConstants.CENTER);
             // highlight-end
 
             summary.add(createSummaryCard(lblTongLuot, "Tổng lượt dùng", new Color(110, 140, 237)));
@@ -2210,8 +2735,7 @@ public class GUI_NhanVienQuanLy extends JFrame {
             card.setBackground(Color.WHITE);
             card.setBorder(new CompoundBorder(
                     new LineBorder(color, 2, true),
-                    new EmptyBorder(10, 10, 10, 10)
-            ));
+                    new EmptyBorder(10, 10, 10, 10)));
             card.setOpaque(true);
 
             valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
@@ -2236,10 +2760,8 @@ public class GUI_NhanVienQuanLy extends JFrame {
             lblHoatDong.setText(String.valueOf(dao.countKhuyenMaiDangHoatDong()));
             lblHetHan.setText(String.valueOf(dao.countKhuyenMaiHetHan()));
             lblTongLuot.setText(String.valueOf(
-                    promotions.stream().mapToInt(KhuyenMai::getLuotSuDung).sum()
-            ));
+                    promotions.stream().mapToInt(KhuyenMai::getLuotSuDung).sum()));
         }
-
 
         public void reloadData() throws SQLException {
             promotions = dao.getAllKhuyenMai();

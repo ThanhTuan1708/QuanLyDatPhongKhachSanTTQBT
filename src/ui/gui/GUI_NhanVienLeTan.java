@@ -243,6 +243,21 @@ public class GUI_NhanVienLeTan extends JFrame {
         logout.setContentAreaFilled(false);
         logout.setForeground(new Color(220, 50, 50));
         logout.setAlignmentX(Component.LEFT_ALIGNMENT);
+        logout.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logout.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                    GUI_NhanVienLeTan.this,
+                    "Bạn có chắc chắn muốn đăng xuất?",
+                    "Xác nhận đăng xuất",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE);
+            if (confirm == JOptionPane.YES_OPTION) {
+                dispose(); // Đóng cửa sổ hiện tại
+                SwingUtilities.invokeLater(() -> {
+                    new ui.gui.FormDialog.FormDangNhap().setVisible(true);
+                });
+            }
+        });
 
         JButton exitButton = new JButton("Thoát Ứng Dụng");
         exitButton.setBorderPainted(false);

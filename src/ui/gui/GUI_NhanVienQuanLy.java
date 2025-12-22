@@ -2415,7 +2415,7 @@ public class GUI_NhanVienQuanLy extends JFrame {
         private JComboBox<String> cbStatus;
         private KhuyenMai_DAO dao;
         private EventKhuyenMai controller;
-        private JLabel lblTongKM, lblHoatDong, lblHetHan, lblTongLuot;
+        private JLabel lblHoatDong, lblHetHan, lblTongLuot;
 
         public PanelKhuyenMaiContent() throws SQLException {
             dao = new KhuyenMai_DAO();
@@ -2708,20 +2708,29 @@ public class GUI_NhanVienQuanLy extends JFrame {
         }
 
         private JPanel createSummaryPanel() {
-            JPanel summary = new JPanel(new GridLayout(1, 4, 15, 15)); // (Sửa layout nếu cần)
+            JPanel summary = new JPanel(new GridLayout(1, 3, 15, 15));
             summary.setOpaque(false);
-            summary.setBorder(new EmptyBorder(10, 0, 100, 0)); // Tăng khoảng cách dưới
+            summary.setBorder(new EmptyBorder(10, 0, 100, 0));
 
-            // highlight-start
-            // *** SỬA LỖI: Thay thế các hàm DAO bị lỗi bằng số 0 ***
-            lblTongLuot = new JLabel(String.valueOf(0), SwingConstants.CENTER);
-            lblHoatDong = new JLabel(String.valueOf(0), SwingConstants.CENTER);
-            lblHetHan = new JLabel(String.valueOf(0), SwingConstants.CENTER);
-            // (Hàm getLuotSuDung() có thể cũng lỗi, thay bằng 0)
-            // lblHetHan = new
-            // JLabel(promotions.stream().mapToInt(KhuyenMai::getLuotSuDung).sum(),
-            // SwingConstants.CENTER);
-            // highlight-end
+            // Tính toán thống kê từ dữ liệu SQL
+            int tongLuotDung = promotions.stream().mapToInt(KhuyenMai::getLuotSuDung).sum();
+
+            LocalDate now = LocalDate.now();
+            int soHoatDong = 0;
+            int soHetHan = 0;
+            for (KhuyenMai km : promotions) {
+                LocalDate start = km.getNgayBatDau().toLocalDate();
+                LocalDate end = km.getNgayKetThuc().toLocalDate();
+                if (!now.isBefore(start) && !now.isAfter(end)) {
+                    soHoatDong++;
+                } else {
+                    soHetHan++;
+                }
+            }
+
+            lblTongLuot = new JLabel(String.valueOf(tongLuotDung), SwingConstants.CENTER);
+            lblHoatDong = new JLabel(String.valueOf(soHoatDong), SwingConstants.CENTER);
+            lblHetHan = new JLabel(String.valueOf(soHetHan), SwingConstants.CENTER);
 
             summary.add(createSummaryCard(lblTongLuot, "Tổng lượt dùng", new Color(110, 140, 237)));
             summary.add(createSummaryCard(lblHoatDong, "Đang hoạt động", new Color(127, 232, 172)));
@@ -2756,11 +2765,28 @@ public class GUI_NhanVienQuanLy extends JFrame {
         }
 
         public void refreshStats() throws SQLException {
-            lblTongKM.setText(String.valueOf(dao.countAllKhuyenMai()));
-            lblHoatDong.setText(String.valueOf(dao.countKhuyenMaiDangHoatDong()));
-            lblHetHan.setText(String.valueOf(dao.countKhuyenMaiHetHan()));
-            lblTongLuot.setText(String.valueOf(
-                    promotions.stream().mapToInt(KhuyenMai::getLuotSuDung).sum()));
+            // Reload data từ database
+            promotions = dao.getAllKhuyenMai();
+
+            // Tính tổng lượt dùng
+            int tongLuotDung = promotions.stream().mapToInt(KhuyenMai::getLuotSuDung).sum();
+            lblTongLuot.setText(String.valueOf(tongLuotDung));
+
+            // Đếm số đang hoạt động và hết hạn
+            LocalDate now = LocalDate.now();
+            int soHoatDong = 0;
+            int soHetHan = 0;
+            for (KhuyenMai km : promotions) {
+                LocalDate start = km.getNgayBatDau().toLocalDate();
+                LocalDate end = km.getNgayKetThuc().toLocalDate();
+                if (!now.isBefore(start) && !now.isAfter(end)) {
+                    soHoatDong++;
+                } else {
+                    soHetHan++;
+                }
+            }
+            lblHoatDong.setText(String.valueOf(soHoatDong));
+            lblHetHan.setText(String.valueOf(soHetHan));
         }
 
         public void reloadData() throws SQLException {

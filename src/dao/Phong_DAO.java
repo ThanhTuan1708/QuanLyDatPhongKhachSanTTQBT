@@ -22,7 +22,7 @@ public class Phong_DAO {
         try {
             loaiPhongDAO = new LoaiPhong_DAO();
             trangThaiPhongDAO = new TrangThaiPhong_DAO();
-        } catch(Exception e) {
+        } catch (Exception e) {
             System.err.println("Lỗi khởi tạo LoaiPhong_DAO hoặc TrangThaiPhong_DAO: " + e.getMessage());
             // Có thể throw lỗi ở đây nếu các DAO này là bắt buộc
         }
@@ -30,7 +30,8 @@ public class Phong_DAO {
 
     /**
      * Lấy phòng theo mã.
-     * (ĐÃ SỬA: Tạo đúng kiểu LoaiPhongEntity/TrangThaiPhongEntity khi tạo đối tượng Phong)
+     * (ĐÃ SỬA: Tạo đúng kiểu LoaiPhongEntity/TrangThaiPhongEntity khi tạo đối tượng
+     * Phong)
      */
     public Phong getPhongById(String maPhong) throws SQLException {
         Phong p = null;
@@ -49,12 +50,10 @@ public class Phong_DAO {
                     // Create the CORRECT Entity types directly from ResultSet
                     LoaiPhongEntity lp = new LoaiPhongEntity(
                             rs.getInt("maLoaiPhong"),
-                            rs.getString("tenLoaiPhong")
-                    );
+                            rs.getString("tenLoaiPhong"));
                     TrangThaiPhongEntity ttp = new TrangThaiPhongEntity(
                             rs.getInt("maTrangThai"),
-                            rs.getString("tenTrangThai")
-                    );
+                            rs.getString("tenTrangThai"));
                     // highlight-end
 
                     // Create Phong object using the correct Entity types
@@ -63,8 +62,8 @@ public class Phong_DAO {
                             rs.getDouble("giaTienMotDem"),
                             rs.getString("moTa"),
                             rs.getInt("soChua"),
-                            lp,  // Now correctly LoaiPhongEntity
-                            ttp  // Now correctly TrangThaiPhongEntity
+                            lp, // Now correctly LoaiPhongEntity
+                            ttp // Now correctly TrangThaiPhongEntity
                     );
                 }
             }
@@ -92,20 +91,25 @@ public class Phong_DAO {
                 "JOIN TrangThaiPhong ttp ON p.maTrangThai = ttp.maTrangThai " +
                 "ORDER BY p.maPhong";
         try (Statement stmt = con.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+                ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
                 // Tạo đối tượng LoaiPhong/TrangThaiPhong từ kết quả JOIN
-                LoaiPhongEntity lp = new LoaiPhongEntity(rs.getInt("maLoaiPhong"), rs.getString("tenLoaiPhong")); // <-- SỬA LẠI TÊN LỚP
-                TrangThaiPhongEntity ttp = new TrangThaiPhongEntity(rs.getInt("maTrangThai"), rs.getString("tenTrangThai")); // <-- KIỂM TRA VÀ SỬA NẾU CẦN
+                LoaiPhongEntity lp = new LoaiPhongEntity(rs.getInt("maLoaiPhong"), rs.getString("tenLoaiPhong")); // <--
+                                                                                                                  // SỬA
+                                                                                                                  // LẠI
+                                                                                                                  // TÊN
+                                                                                                                  // LỚP
+                TrangThaiPhongEntity ttp = new TrangThaiPhongEntity(rs.getInt("maTrangThai"),
+                        rs.getString("tenTrangThai")); // <-- KIỂM TRA VÀ SỬA NẾU CẦN
 
                 Phong p = new Phong(
                         rs.getString("maPhong"),
                         rs.getDouble("giaTienMotDem"),
                         rs.getString("moTa"),
                         rs.getInt("soChua"),
-                        lp,  // Kiểu LoaiPhong
-                        ttp  // Kiểu TrangThaiPhong
+                        lp, // Kiểu LoaiPhong
+                        ttp // Kiểu TrangThaiPhong
                 );
                 dsPhong.add(p);
             }
@@ -175,7 +179,8 @@ public class Phong_DAO {
      * Lấy danh sách phòng ĐÃ LỌC theo Tên Loại Phòng và/hoặc Số Chứa.
      * (ĐÃ SỬA: Sử dụng đúng kiểu LoaiPhong/TrangThaiPhong khi tạo đối tượng Phong)
      */
-    public List<Phong> getFilteredPhong(String tenLoaiPhong, int soChua, Integer tang, Integer maTrangThai, java.util.Date tuNgay, java.util.Date denNgay) throws SQLException {
+    public List<Phong> getFilteredPhong(String tenLoaiPhong, int soChua, Integer tang, Integer maTrangThai,
+            java.util.Date tuNgay, java.util.Date denNgay) throws SQLException {
         List<Phong> dsPhong = new ArrayList<>();
         Connection con = ConnectDB.getConnection();
 
@@ -202,22 +207,24 @@ public class Phong_DAO {
             sql += " AND lp.tenLoaiPhong = ?";
         }
 
-        // Thêm điều kiện lọc Số người
-        if (soChua == 4) { // Quy ước 4 là "4+ người"
+        // Thêm điều kiện lọc Số người (phòng phải chứa được ÍT NHẤT số người yêu cầu)
+        if (soChua > 0) { // Nếu có yêu cầu về số người (> 0)
             sql += " AND p.soChua >= ?";
-        } else if (soChua != -1) { // -1 là "Tất cả"
-            sql += " AND p.soChua = ?";
         }
 
-        // Thêm điều kiện lọc Tầng
+        // Thêm điều kiện lọc Tầng (P1% = tầng 1, P2% = tầng 2, ...)
         if (tang != null) {
-            sql += " AND SUBSTRING(p.maPhong, 2, 1) = ?";
+            sql += " AND p.maPhong LIKE ?";
         }
 
         // Thêm điều kiện lọc Trạng thái
         if (maTrangThai != null) {
             sql += " AND ttp.maTrangThai = ?";
         }
+
+        // DEBUG: In ra câu SQL và giá trị tang
+        System.out.println("DEBUG SQL: " + sql);
+        System.out.println("DEBUG tang: " + tang + " -> P" + tang + "%");
 
         try (PreparedStatement stmt = con.prepareStatement(sql)) {
             int paramIndex = 1;
@@ -227,16 +234,16 @@ public class Phong_DAO {
                 stmt.setDate(paramIndex++, new java.sql.Date(denNgay.getTime())); // ngayTra >= tuNgay
                 stmt.setDate(paramIndex++, new java.sql.Date(tuNgay.getTime())); // ngayNhan <= denNgay
             }
-            
+
             // Tiếp tục với các tham số khác
             if (tenLoaiPhong != null) {
                 stmt.setString(paramIndex++, tenLoaiPhong);
             }
-            if (soChua != -1) {
+            if (soChua > 0) {
                 stmt.setInt(paramIndex++, soChua);
             }
             if (tang != null) {
-                stmt.setString(paramIndex++, tang.toString());
+                stmt.setString(paramIndex++, "P" + tang.toString() + "%"); // Tạo P1%, P2%, P3%, P4%
             }
             if (maTrangThai != null) {
                 stmt.setInt(paramIndex++, maTrangThai);
@@ -245,8 +252,13 @@ public class Phong_DAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     // Tạo đối tượng LoaiPhong/TrangThaiPhong từ kết quả JOIN
-                    LoaiPhongEntity lp = new LoaiPhongEntity(rs.getInt("maLoaiPhong"), rs.getString("tenLoaiPhong")); // <-- SỬA LẠI TÊN LỚP
-                    TrangThaiPhongEntity ttp = new TrangThaiPhongEntity(rs.getInt("maTrangThai"), rs.getString("tenTrangThai")); // <-- SỬA LẠI TÊN LỚP
+                    LoaiPhongEntity lp = new LoaiPhongEntity(rs.getInt("maLoaiPhong"), rs.getString("tenLoaiPhong")); // <--
+                                                                                                                      // SỬA
+                                                                                                                      // LẠI
+                                                                                                                      // TÊN
+                                                                                                                      // LỚP
+                    TrangThaiPhongEntity ttp = new TrangThaiPhongEntity(rs.getInt("maTrangThai"),
+                            rs.getString("tenTrangThai")); // <-- SỬA LẠI TÊN LỚP
 
                     // Tạo đối tượng Phong
                     Phong p = new Phong();
@@ -254,7 +266,7 @@ public class Phong_DAO {
                     p.setGiaTienMotDem(rs.getDouble("giaTienMotDem"));
                     p.setMoTa(rs.getString("moTa"));
                     p.setSoChua(rs.getInt("soChua"));
-                    p.setLoaiPhong(lp);        // Kiểu LoaiPhong
+                    p.setLoaiPhong(lp); // Kiểu LoaiPhong
                     p.setTrangThaiPhong(ttp); // Kiểu TrangThaiPhong
 
                     dsPhong.add(p);
@@ -269,6 +281,7 @@ public class Phong_DAO {
         }
         return dsPhong;
     }
+
     /**
      * Cập nhật thông tin chi tiết của một phòng.
      * (Không cập nhật trạng thái ở đây, dùng updatePhongTrangThai riêng)
